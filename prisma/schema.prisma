@@ -1,0 +1,172 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id        String    @id @default(cuid())
+  name      String    @db.VarChar(255)
+  email     String    @unique @db.VarChar(255)
+  company   String    @db.VarChar(255)
+  seniority String    @db.VarChar(255)
+
+  // DAISEE Score Components
+  daiseeScore    Float        @default(0)
+  decisionPower  Int          @default(0) // 0-100
+  companySize    CompanySize  @default(PEQUENA)
+  segmentMatch   Int          @default(0) // 0-100
+
+  // Lead Status
+  status        LeadStatus   @default(PROSPECTANDO)
+  priority      Priority     @default(MEDIA)
+
+  // Profile Data
+  profileUrl    String?      @db.Text
+  profileText   String?      @db.Text
+  linkedinUrl   String?
+
+  // Relationships
+  cadencia      Cadencia?
+  touches       Touch[]
+  complianceLog ComplianceLog[]
+  auditLog      AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cadencia {
+  id        String   @id @default(cuid())
+  leadId    String   @unique
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  tone      CadenciaTone @default(CONSULTIVO)
+  status    CadenciaStatus @default(DRAFT)
+
+  // Touch sequence
+  touches   Touch[]
+
+  generatedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Touch {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  cadenciaId String
+  cadencia   Cadencia @relation(fields: [cadenciaId], references: [id], onDelete: Cascade)
+
+  sequence   Int      // 1-5
+  type       TouchType // LINKEDIN_250, LINKEDIN_500, EMAIL_T3, EMAIL_T4, EMAIL_T5
+  content    String   @db.Text
+  subject    String?  @db.VarChar(255)
+
+  status     TouchStatus @default(AGENDADO)
+  sentAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ComplianceRule {
+  id          String   @id @default(cuid())
+  regulation  Regulation
+  keywords    String[] // Forbidden keywords
+  requirements String[] // Required phrases
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([regulation])
+}
+
+model ComplianceLog {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  regulation Regulation
+  message    String   @db.Text
+  isValid    Boolean
+  issues     String[] // List of violations
+
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  action    String   @db.VarChar(255)
+  details   String?  @db.Text
+
+  createdAt DateTime @default(now())
+}
+
+// Enums
+
+enum CompanySize {
+  MICRO      // 1-9
+  PEQUENA    // 10-49
+  MEDIA      // 50-249
+  GRANDE     // 250+
+}
+
+enum LeadStatus {
+  PROSPECTANDO  // Prospecting
+  QUALIFICADO   // Qualified
+  EM_PROGRESSO  // In Progress
+  DESCARTADO    // Discarded
+  PERDIDO       // Lost
+}
+
+enum Priority {
+  BAIXA  // Low (0-49)
+  MEDIA  // Medium (50-79)
+  ALTA   // High (80-100)
+}
+
+enum CadenciaTone {
+  CONSULTIVO  // Consultative
+  DIRETO      // Direct
+  CRIATIVO    // Creative
+}
+
+enum CadenciaStatus {
+  DRAFT
+  PRONTO
+  ENVIADO
+}
+
+enum TouchType {
+  LINKEDIN_250  // T1: LinkedIn 250 chars
+  LINKEDIN_500  // T2: LinkedIn 500 chars
+  EMAIL_T3      // T3: Email
+  EMAIL_T4      // T4: Email
+  EMAIL_T5      // T5: Email
+}
+
+enum TouchStatus {
+  AGENDADO    // Scheduled
+  ENVIADO     // Sent
+  ENTREGUE    // Delivered
+  RESPONDIDO  // Replied
+  FALHOU      // Failed
+}
+
+enum Regulation {
+  LGPD        // Lei Geral de Proteção de Dados
+  PHARMA      // ANVISA (Farmacêutica)
+  INSURANCE   // SUSEP (Seguros)
+  CONAR       // Publicidade
+}
