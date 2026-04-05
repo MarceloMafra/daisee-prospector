@@ -1,4 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { calculateDAISEEScore } from '@/lib/daisee-score'
+import { Readable } from 'stream'
+import csv from 'csv-parser'
+
+interface CSVRow {
+  name: string
+  email: string
+  company: string
+  seniority: string
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,19 +30,102 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Implement CSV import
-    // - Parse CSV file
-    // - Validate required columns (name, email, company, seniority)
-    // - Calculate DAISEE scores for each lead
-    // - Check for duplicates
-    // - Create leads in database
-    // - Return import summary
+    // Convert File to Buffer
+    const buffer = await file.arrayBuffer()
+    const stream = Readable.from(Buffer.from(buffer))
+
+    // Parse CSV
+    const rows: CSVRow[] = []
+    await new Promise((resolve, reject) => {
+      stream
+        .pipe(csv())
+        .on('data', (row: CSVRow) => {
+          rows.push(row)
+        })
+        .on('error', reject)
+        .on('end', resolve)
+    })
+
+    // Validate and import
+    let imported = 0
+    let duplicates = 0
+    const errors: Array<{ row: number; email: string; error: string }> = []
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+
+      // Validate required fields
+      if (!row.name || !row.email || !row.company || !row.seniority) {
+        errors.push({
+          row: i + 2, // +2 because CSV has header and 0-indexing
+          email: row.email || 'N/A',
+          error: 'Missing required fields (name, email, company, seniority)',
+        })
+        continue
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(row.email)) {
+        errors.push({
+          row: i + 2,
+          email: row.email,
+          error: 'Invalid email format',
+        })
+        continue
+      }
+
+      try {
+        // Check for duplicates
+        const existing = await prisma.lead.findUnique({
+          where: { email: row.email },
+        })
+
+        if (existing) {
+          duplicates++
+          continue
+        }
+
+        // Calculate DAISEE score
+        const scoreResult = calculateDAISEEScore({
+          seniority: row.seniority,
+          companySize: 'MEDIA', // Default, could be enhanced
+          segmentMatch: 50, // Default, could be enhanced
+        })
+
+        // Create lead
+        await prisma.lead.create({
+          data: {
+            name: row.name,
+            email: row.email,
+            company: row.company,
+            seniority: row.seniority,
+            daiseeScore: scoreResult.score,
+            decisionPower: scoreResult.decisionPower,
+            companySize: 'MEDIA',
+            segmentMatch: scoreResult.segmentMatch,
+            status: 'PROSPECTANDO',
+            priority: scoreResult.score >= 80 ? 'ALTA' : scoreResult.score >= 50 ? 'MEDIA' : 'BAIXA',
+          },
+        })
+
+        imported++
+      } catch (err) {
+        errors.push({
+          row: i + 2,
+          email: row.email,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        })
+      }
+    }
 
     return NextResponse.json(
       {
-        imported: 0,
-        duplicates: 0,
-        errors: [],
+        imported,
+        duplicates,
+        errors,
+        total: rows.length,
+        summary: `Imported ${imported} leads, skipped ${duplicates} duplicates, ${errors.length} errors`,
       },
       { status: 201 }
     )

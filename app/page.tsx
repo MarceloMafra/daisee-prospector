@@ -36,7 +36,7 @@ export default function Home() {
         </div>
         <Link
           href="/dashboard"
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           Get Started
         </Link>
@@ -55,7 +55,7 @@ export default function Home() {
             <div className="flex gap-4">
               <Link
                 href="/dashboard"
-                className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               >
                 Launch App
               </Link>
