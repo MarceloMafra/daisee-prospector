@@ -24,63 +24,65 @@ export async function generateCadencia(
 
   const toneDescriptions = {
     CONSULTIVO:
-      'Consultative and educational tone, asking questions to understand their needs, positioning as a trusted advisor',
+      'Tom consultivo e educativo, fazendo perguntas para entender as necessidades do prospect, posicionando-se como um consultor de confiança',
     DIRETO:
-      'Direct and straight-to-the-point, highlighting specific value proposition and benefits',
+      'Tom direto e objetivo, destacando a proposta de valor e os benefícios de forma clara e sem rodeios',
     CRIATIVO:
-      'Creative and engaging tone, using storytelling and unique angles to capture attention',
+      'Tom criativo e envolvente, usando storytelling e ângulos únicos para capturar a atenção do prospect',
   }
 
-  const prompt = `Generate a 5-touch sales cadence for this prospect. Keep each message SHORT (max 200 chars for LinkedIn, max 300 chars for email body):
+  const prompt = `Você é um especialista em vendas B2B no mercado brasileiro. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. As mensagens devem ser naturais, personalizadas e adequadas ao mercado brasileiro.
 
-**Prospect Details:**
-- Name: ${lead.name}
-- Company: ${lead.company}
-- Position: ${lead.seniority}
-- Email: ${lead.email}
-- DAISEE Score: ${lead.daiseeScore}/100
+**Dados do Prospect:**
+- Nome: ${lead.name}
+- Empresa: ${lead.company}
+- Cargo: ${lead.seniority}
+- E-mail: ${lead.email}
+- Score DAISEE: ${lead.daiseeScore}/100
 
-**Tone:** ${toneDescriptions[tone]}
+**Tom:** ${toneDescriptions[tone]}
 
-Generate exactly 5 touches in this specific order and format:
+Gere exatamente 5 touches na ordem e formato abaixo:
 
-**T1: LinkedIn Message (250 chars max)**
+**T1: Mensagem LinkedIn (máx. 250 caracteres)**
 Type: LINKEDIN_250
 Channel: LINKEDIN
-Content: [Write a compelling LinkedIn message that starts a conversation. Max 250 characters.]
+Content: [Mensagem curta no LinkedIn para iniciar uma conversa. Máx. 250 caracteres.]
 
-**T2: LinkedIn Message (500 chars max)**
+**T2: Mensagem LinkedIn (máx. 500 caracteres)**
 Type: LINKEDIN_500
 Channel: LINKEDIN
-Content: [Follow-up LinkedIn message with more context about how you can help. Max 500 characters.]
+Content: [Mensagem de follow-up no LinkedIn com mais contexto sobre como você pode ajudar. Máx. 500 caracteres.]
 
-**T3: Email with Subject**
+**T3: E-mail com Assunto**
 Type: EMAIL_T3
 Channel: EMAIL
-Subject: [Compelling email subject line, max 60 chars]
-Content: [Email body with clear value proposition and CTA]
+Subject: [Assunto do e-mail chamativo, máx. 60 caracteres]
+Content: [Corpo do e-mail com proposta de valor clara e chamada para ação]
 
-**T4: Email with Subject**
+**T4: E-mail com Assunto**
 Type: EMAIL_T4
 Channel: EMAIL
-Subject: [Different angle subject line, max 60 chars]
-Content: [Email body from a different perspective, acknowledging lack of response]
+Subject: [Assunto com ângulo diferente, máx. 60 caracteres]
+Content: [Corpo do e-mail de uma perspectiva diferente, reconhecendo a falta de resposta]
 
-**T5: Email with Subject**
+**T5: E-mail com Assunto**
 Type: EMAIL_T5
 Channel: EMAIL
-Subject: [Final touch subject line, max 60 chars]
-Content: [Final email with clear CTA and next steps]
+Subject: [Assunto do último touch, máx. 60 caracteres]
+Content: [E-mail final com CTA claro e próximos passos]
 
-Important:
-- All content should be personalized to the prospect
-- Each touch should build on previous ones
-- Tone should be ${tone.toLowerCase()}
-- Subject lines should be compelling and varied
-- Content should be professional but engaging
-- Include specific CTAs in each message
+Regras importantes:
+- ESCREVA TUDO EM PORTUGUÊS BRASILEIRO
+- Todo conteúdo deve ser personalizado para o prospect
+- Cada touch deve construir sobre os anteriores
+- Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo' : tone === 'DIRETO' ? 'direto' : 'criativo'}
+- Assuntos de e-mail devem ser variados e chamativos
+- Conteúdo deve ser profissional mas envolvente
+- Inclua chamadas para ação específicas em cada mensagem
+- Use linguagem natural do mercado brasileiro, evite traduções literais
 
-Return ONLY the 5 touches in the format specified above, with clear markers for each field.`
+Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
   const message = await client.messages.create({
     model: 'claude-opus-4-6',
