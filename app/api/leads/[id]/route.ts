@@ -10,20 +10,14 @@ export async function GET(
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: params.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        company: true,
-        seniority: true,
-        daiseeScore: true,
-        decisionPower: true,
-        companySize: true,
-        segmentMatch: true,
-        status: true,
-        priority: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        cadencia: {
+          include: {
+            touches: {
+              orderBy: { sequence: 'asc' },
+            },
+          },
+        },
       },
     })
 
