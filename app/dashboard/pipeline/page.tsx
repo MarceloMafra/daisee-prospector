@@ -59,17 +59,17 @@ export default function PipelinePage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Sales Pipeline
+          Pipeline de Vendas
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Track leads through the sales funnel
+          Acompanhe seus leads pelo funil de vendas
         </p>
       </div>
 
       {/* Pipeline Kanban */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <p className="text-gray-500">Loading pipeline...</p>
+          <p className="text-gray-500">Carregando pipeline...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -86,7 +86,7 @@ export default function PipelinePage() {
 
               <div className={`space-y-3 p-4 rounded-lg min-h-96 ${column.color}`}>
                 {column.leads.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No leads</p>
+                  <p className="text-center text-gray-500 py-8">Sem leads</p>
                 ) : (
                   column.leads.map((lead) => (
                     <Card

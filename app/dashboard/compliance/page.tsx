@@ -25,7 +25,7 @@ export default function CompliancePage() {
     {
       id: 'LGPD',
       name: 'LGPD',
-      description: 'Lei Geral de Proteção de Dados (Brazil)',
+      description: 'Lei Geral de Proteção de Dados',
       icon: '🛡️',
     },
     {
@@ -58,10 +58,10 @@ export default function CompliancePage() {
           {
             type: 'error',
             severity: 'critical',
-            message: 'Message cannot be empty',
+            message: 'A mensagem não pode estar vazia',
           },
         ],
-        summary: 'Message is required',
+        summary: 'A mensagem é obrigatória',
       })
       return
     }
@@ -88,10 +88,10 @@ export default function CompliancePage() {
           {
             type: 'error',
             severity: 'critical',
-            message: 'Failed to validate message',
+            message: 'Falha ao validar a mensagem',
           },
         ],
-        summary: 'Validation error occurred',
+        summary: 'Erro ao validar',
       })
     } finally {
       setLoading(false)
@@ -103,10 +103,10 @@ export default function CompliancePage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Compliance Validator
+          Validador de Compliance
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Validate your messages against Brazilian regulatory requirements
+          Valide suas mensagens contra as exigências regulatórias brasileiras
         </p>
       </div>
 
@@ -115,16 +115,16 @@ export default function CompliancePage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Validate Message</CardTitle>
+              <CardTitle>Validar Mensagem</CardTitle>
               <CardDescription>
-                Check your message for compliance violations
+                Verifique se sua mensagem está em conformidade
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Regulation Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                  Select Regulation
+                  Selecione a Regulação
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {regulations.map((reg) => (
@@ -152,12 +152,12 @@ export default function CompliancePage() {
               {/* Message Input */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                  Message Text
+                  Texto da Mensagem
                 </label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Paste your message here..."
+                  placeholder="Cole sua mensagem aqui..."
                   className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 min-h-32 resize-none bg-white dark:bg-gray-800"
                 />
               </div>
@@ -179,7 +179,7 @@ export default function CompliancePage() {
                           <>
                             <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                             <span className="font-semibold text-green-800 dark:text-green-200">
-                              Message is compliant
+                              Mensagem em conformidade
                             </span>
                           </>
                         ) : (
@@ -200,7 +200,7 @@ export default function CompliancePage() {
                           {validationResult.score}
                         </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
-                          Compliance Score
+                          Score de Compliance
                         </div>
                       </div>
                     </div>
@@ -208,7 +208,7 @@ export default function CompliancePage() {
                     {validationResult.violations.length > 0 && (
                       <div className="space-y-2">
                         <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
-                          Issues
+                          Problemas
                         </div>
                         <ul className="space-y-2">
                           {validationResult.violations.map((violation, idx) => (
@@ -244,7 +244,7 @@ export default function CompliancePage() {
                 disabled={loading || !message.trim()}
                 className="w-full"
               >
-                {loading ? 'Validating...' : 'Validate Message'}
+                {loading ? 'Validando...' : 'Validar Mensagem'}
               </Button>
             </CardContent>
           </Card>
@@ -257,7 +257,7 @@ export default function CompliancePage() {
               <CardTitle className="text-lg">
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  Requirements
+                  Requisitos
                 </div>
               </CardTitle>
             </CardHeader>
@@ -267,9 +267,9 @@ export default function CompliancePage() {
                   LGPD
                 </h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• No personal data without consent</li>
-                  <li>• Clear identification of sender</li>
-                  <li>• Opt-out option required</li>
+                  <li>• Sem dados pessoais sem consentimento</li>
+                  <li>• Identificação clara do remetente</li>
+                  <li>• Opção de descadastro obrigatória</li>
                 </ul>
               </div>
 
@@ -278,9 +278,9 @@ export default function CompliancePage() {
                   ANVISA
                 </h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• No false health claims</li>
-                  <li>• Professional language only</li>
-                  <li>• Required disclaimers</li>
+                  <li>• Sem alegações de saúde falsas</li>
+                  <li>• Linguagem profissional</li>
+                  <li>• Disclaimers obrigatórios</li>
                 </ul>
               </div>
 
@@ -289,9 +289,9 @@ export default function CompliancePage() {
                   SUSEP
                 </h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Clear policy details</li>
-                  <li>• No misleading rates</li>
-                  <li>• Company registration visible</li>
+                  <li>• Detalhes claros da apólice</li>
+                  <li>• Sem taxas enganosas</li>
+                  <li>• Registro da empresa visível</li>
                 </ul>
               </div>
 
@@ -300,9 +300,9 @@ export default function CompliancePage() {
                   CONAR
                 </h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Truthful advertising</li>
-                  <li>• No inappropriate language</li>
-                  <li>• Respect consumer dignity</li>
+                  <li>• Publicidade verdadeira</li>
+                  <li>• Sem linguagem inapropriada</li>
+                  <li>• Respeito à dignidade do consumidor</li>
                 </ul>
               </div>
             </CardContent>
