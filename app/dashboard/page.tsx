@@ -33,7 +33,7 @@ export default function DashboardPage() {
           setStats(data)
         }
       } catch (error) {
-        console.error('Failed to fetch stats:', error)
+        console.error('Falha ao buscar estatísticas:', error)
       } finally {
         setLoading(false)
       }
@@ -51,13 +51,13 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Welcome back. Here's your sales pipeline overview.
+            Bem-vindo. Aqui está o resumo do seu pipeline de vendas.
           </p>
         </div>
         <Link href="/dashboard/leads/import">
           <Button className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Import Leads
+            Importar Leads
           </Button>
         </Link>
       </div>
@@ -68,7 +68,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Total Leads
+                Total de Leads
               </p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {loading ? '-' : stats?.totalLeads || 0}
@@ -82,7 +82,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Hot Prospects
+                Prospectos Quentes
               </p>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
                 {loading ? '-' : stats?.hotProspects || 0}
@@ -96,7 +96,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Pending Cadencias
+                Cadências Pendentes
               </p>
               <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">
                 {loading ? '-' : stats?.pendingCadencias || 0}
@@ -110,7 +110,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Completed Touches
+                Touches Enviados
               </p>
               <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">
                 {loading ? '-' : stats?.completedTouches || 0}
@@ -125,24 +125,24 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-            Quick Actions
+            Ações Rápidas
           </h3>
           <div className="space-y-3">
             <Link href="/dashboard/leads/import">
               <Button variant="outline" className="w-full justify-between">
-                Import Leads
+                Importar Leads
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link href="/dashboard/leads">
               <Button variant="outline" className="w-full justify-between">
-                View All Leads
+                Ver Todos os Leads
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link href="/dashboard/pipeline">
               <Button variant="outline" className="w-full justify-between">
-                Sales Pipeline
+                Pipeline de Vendas
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -151,41 +151,24 @@ export default function DashboardPage() {
 
         <Card className="p-6 md:col-span-2">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-            Getting Started
+            Como Começar
           </h3>
           <ol className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
             <li className="flex gap-3">
-              <span className="font-semibold text-red-600 dark:text-red-400">
-                1.
-              </span>
-              <span>
-                Import your sales leads using a CSV file with name, email, and company
-              </span>
+              <span className="font-semibold text-red-600 dark:text-red-400">1.</span>
+              <span>Importe seus leads via arquivo CSV com nome, e-mail, empresa e cargo</span>
             </li>
             <li className="flex gap-3">
-              <span className="font-semibold text-red-600 dark:text-red-400">
-                2.
-              </span>
-              <span>
-                The system calculates DAISEE scores based on seniority and company fit
-              </span>
+              <span className="font-semibold text-red-600 dark:text-red-400">2.</span>
+              <span>O sistema calcula o score DAISEE automaticamente com base em senioridade e porte da empresa</span>
             </li>
             <li className="flex gap-3">
-              <span className="font-semibold text-red-600 dark:text-red-400">
-                3.
-              </span>
-              <span>
-                Upload LinkedIn profiles to enrich lead data and generate personalized
-                cadencias
-              </span>
+              <span className="font-semibold text-red-600 dark:text-red-400">3.</span>
+              <span>Clique em "Ver" em um lead para gerar uma cadência personalizada com IA</span>
             </li>
             <li className="flex gap-3">
-              <span className="font-semibold text-red-600 dark:text-red-400">
-                4.
-              </span>
-              <span>
-                Track your sales pipeline and validate messages for compliance
-              </span>
+              <span className="font-semibold text-red-600 dark:text-red-400">4.</span>
+              <span>Valide suas mensagens para garantir conformidade com LGPD, ANVISA, SUSEP e CONAR</span>
             </li>
           </ol>
         </Card>

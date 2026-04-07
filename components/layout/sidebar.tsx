@@ -15,7 +15,7 @@ import {
 const menuItems = [
   {
     label: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: BarChart3,
   },
   {
@@ -34,7 +34,7 @@ const menuItems = [
     icon: Shield,
   },
   {
-    label: 'Settings',
+    label: 'Configurações',
     href: '/dashboard/settings',
     icon: Settings,
   },
@@ -80,7 +80,7 @@ export function Sidebar() {
       <div className="border-t border-border p-4 mt-6">
         <button className="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors">
           <LogOut className="w-5 h-5" />
-          <span>Logout</span>
+          <span>Sair</span>
         </button>
       </div>
     </aside>

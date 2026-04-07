@@ -17,6 +17,14 @@ interface Lead {
   createdAt: string
 }
 
+const statusLabels: Record<string, string> = {
+  PROSPECTANDO: 'Prospectando',
+  QUALIFICADO: 'Qualificado',
+  EM_PROGRESSO: 'Em Progresso',
+  DESCARTADO: 'Descartado',
+  PERDIDO: 'Perdido',
+}
+
 export default function LeadsPage() {
   const router = useRouter()
   const [leads, setLeads] = useState<Lead[]>([])
@@ -32,7 +40,7 @@ export default function LeadsPage() {
           setLeads(data.leads || [])
         }
       } catch (error) {
-        console.error('Failed to fetch leads:', error)
+        console.error('Falha ao buscar leads:', error)
       } finally {
         setLoading(false)
       }
@@ -53,17 +61,15 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Leads
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leads</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage and track your sales leads
+            Gerencie e acompanhe seus leads de vendas
           </p>
         </div>
         <Link href="/dashboard/leads/import">
           <Button className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Import Leads
+            Importar Leads
           </Button>
         </Link>
       </div>
@@ -75,7 +81,7 @@ export default function LeadsPage() {
             <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email or company..."
+              placeholder="Buscar por nome, e-mail ou empresa..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800"
@@ -87,29 +93,29 @@ export default function LeadsPage() {
       {/* Leads Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lead List</CardTitle>
+          <CardTitle>Lista de Leads</CardTitle>
           <CardDescription>
-            {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''} found
+            {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''} encontrado{filteredLeads.length !== 1 ? 's' : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-8">
-              <p className="text-gray-500">Loading leads...</p>
+              <p className="text-gray-500">Carregando leads...</p>
             </div>
           ) : filteredLeads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mb-4" />
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {leads.length === 0
-                  ? 'No leads yet. Import your first batch to get started.'
-                  : 'No leads match your search.'}
+                  ? 'Nenhum lead ainda. Importe sua primeira lista para começar.'
+                  : 'Nenhum lead encontrado para esta busca.'}
               </p>
               {leads.length === 0 && (
                 <Link href="/dashboard/leads/import">
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Import Leads
+                    Importar Leads
                   </Button>
                 </Link>
               )}
@@ -119,51 +125,36 @@ export default function LeadsPage() {
               <table className="w-full">
                 <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">
-                      Name
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">
-                      Email
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">
-                      Company
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">
-                      Score
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">
-                      Status
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">
-                      Action
-                    </th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Nome</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">E-mail</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Empresa</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Score</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredLeads.map((lead) => (
-                    <tr
-                      key={lead.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    >
+                    <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <td className="px-4 py-3">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {lead.name}
-                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white">{lead.name}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {lead.email}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {lead.company}
-                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.company}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          lead.daiseeScore >= 80
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                            : lead.daiseeScore >= 50
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                        }`}>
                           {lead.daiseeScore.toFixed(1)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {lead.status}
+                          {statusLabels[lead.status] || lead.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
