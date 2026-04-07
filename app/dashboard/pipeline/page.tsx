@@ -29,7 +29,7 @@ export default function PipelinePage() {
         if (response.ok) {
           const data = await response.json()
           // Group leads by status
-          const grouped = {
+          const grouped: Record<string, { status: string; leads: Lead[]; color: string }> = {
             'QUALIFICADO': { status: 'QUALIFICADO', leads: [], color: 'bg-green-100' },
             'EM_PROGRESSO': { status: 'EM_PROGRESSO', leads: [], color: 'bg-blue-100' },
             'DESCARTADO': { status: 'DESCARTADO', leads: [], color: 'bg-red-100' },
@@ -37,8 +37,8 @@ export default function PipelinePage() {
           }
 
           data.leads?.forEach((lead: Lead) => {
-            if (grouped[lead.status as keyof typeof grouped]) {
-              grouped[lead.status as keyof typeof grouped].leads.push(lead)
+            if (grouped[lead.status]) {
+              grouped[lead.status].leads.push(lead)
             }
           })
 

@@ -10,7 +10,14 @@ export default function CompliancePage() {
   const [selectedRegulation, setSelectedRegulation] = useState('LGPD')
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean
-    issues: string[]
+    regulation: string
+    score: number
+    violations: Array<{
+      type: string
+      severity: string
+      message: string
+    }>
+    summary: string
   } | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -45,7 +52,16 @@ export default function CompliancePage() {
     if (!message.trim()) {
       setValidationResult({
         isValid: false,
-        issues: ['Message cannot be empty'],
+        regulation: selectedRegulation,
+        score: 0,
+        violations: [
+          {
+            type: 'error',
+            severity: 'critical',
+            message: 'Message cannot be empty',
+          },
+        ],
+        summary: 'Message is required',
       })
       return
     }
@@ -66,7 +82,16 @@ export default function CompliancePage() {
     } catch (error) {
       setValidationResult({
         isValid: false,
-        issues: ['Failed to validate message'],
+        regulation: selectedRegulation,
+        score: 0,
+        violations: [
+          {
+            type: 'error',
+            severity: 'critical',
+            message: 'Failed to validate message',
+          },
+        ],
+        summary: 'Validation error occurred',
       })
     } finally {
       setLoading(false)
@@ -139,45 +164,77 @@ export default function CompliancePage() {
 
               {/* Validation Result */}
               {validationResult && (
-                <div
-                  className={`p-4 rounded-lg border-l-4 ${
-                    validationResult.isValid
-                      ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
-                      : 'bg-red-50 dark:bg-red-900/20 border-red-500'
-                  }`}
-                >
-                  <div className="flex gap-3 mb-3">
-                    {validationResult.isValid ? (
-                      <>
-                        <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                        <span className="font-semibold text-green-800 dark:text-green-200">
-                          Message is compliant
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-                        <span className="font-semibold text-red-800 dark:text-red-200">
-                          {validationResult.issues.length} issue
-                          {validationResult.issues.length !== 1 ? 's' : ''} found
-                        </span>
-                      </>
+                <div className="space-y-4">
+                  {/* Score Card */}
+                  <div
+                    className={`p-4 rounded-lg border-l-4 ${
+                      validationResult.isValid
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
+                        : 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex gap-3">
+                        {validationResult.isValid ? (
+                          <>
+                            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <span className="font-semibold text-green-800 dark:text-green-200">
+                              Message is compliant
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                            <span className="font-semibold text-red-800 dark:text-red-200">
+                              {validationResult.violations.length} violation
+                              {validationResult.violations.length !== 1
+                                ? 's'
+                                : ''}{' '}
+                              found
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {validationResult.score}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          Compliance Score
+                        </div>
+                      </div>
+                    </div>
+
+                    {validationResult.violations.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          Issues
+                        </div>
+                        <ul className="space-y-2">
+                          {validationResult.violations.map((violation, idx) => (
+                            <li
+                              key={idx}
+                              className="text-sm flex gap-2 items-start"
+                            >
+                              <div
+                                className={`flex-shrink-0 w-4 h-4 rounded mt-0.5 ${
+                                  violation.severity === 'critical'
+                                    ? 'bg-red-500'
+                                    : 'bg-yellow-500'
+                                }`}
+                              />
+                              <div className="flex-1 text-gray-700 dark:text-gray-300">
+                                {violation.message}
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {violation.type} ({violation.severity})
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </div>
-
-                  {validationResult.issues.length > 0 && (
-                    <ul className="space-y-2">
-                      {validationResult.issues.map((issue, idx) => (
-                        <li
-                          key={idx}
-                          className="text-sm text-red-800 dark:text-red-200 flex gap-2"
-                        >
-                          <span className="text-red-600 dark:text-red-400">•</span>
-                          {issue}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
               )}
 

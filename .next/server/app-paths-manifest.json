@@ -1,7 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/dashboard/leads/import/page": "app/dashboard/leads/import/page.js",
-  "/dashboard/pipeline/page": "app/dashboard/pipeline/page.js",
-  "/dashboard/compliance/page": "app/dashboard/compliance/page.js",
-  "/dashboard/settings/page": "app/dashboard/settings/page.js"
-}
