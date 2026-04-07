@@ -1,8 +1,6 @@
-import { CompanySize } from '@prisma/client'
-
 export interface DAISEEInput {
   seniority: string
-  companySize?: CompanySize
+  companySize?: 'MICRO' | 'PEQUENA' | 'MEDIA' | 'GRANDE'
   segmentMatch?: number // 0-100
 }
 
