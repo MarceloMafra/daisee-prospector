@@ -11,6 +11,9 @@ interface CSVRow {
   email: string
   company: string
   seniority: string
+  linkedin?: string
+  linkedin_url?: string
+  linkedinUrl?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -95,6 +98,9 @@ export async function POST(request: NextRequest) {
           segmentMatch: 50, // Default, could be enhanced
         })
 
+        // Resolve linkedin URL from any column name variation
+        const linkedinUrl = row.linkedinUrl || row.linkedin_url || row.linkedin || null
+
         // Create lead
         await prisma.lead.create({
           data: {
@@ -108,6 +114,7 @@ export async function POST(request: NextRequest) {
             segmentMatch: scoreResult.segmentMatch,
             status: 'PROSPECTANDO',
             priority: scoreResult.score >= 80 ? 'ALTA' : scoreResult.score >= 50 ? 'MEDIA' : 'BAIXA',
+            linkedinUrl,
           },
         })
 
