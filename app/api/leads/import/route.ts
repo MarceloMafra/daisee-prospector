@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateDAISEEScore } from '@/lib/daisee-score'
+
+export const dynamic = 'force-dynamic'
 import { Readable } from 'stream'
 import csv from 'csv-parser'
 
