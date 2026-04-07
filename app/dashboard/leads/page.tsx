@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus, FileText, Search } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface Lead {
   id: string
@@ -17,6 +18,7 @@ interface Lead {
 }
 
 export default function LeadsPage() {
+  const router = useRouter()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -165,8 +167,12 @@ export default function LeadsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <Button variant="outline" size="sm">
-                          View
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
+                        >
+                          Ver
                         </Button>
                       </td>
                     </tr>
