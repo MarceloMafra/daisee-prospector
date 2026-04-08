@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2 } from 'lucide-react'
 
 interface Touch {
   id: string
@@ -33,6 +33,8 @@ interface Lead {
   status: string
   priority: string
   linkedinUrl?: string
+  profileText?: string
+  profileUrl?: string
   companySize: string
   segmentMatch: number
   cadencia?: Cadencia
@@ -61,6 +63,8 @@ export default function LeadDetailPage() {
   const [generating, setGenerating] = useState(false)
   const [selectedTone, setSelectedTone] = useState('CONSULTIVO')
   const [error, setError] = useState('')
+  const [uploadingPdf, setUploadingPdf] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState('')
 
   useEffect(() => {
     fetchLead()
@@ -79,6 +83,45 @@ export default function LeadDetailPage() {
       setError('Failed to load lead')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setError('Por favor, selecione um arquivo PDF')
+      return
+    }
+    setUploadingPdf(true)
+    setError('')
+    setUploadSuccess('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`/api/leads/${params.id}/profile`, {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Falha ao enviar PDF')
+      setUploadSuccess(`Perfil extraído com sucesso! ${data.textLength} caracteres processados.`)
+      await fetchLead()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao processar PDF')
+    } finally {
+      setUploadingPdf(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveProfile = async () => {
+    try {
+      await fetch(`/api/leads/${params.id}/profile`, { method: 'DELETE' })
+      setUploadSuccess('')
+      await fetchLead()
+    } catch {
+      setError('Falha ao remover perfil')
     }
   }
 
@@ -187,12 +230,7 @@ export default function LeadDetailPage() {
               {lead.linkedinUrl && (
                 <div className="flex items-center gap-2">
                   <Linkedin className="w-4 h-4 text-blue-500" />
-                  <a
-                    href={lead.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline truncate"
-                  >
+                  <a href={lead.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate">
                     Ver perfil LinkedIn
                   </a>
                 </div>
@@ -208,6 +246,71 @@ export default function LeadDetailPage() {
                   {lead.priority}
                 </span>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* LinkedIn PDF Upload */}
+          <Card className={lead.profileText ? 'border-green-300 dark:border-green-700' : 'border-orange-300 dark:border-orange-700'}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Perfil LinkedIn (PDF)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {lead.profileText ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-sm font-medium">Perfil carregado</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {lead.profileUrl && `Arquivo: ${lead.profileUrl}`}
+                    <br />
+                    {lead.profileText.length} caracteres extraídos
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded line-clamp-3">
+                    {lead.profileText.substring(0, 150)}...
+                  </p>
+                  <div className="flex gap-2">
+                    <label className="flex-1 cursor-pointer">
+                      <span className="flex items-center justify-center gap-1 text-xs px-3 py-1.5 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <Upload className="w-3 h-3" />
+                        {uploadingPdf ? 'Enviando...' : 'Substituir PDF'}
+                      </span>
+                      <input type="file" accept=".pdf" onChange={handlePdfUpload} className="hidden" disabled={uploadingPdf} />
+                    </label>
+                    <button
+                      onClick={handleRemoveProfile}
+                      className="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                    ⚠️ Sem perfil — cadência será genérica
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Exporte o PDF do LinkedIn e faça upload para gerar mensagens altamente personalizadas.
+                  </p>
+                  {uploadSuccess && (
+                    <p className="text-xs text-green-600 dark:text-green-400">{uploadSuccess}</p>
+                  )}
+                  <label className="block cursor-pointer">
+                    <span className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed text-sm transition-colors ${uploadingPdf ? 'opacity-50' : 'border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/10 text-orange-600'}`}>
+                      <Upload className="w-4 h-4" />
+                      {uploadingPdf ? 'Processando PDF...' : 'Upload PDF do LinkedIn'}
+                    </span>
+                    <input type="file" accept=".pdf" onChange={handlePdfUpload} className="hidden" disabled={uploadingPdf} />
+                  </label>
+                </div>
+              )}
+              {error && error.includes('PDF') && (
+                <p className="text-xs text-red-500">{error}</p>
+              )}
             </CardContent>
           </Card>
         </div>

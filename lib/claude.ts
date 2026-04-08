@@ -6,6 +6,7 @@ interface LeadInfo {
   company: string
   seniority: string
   daiseeScore: number
+  profileText?: string | null
 }
 
 interface GeneratedTouch {
@@ -31,7 +32,16 @@ export async function generateCadencia(
       'Tom criativo e envolvente, usando storytelling e ângulos únicos para capturar a atenção do prospect',
   }
 
-  const prompt = `Você é um especialista em vendas B2B no mercado brasileiro. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. As mensagens devem ser naturais, personalizadas e adequadas ao mercado brasileiro.
+  const profileSection = lead.profileText
+    ? `**Perfil Completo do LinkedIn (use estas informações para personalizar ao máximo):**
+${lead.profileText.substring(0, 3000)}
+
+`
+    : `**Atenção:** Perfil do LinkedIn não disponível. Use apenas os dados básicos abaixo para personalizar.
+
+`
+
+  const prompt = `Você é um especialista em vendas B2B no mercado brasileiro. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. As mensagens devem ser naturais, ALTAMENTE PERSONALIZADAS com base no perfil real do LinkedIn, e adequadas ao mercado brasileiro.
 
 **Dados do Prospect:**
 - Nome: ${lead.name}
@@ -39,6 +49,8 @@ export async function generateCadencia(
 - Cargo: ${lead.seniority}
 - E-mail: ${lead.email}
 - Score DAISEE: ${lead.daiseeScore}/100
+
+${profileSection}
 
 **Tom:** ${toneDescriptions[tone]}
 
@@ -74,6 +86,8 @@ Content: [E-mail final com CTA claro e próximos passos]
 
 Regras importantes:
 - ESCREVA TUDO EM PORTUGUÊS BRASILEIRO
+- Se o perfil do LinkedIn foi fornecido, use informações específicas: experiências anteriores, empresas onde trabalhou, formação, conquistas, interesses — para tornar as mensagens únicas e relevantes
+- Evite mensagens genéricas — o prospect deve sentir que você realmente o conhece
 - Todo conteúdo deve ser personalizado para o prospect
 - Cada touch deve construir sobre os anteriores
 - Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo' : tone === 'DIRETO' ? 'direto' : 'criativo'}

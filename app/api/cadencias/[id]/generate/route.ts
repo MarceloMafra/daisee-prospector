@@ -54,6 +54,7 @@ export async function POST(
         company: cadencia.lead.company,
         seniority: cadencia.lead.seniority,
         daiseeScore: cadencia.lead.daiseeScore,
+        profileText: cadencia.lead.profileText,
       },
       tone as 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO'
     )
