@@ -143,28 +143,30 @@ function parseCadenciaResponse(text: string): GeneratedTouch[] {
       subject = subjectMatch[1].trim().replace(/^["']|["']$/g, '')
     }
 
-    // Extract content
-    const contentMatch = section.match(
-      /Content:\s*\[?([^[]*?)(?:\]|\n\*\*|$)/is
-    )
+    // Extract content — capture everything after Content: until the next **T marker or end
+    const contentMatch = section.match(/Content:\s*\[?([\s\S]*?)(?=\n\*\*T[2-5]:|$)/i)
     let content = contentMatch ? contentMatch[1].trim() : section.trim()
 
-    // Clean up content - remove quotes and extra markers
+    // Clean up content - remove wrapping quotes and brackets
     content = content
       .replace(/^["']|["']$/g, '')
-      .replace(/\[|\]/g, '')
+      .replace(/^\[|\]$/g, '')
       .trim()
 
-    // Only keep content up to 300 chars to be safe
-    const MAX_CONTENT = 300
-    if (content.length > MAX_CONTENT) {
-      content = content.substring(0, MAX_CONTENT).trim()
+    // Per-type content limits
+    const maxByType: Record<string, number> = {
+      LINKEDIN_250: 300,
+      LINKEDIN_500: 600,
     }
+    const maxContent = maxByType[type] ?? 2000
 
-    // Truncate at last sentence to avoid incomplete sentences
-    const lastPeriod = content.lastIndexOf('.')
-    if (lastPeriod > 100) {
-      content = content.substring(0, lastPeriod + 1)
+    if (content.length > maxContent) {
+      content = content.substring(0, maxContent).trim()
+      // Truncate at last complete sentence
+      const lastPeriod = content.lastIndexOf('.')
+      if (lastPeriod > 50) {
+        content = content.substring(0, lastPeriod + 1)
+      }
     }
 
     if (content.length > 0) {
@@ -177,7 +179,7 @@ function parseCadenciaResponse(text: string): GeneratedTouch[] {
         sequence,
         type: type as GeneratedTouch['type'],
         channel,
-        content: content.substring(0, 300), // Double-check truncation
+        content,
         subject: subject || undefined,
       })
     }

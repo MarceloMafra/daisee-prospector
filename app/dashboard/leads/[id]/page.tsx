@@ -65,6 +65,9 @@ export default function LeadDetailPage() {
   const [error, setError] = useState('')
   const [uploadingPdf, setUploadingPdf] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState('')
+  const [editingLinkedin, setEditingLinkedin] = useState(false)
+  const [linkedinInput, setLinkedinInput] = useState('')
+  const [savingLinkedin, setSavingLinkedin] = useState(false)
 
   useEffect(() => {
     fetchLead()
@@ -122,6 +125,25 @@ export default function LeadDetailPage() {
       await fetchLead()
     } catch {
       setError('Falha ao remover perfil')
+    }
+  }
+
+  const handleSaveLinkedin = async () => {
+    if (!lead) return
+    setSavingLinkedin(true)
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkedinUrl: linkedinInput }),
+      })
+      if (!res.ok) throw new Error('Falha ao salvar')
+      setEditingLinkedin(false)
+      await fetchLead()
+    } catch {
+      setError('Falha ao salvar URL do LinkedIn')
+    } finally {
+      setSavingLinkedin(false)
     }
   }
 
@@ -227,15 +249,82 @@ export default function LeadDetailPage() {
                 <User className="w-4 h-4 text-gray-400" />
                 <span>{lead.seniority}</span>
               </div>
-              {lead.linkedinUrl && (
-                <div className="flex items-center gap-2">
-                  <Linkedin className="w-4 h-4 text-blue-500" />
-                  <a href={lead.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate">
-                    Ver perfil LinkedIn
-                  </a>
+              <div className="flex items-start gap-2">
+                <Linkedin className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                {lead.linkedinUrl ? (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <a href={lead.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate text-sm">
+                      Ver perfil LinkedIn
+                    </a>
+                    <button
+                      onClick={() => { setEditingLinkedin(true); setLinkedinInput(lead.linkedinUrl || '') }}
+                      className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                ) : editingLinkedin ? (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <input
+                      type="url"
+                      value={linkedinInput}
+                      onChange={(e) => setLinkedinInput(e.target.value)}
+                      placeholder="https://linkedin.com/in/..."
+                      className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveLinkedin}
+                        disabled={savingLinkedin}
+                        className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                      >
+                        {savingLinkedin ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button
+                        onClick={() => setEditingLinkedin(false)}
+                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingLinkedin(true)}
+                    className="text-sm text-gray-400 hover:text-blue-500 italic"
+                  >
+                    + Adicionar URL do LinkedIn
+                  </button>
+                )}
+              </div>
+              {editingLinkedin && lead.linkedinUrl && (
+                <div className="flex flex-col gap-1 pl-6">
+                  <input
+                    type="url"
+                    value={linkedinInput}
+                    onChange={(e) => setLinkedinInput(e.target.value)}
+                    placeholder="https://linkedin.com/in/..."
+                    className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveLinkedin}
+                      disabled={savingLinkedin}
+                      className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      {savingLinkedin ? 'Salvando...' : 'Salvar'}
+                    </button>
+                    <button
+                      onClick={() => setEditingLinkedin(false)}
+                      className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               )}
               <hr className="dark:border-gray-700" />
+
               <div className="flex justify-between">
                 <span className="text-gray-500">Status</span>
                 <span className="font-medium">{lead.status}</span>

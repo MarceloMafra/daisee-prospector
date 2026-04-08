@@ -96,6 +96,7 @@ export async function PUT(
         segmentMatch: body.segmentMatch ?? undefined,
         status: body.status ?? undefined,
         priority: body.priority ?? undefined,
+        linkedinUrl: body.linkedinUrl ?? undefined,
       },
       select: {
         id: true,
