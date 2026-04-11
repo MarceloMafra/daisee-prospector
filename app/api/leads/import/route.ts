@@ -39,13 +39,29 @@ export async function POST(request: NextRequest) {
     const buffer = await file.arrayBuffer()
     const stream = Readable.from(Buffer.from(buffer))
 
-    // Parse CSV
+    // Detect separator (tab or comma)
+    const rawText = Buffer.from(buffer).toString('utf-8')
+    const firstLine = rawText.split('\n')[0] || ''
+    const separator = firstLine.includes('\t') ? '\t' : ','
+
+    // Parse CSV with normalized headers (lowercase + trim)
     const rows: CSVRow[] = []
     await new Promise((resolve, reject) => {
       stream
-        .pipe(csv())
-        .on('data', (row: CSVRow) => {
-          rows.push(row)
+        .pipe(csv({
+          separator,
+          mapHeaders: ({ header }: { header: string }) => header.trim().toLowerCase(),
+        }))
+        .on('data', (row: Record<string, string>) => {
+          // Map portuguese column names to english
+          const normalized: CSVRow = {
+            name: (row.name || row.nome || '').trim(),
+            email: (row.email || '').trim(),
+            company: (row.company || row.empresa || '').trim(),
+            seniority: (row.seniority || row.senioridade || row.cargo || '').trim(),
+            linkedin: (row.linkedin || row.linkedin_url || row.linkedinUrl || '').trim() || undefined,
+          }
+          rows.push(normalized)
         })
         .on('error', reject)
         .on('end', resolve)

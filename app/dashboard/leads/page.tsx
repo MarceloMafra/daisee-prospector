@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileText, Search } from 'lucide-react'
+import { Plus, FileText, Search, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Lead {
@@ -30,6 +30,22 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o lead "${name}"? Esta ação não pode ser desfeita.`)) return
+    setDeletingId(id)
+    try {
+      const response = await fetch(`/api/leads/${id}`, { method: 'DELETE' })
+      if (response.ok) {
+        setLeads((prev) => prev.filter((l) => l.id !== id))
+      }
+    } catch (error) {
+      console.error('Falha ao excluir lead:', error)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -130,7 +146,7 @@ export default function LeadsPage() {
                     <th className="text-left px-4 py-3 font-semibold text-sm">Empresa</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Score</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Status</th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">Ação</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -158,13 +174,24 @@ export default function LeadsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
-                        >
-                          Ver
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
+                          >
+                            Ver
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(lead.id, lead.name)}
+                            disabled={deletingId === lead.id}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
