@@ -88,6 +88,7 @@ Regras importantes:
 - ESCREVA TUDO EM PORTUGUÊS BRASILEIRO
 - Se o perfil do LinkedIn foi fornecido, use informações específicas: experiências anteriores, empresas onde trabalhou, formação, conquistas, interesses — para tornar as mensagens únicas e relevantes
 - Evite mensagens genéricas — o prospect deve sentir que você realmente o conhece
+- **Cargo recente:** Se o cargo atual do prospect foi iniciado há 9 meses ou menos (contando a partir da data de hoje), mencione isso como gancho de abertura no T1 ou T2 — ex: "Parabéns pelo novo cargo de X na Y!" Calcule a partir da data de início informada no perfil. Se a data de início tiver mais de 9 meses, NÃO use esse gancho.
 - Todo conteúdo deve ser personalizado para o prospect
 - Cada touch deve construir sobre os anteriores
 - Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo' : tone === 'DIRETO' ? 'direto' : 'criativo'}
