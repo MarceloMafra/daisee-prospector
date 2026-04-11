@@ -42,10 +42,9 @@ export async function POST(request: NextRequest) {
     if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
       buf = buf.subarray(3)
     }
-    const stream = Readable.from(buf)
-
-    // Detect separator (tab or comma)
+    // Decode as UTF-8 string so csv-parser handles accents correctly
     const rawText = buf.toString('utf-8')
+    const stream = Readable.from(rawText)
     const firstLine = rawText.split('\n')[0] || ''
     const separator = firstLine.includes('\t') ? '\t' : ','
 
