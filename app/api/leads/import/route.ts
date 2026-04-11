@@ -61,6 +61,17 @@ export async function POST(request: NextRequest) {
     const rawText = buf.toString('utf-8')
     const rows = parseCSV(rawText)
 
+    // DEBUG: return raw info if no rows parsed
+    if (rows.length === 0) {
+      return NextResponse.json({
+        debug: true,
+        bufferLength: buf.length,
+        firstBytes: Array.from(buf.subarray(0, 20)),
+        rawTextPreview: rawText.substring(0, 300),
+        linesCount: rawText.split('\n').length,
+      }, { status: 200 })
+    }
+
     // Validate and import
     let imported = 0
     let duplicates = 0
