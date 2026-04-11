@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
     // Decode as UTF-8 string so csv-parser handles accents correctly
     const rawText = buf.toString('utf-8')
-    const stream = Readable.from(rawText)
+    const stream = Readable.from([rawText])
     const firstLine = rawText.split('\n')[0] || ''
     const separator = firstLine.includes('\t') ? '\t' : ','
 
