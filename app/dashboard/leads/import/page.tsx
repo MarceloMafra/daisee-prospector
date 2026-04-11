@@ -36,9 +36,13 @@ export default function ImportLeadsPage() {
       const response = await fetch('/api/leads/import', { method: 'POST', body: formData })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Falha ao importar leads')
-      setSuccess(`${data.imported} leads importados com sucesso.${data.duplicates > 0 ? ` ${data.duplicates} duplicatas ignoradas.` : ''}`)
+      let msg = `Total: ${data.total} | Importados: ${data.imported} | Duplicatas: ${data.duplicates} | Erros: ${data.errors?.length ?? 0}`
+      if (data.errors?.length > 0) {
+        msg += '\n\nErros:\n' + data.errors.map((e: {row: number; email: string; error: string}) => `Linha ${e.row} (${e.email}): ${e.error}`).join('\n')
+      }
+      setSuccess(msg)
       setFile(null)
-      setTimeout(() => router.push('/dashboard/leads'), 2000)
+      if (data.imported > 0) setTimeout(() => router.push('/dashboard/leads'), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro inesperado')
     } finally {
@@ -78,7 +82,7 @@ export default function ImportLeadsPage() {
                 {success && (
                   <div className="flex gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-green-800 dark:text-green-200">{success}</p>
+                    <pre className="text-sm text-green-800 dark:text-green-200 whitespace-pre-wrap font-sans">{success}</pre>
                   </div>
                 )}
                 <div className="flex gap-3">
