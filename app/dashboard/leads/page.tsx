@@ -31,21 +31,8 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o lead "${name}"? Esta ação não pode ser desfeita.`)) return
-    setDeletingId(id)
-    try {
-      const response = await fetch(`/api/leads/${id}`, { method: 'DELETE' })
-      if (response.ok) {
-        setLeads((prev) => prev.filter((l) => l.id !== id))
-      }
-    } catch (error) {
-      console.error('Falha ao excluir lead:', error)
-    } finally {
-      setDeletingId(null)
-    }
-  }
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -61,7 +48,6 @@ export default function LeadsPage() {
         setLoading(false)
       }
     }
-
     fetchLeads()
   }, [])
 
@@ -71,6 +57,56 @@ export default function LeadsPage() {
       lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.company.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const allFilteredSelected = filteredLeads.length > 0 && filteredLeads.every(l => selected.has(l.id))
+  const someSelected = selected.size > 0
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filteredLeads.map(l => l.id)))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o lead "${name}"?`)) return
+    setDeletingId(id)
+    try {
+      const response = await fetch(`/api/leads/${id}`, { method: 'DELETE' })
+      if (response.ok) {
+        setLeads(prev => prev.filter(l => l.id !== id))
+        setSelected(prev => { const next = new Set(prev); next.delete(id); return next })
+      }
+    } catch (error) {
+      console.error('Falha ao excluir lead:', error)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Tem certeza que deseja excluir ${selected.size} lead(s)? Esta ação não pode ser desfeita.`)) return
+    setBulkDeleting(true)
+    const ids = Array.from(selected)
+    try {
+      await Promise.all(ids.map(id => fetch(`/api/leads/${id}`, { method: 'DELETE' })))
+      setLeads(prev => prev.filter(l => !selected.has(l.id)))
+      setSelected(new Set())
+    } catch (error) {
+      console.error('Falha ao excluir leads:', error)
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -82,12 +118,25 @@ export default function LeadsPage() {
             Gerencie e acompanhe seus leads de vendas
           </p>
         </div>
-        <Link href="/dashboard/leads/import">
-          <Button className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Importar Leads
-          </Button>
-        </Link>
+        <div className="flex gap-2 items-center">
+          {someSelected && (
+            <Button
+              variant="outline"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {bulkDeleting ? 'Excluindo...' : `Excluir ${selected.size} selecionado(s)`}
+            </Button>
+          )}
+          <Link href="/dashboard/leads/import">
+            <Button className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Importar Leads
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Search */}
@@ -112,6 +161,7 @@ export default function LeadsPage() {
           <CardTitle>Lista de Leads</CardTitle>
           <CardDescription>
             {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''} encontrado{filteredLeads.length !== 1 ? 's' : ''}
+            {someSelected && ` · ${selected.size} selecionado(s)`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -141,6 +191,14 @@ export default function LeadsPage() {
               <table className="w-full">
                 <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <tr>
+                    <th className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300 cursor-pointer"
+                      />
+                    </th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Nome</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">E-mail</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Empresa</th>
@@ -151,7 +209,15 @@ export default function LeadsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <tr key={lead.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selected.has(lead.id) ? 'bg-red-50 dark:bg-red-950/20' : ''}`}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(lead.id)}
+                          onChange={() => toggleSelect(lead.id)}
+                          className="rounded border-gray-300 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <span className="font-medium text-gray-900 dark:text-white">{lead.name}</span>
                       </td>
