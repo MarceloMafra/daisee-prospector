@@ -16,7 +16,8 @@ function parseCSV(text: string): CSVRow[] {
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim())
   if (lines.length < 2) return []
 
-  const separator = lines[0].includes('\t') ? '\t' : ','
+  const firstLine = lines[0]
+  const separator = firstLine.includes('\t') ? '\t' : firstLine.includes(';') ? ';' : ','
   const headers = lines[0].split(separator).map(h =>
     h.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   )
@@ -54,11 +55,17 @@ export async function POST(request: NextRequest) {
     // Read and decode file
     const buffer = await file.arrayBuffer()
     let buf = Buffer.from(buffer)
-    // Strip UTF-8 BOM if present
+    // Strip UTF-8 BOM if present (EF BB BF)
     if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
       buf = buf.subarray(3)
     }
-    const rawText = buf.toString('utf-8')
+    // Detect encoding: if high bytes present and not valid UTF-8 sequence, treat as latin1
+    let rawText: string
+    try {
+      rawText = new TextDecoder('utf-8', { fatal: true }).decode(buf)
+    } catch {
+      rawText = new TextDecoder('latin1').decode(buf)
+    }
     const rows = parseCSV(rawText)
 
     // DEBUG: return first row and headers
