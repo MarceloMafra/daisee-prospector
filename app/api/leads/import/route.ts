@@ -37,10 +37,15 @@ export async function POST(request: NextRequest) {
 
     // Convert File to Buffer
     const buffer = await file.arrayBuffer()
-    const stream = Readable.from(Buffer.from(buffer))
+    // Strip UTF-8 BOM if present (EF BB BF) before parsing
+    let buf = Buffer.from(buffer)
+    if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+      buf = buf.subarray(3)
+    }
+    const stream = Readable.from(buf)
 
     // Detect separator (tab or comma)
-    const rawText = Buffer.from(buffer).toString('utf-8')
+    const rawText = buf.toString('utf-8')
     const firstLine = rawText.split('\n')[0] || ''
     const separator = firstLine.includes('\t') ? '\t' : ','
 
@@ -50,7 +55,8 @@ export async function POST(request: NextRequest) {
       stream
         .pipe(csv({
           separator,
-          mapHeaders: ({ header }: { header: string }) => header.trim().toLowerCase(),
+          mapHeaders: ({ header }: { header: string }) =>
+            header.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
         }))
         .on('data', (row: Record<string, string>) => {
           // Map portuguese column names to english
