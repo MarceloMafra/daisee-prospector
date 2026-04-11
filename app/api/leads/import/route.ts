@@ -61,14 +61,18 @@ export async function POST(request: NextRequest) {
     const rawText = buf.toString('utf-8')
     const rows = parseCSV(rawText)
 
-    // DEBUG: return raw info if no rows parsed
-    if (rows.length === 0) {
+    // DEBUG: return first row and headers
+    if (rows.length > 0) {
+      const lines = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim())
+      const sep = lines[0].includes('\t') ? '\t' : ','
+      const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       return NextResponse.json({
         debug: true,
-        bufferLength: buf.length,
-        firstBytes: Array.from(buf.subarray(0, 20)),
-        rawTextPreview: rawText.substring(0, 300),
-        linesCount: rawText.split('\n').length,
+        headers,
+        firstRow: rows[0],
+        rawHeader: lines[0],
+        rawFirstLine: lines[1],
+        separator: sep === '\t' ? 'TAB' : 'COMMA',
       }, { status: 200 })
     }
 
