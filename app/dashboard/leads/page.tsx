@@ -34,10 +34,12 @@ export default function LeadsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [recalculating, setRecalculating] = useState(false)
+  const [recalcMsg, setRecalcMsg] = useState('')
 
   const handleRecalculate = async () => {
     if (!confirm('Recalcular o DAISEE Score de todos os leads com os novos critérios?')) return
     setRecalculating(true)
+    setRecalcMsg('')
     try {
       const res = await fetch('/api/leads/recalculate', { method: 'POST' })
       const data = await res.json()
@@ -47,10 +49,11 @@ export default function LeadsPage() {
           const d = await response.json()
           setLeads(d.leads || [])
         }
-        alert(`${data.updated} leads recalculados com sucesso.`)
+        setRecalcMsg(`${data.updated} leads recalculados com sucesso.`)
+        setTimeout(() => setRecalcMsg(''), 4000)
       }
     } catch {
-      alert('Erro ao recalcular scores.')
+      setRecalcMsg('Erro ao recalcular scores.')
     } finally {
       setRecalculating(false)
     }
@@ -152,15 +155,20 @@ export default function LeadsPage() {
               {bulkDeleting ? 'Excluindo...' : `Excluir ${selected.size} selecionado(s)`}
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={handleRecalculate}
-            disabled={recalculating}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
-            {recalculating ? 'Recalculando...' : 'Recalcular Scores'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {recalcMsg && (
+              <span className="text-sm text-green-600 dark:text-green-400 font-medium">{recalcMsg}</span>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleRecalculate}
+              disabled={recalculating}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
+              {recalculating ? 'Recalculando...' : 'Recalcular Scores'}
+            </Button>
+          </div>
           <Link href="/dashboard/leads/import">
             <Button className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
