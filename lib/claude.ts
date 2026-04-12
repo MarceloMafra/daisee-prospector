@@ -139,7 +139,7 @@ function parseCadenciaResponse(text: string): GeneratedTouch[] {
 
     // Extract subject for emails
     let subject: string | undefined
-    const subjectMatch = section.match(/Subject:\s*\[?([^\]]*)\]?/i)
+    const subjectMatch = section.match(/Subject:\s*\[?([^\]\n\r]*)\]?/i)
     if (subjectMatch && channel === 'EMAIL') {
       subject = subjectMatch[1].trim().replace(/^["']|["']$/g, '')
     }
