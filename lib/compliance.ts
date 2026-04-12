@@ -16,170 +16,68 @@ export interface ComplianceRule {
 const rules: Record<string, ComplianceRule> = {
   LGPD: {
     regulation: 'LGPD',
-    description:
-      'Lei Geral de Proteção de Dados - Brazilian Data Protection Law',
+    description: 'Lei Geral de Proteção de Dados',
     forbiddenKeywords: [
-      {
-        pattern: 'rastreamento sem consentimento',
-        reason: 'Tracking without consent violates LGPD',
-      },
-      {
-        pattern: 'monitorar dados pessoais',
-        reason: 'Monitoring personal data without consent is forbidden',
-      },
-      {
-        pattern: 'vender dados pessoais',
-        reason: 'Selling personal data is prohibited by LGPD',
-      },
-      {
-        pattern: 'compartilhar dados sem permissão',
-        reason: 'Sharing personal data without permission violates LGPD',
-      },
-      {
-        pattern: 'coleta obrigatória de dados',
-        reason: 'Mandatory data collection without consent is prohibited',
-      },
+      { pattern: 'rastreamento sem consentimento', reason: 'Rastreamento sem consentimento viola a LGPD' },
+      { pattern: 'monitorar dados pessoais', reason: 'Monitorar dados pessoais sem consentimento é proibido pela LGPD' },
+      { pattern: 'vender dados pessoais', reason: 'Venda de dados pessoais é proibida pela LGPD' },
+      { pattern: 'compartilhar dados sem permissão', reason: 'Compartilhar dados pessoais sem autorização viola a LGPD' },
+      { pattern: 'coleta obrigatória de dados', reason: 'Coleta obrigatória de dados sem consentimento é proibida' },
     ],
     requiredStatements: [
-      {
-        pattern: 'consentimento|consent|autorizo',
-        reason:
-          'Must include consent or authorization statement for data processing',
-      },
-      {
-        pattern: 'direito de|opt-out|desinscrever|cancelar',
-        reason: 'Must provide opt-out or unsubscribe option as required by LGPD',
-      },
-      {
-        pattern: 'privacidade|proteção de dados',
-        reason: 'Should mention privacy or data protection commitment',
-      },
+      { pattern: 'consentimento|consent|autorizo', reason: 'Deve incluir declaração de consentimento ou autorização para tratamento de dados' },
+      { pattern: 'direito de|opt-out|desinscrever|cancelar', reason: 'Deve oferecer opção de descadastro conforme exigido pela LGPD' },
+      { pattern: 'privacidade|proteção de dados', reason: 'Deve mencionar compromisso com privacidade ou proteção de dados' },
     ],
   },
 
   PHARMA: {
     regulation: 'PHARMA',
-    description: 'ANVISA Pharmaceutical and Healthcare Regulations',
+    description: 'ANVISA — Regulação Farmacêutica e de Saúde',
     forbiddenKeywords: [
-      {
-        pattern: '\\bcur(a|ada|ado|ar|aremos|arão|á)\\b',
-        reason: 'Pharmaceutical products cannot claim to cure diseases (ANVISA)',
-      },
-      {
-        pattern: '\\b(milagre|milagroso|milagrosa)\\b',
-        reason: 'Miraculous claims are strictly forbidden by ANVISA',
-      },
-      {
-        pattern: '\\b(eficácia|eficaz).*(comprovada|garantida)',
-        reason: 'Cannot claim unproven efficacy without clinical evidence',
-      },
-      {
-        pattern: '\\bsem\\b.*(efeito colateral|efeitos colaterais)',
-        reason: 'Cannot claim absence of side effects without evidence (ANVISA)',
-      },
-      {
-        pattern: '\\b(substitui|substituir|substituto)\\b.*(medicamento|tratamento)',
-        reason: 'Cannot claim to substitute prescribed medication',
-      },
-      {
-        pattern: '\\b(aprovado|registrado)\\b.*(governo|ministério|anvisa)',
-        reason: 'Cannot make false approval claims',
-      },
-      {
-        pattern: '\\b(melhor|superior|mais eficaz)\\b.*(remédio|tratamento|solução|medicamento)',
-        reason: 'Superlative claims require evidence (ANVISA)',
-      },
+      { pattern: '\\bcur(a|ada|ado|ar|aremos|arão|á)\\b', reason: 'Produtos farmacêuticos não podem afirmar que curam doenças (ANVISA)' },
+      { pattern: '\\b(milagre|milagroso|milagrosa)\\b', reason: 'Alegações milagrosas são estritamente proibidas pela ANVISA' },
+      { pattern: '\\b(eficácia|eficaz).*(comprovada|garantida)', reason: 'Não é permitido alegar eficácia sem evidências clínicas comprovadas' },
+      { pattern: '\\bsem\\b.*(efeito colateral|efeitos colaterais)', reason: 'Não é permitido afirmar ausência de efeitos colaterais sem evidências (ANVISA)' },
+      { pattern: '\\b(substitui|substituir|substituto)\\b.*(medicamento|tratamento)', reason: 'Não é permitido afirmar que substitui medicamento prescrito' },
+      { pattern: '\\b(aprovado|registrado)\\b.*(governo|ministério|anvisa)', reason: 'Não é permitido fazer alegações falsas de aprovação regulatória' },
+      { pattern: '\\b(melhor|superior|mais eficaz)\\b.*(remédio|tratamento|solução|medicamento)', reason: 'Alegações superlativas exigem evidências comprovadas (ANVISA)' },
     ],
     requiredStatements: [
-      {
-        pattern: 'consult(e|ar|oria)',
-        reason:
-          'Should recommend consulting healthcare professionals (ANVISA requirement)',
-      },
-      {
-        pattern: 'registro(.*?)anvisa',
-        reason:
-          'Pharmaceutical products should mention ANVISA registration if applicable',
-      },
+      { pattern: 'consult(e|ar|oria)', reason: 'Recomenda-se indicar consulta a profissionais de saúde (exigência ANVISA)' },
+      { pattern: 'registro(.*?)anvisa', reason: 'Produtos farmacêuticos devem mencionar registro ANVISA quando aplicável' },
     ],
   },
 
   INSURANCE: {
     regulation: 'INSURANCE',
-    description: 'SUSEP Insurance Regulations',
+    description: 'SUSEP — Superintendência de Seguros Privados',
     forbiddenKeywords: [
-      {
-        pattern: 'ganho garantido|lucro certo|rendimento garantido',
-        reason: 'Cannot guarantee returns or profits in insurance (SUSEP)',
-      },
-      {
-        pattern: 'sem risco|risco zero|100% seguro',
-        reason: 'Cannot claim zero risk in insurance products (SUSEP)',
-      },
-      {
-        pattern: 'nunca perde|sempre ganha|ganhar com certeza',
-        reason: 'Cannot guarantee financial gains (SUSEP)',
-      },
-      {
-        pattern: 'melhor taxa|menor preço garantido',
-        reason: 'Cannot make unsubstantiated comparison claims',
-      },
-      {
-        pattern: 'aprovado pelo(a)\\s+(government|estado|susep)',
-        reason: 'Cannot make false regulatory approval claims',
-      },
+      { pattern: 'ganho garantido|lucro certo|rendimento garantido', reason: 'Não é permitido garantir retornos ou lucros em produtos de seguro (SUSEP)' },
+      { pattern: 'sem risco|risco zero|100% seguro', reason: 'Não é permitido alegar risco zero em produtos de seguro (SUSEP)' },
+      { pattern: 'nunca perde|sempre ganha|ganhar com certeza', reason: 'Não é permitido garantir ganhos financeiros (SUSEP)' },
+      { pattern: 'melhor taxa|menor preço garantido', reason: 'Comparações sem comprovação não são permitidas (SUSEP)' },
+      { pattern: 'aprovado pelo(a)\\s+(government|estado|susep)', reason: 'Não é permitido fazer alegações falsas de aprovação regulatória' },
     ],
     requiredStatements: [
-      {
-        pattern: 'condições|riscos|limitações',
-        reason: 'Must disclose terms, conditions, and limitations (SUSEP)',
-      },
-      {
-        pattern: 'contrato|apólice',
-        reason: 'Insurance products must reference contract or policy documentation',
-      },
-      {
-        pattern: 'susep|regulado|regulação',
-        reason:
-          'Should mention SUSEP regulation if applicable to insurance products',
-      },
+      { pattern: 'condições|riscos|limitações', reason: 'Deve informar condições, riscos e limitações do produto (SUSEP)' },
+      { pattern: 'contrato|apólice', reason: 'Produtos de seguro devem referenciar contrato ou apólice' },
+      { pattern: 'susep|regulado|regulação', reason: 'Deve mencionar regulação SUSEP quando aplicável' },
     ],
   },
 
   CONAR: {
     regulation: 'CONAR',
-    description: 'CONAR - Brazilian Advertising Code',
+    description: 'CONAR — Código Brasileiro de Autorregulamentação Publicitária',
     forbiddenKeywords: [
-      {
-        pattern: 'enganoso|falso|mentir|engano',
-        reason:
-          'Deceptive or false claims violate CONAR advertising code',
-      },
-      {
-        pattern: 'discriminatório|preconceito|racista|sexista',
-        reason:
-          'Discriminatory content violates CONAR advertising standards',
-      },
-      {
-        pattern: 'explorar|vulnerável|criança',
-        reason:
-          'Cannot exploit vulnerable populations (CONAR ethical standards)',
-      },
-      {
-        pattern: 'comparação injusta|concorrente inferior',
-        reason: 'Unfair comparisons with competitors violate CONAR',
-      },
-      {
-        pattern: 'urgência artificial|aproveite agora ou nunca',
-        reason:
-          'Artificial urgency tactics are discouraged by CONAR standards',
-      },
+      { pattern: 'enganoso|falso|mentir|engano', reason: 'Alegações enganosas ou falsas violam o Código CONAR' },
+      { pattern: 'discriminatório|preconceito|racista|sexista', reason: 'Conteúdo discriminatório viola as normas do CONAR' },
+      { pattern: 'explorar|vulnerável|criança', reason: 'Não é permitido explorar populações vulneráveis (ética CONAR)' },
+      { pattern: 'comparação injusta|concorrente inferior', reason: 'Comparações injustas com concorrentes violam o CONAR' },
+      { pattern: 'urgência artificial|aproveite agora ou nunca', reason: 'Táticas de urgência artificial são vedadas pelo CONAR' },
     ],
     requiredStatements: [
-      {
-        pattern: 'verdade|honestidade|sincero',
-        reason: 'Advertising must be truthful and honest (CONAR principle)',
-      },
+      { pattern: 'verdade|honestidade|sincero', reason: 'A publicidade deve ser verdadeira e honesta (princípio CONAR)' },
     ],
   },
 }
@@ -222,10 +120,10 @@ export function validateMessage(
         {
           type: 'forbidden_keyword',
           severity: 'critical',
-          message: `Unknown regulation: ${regulation}. Valid options: LGPD, PHARMA, INSURANCE, CONAR`,
+          message: `Regulação desconhecida: ${regulation}. Opções válidas: LGPD, PHARMA, INSURANCE, CONAR`,
         },
       ],
-      summary: `Invalid regulation: ${regulation}`,
+      summary: `Regulação inválida: ${regulation}`,
     }
   }
 
@@ -269,8 +167,8 @@ export function validateMessage(
 
   const isValid = violations.length === 0
   const summary = isValid
-    ? `Message complies with ${regulation} requirements`
-    : `Found ${violations.length} compliance issue(s)`
+    ? `Mensagem em conformidade com os requisitos de ${regulation}`
+    : `${violations.length} problema(s) de conformidade encontrado(s)`
 
   return {
     isValid,
