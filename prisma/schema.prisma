@@ -126,7 +126,8 @@ enum CompanySize {
   MICRO      // 1-9
   PEQUENA    // 10-49
   MEDIA      // 50-249
-  GRANDE     // 250+
+  GRANDE     // 250-499
+  ENTERPRISE // 500+
 }
 
 enum LeadStatus {
