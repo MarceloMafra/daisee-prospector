@@ -22,30 +22,9 @@ export default function CompliancePage() {
   const [loading, setLoading] = useState(false)
 
   const regulations = [
-    {
-      id: 'LGPD',
-      name: 'LGPD',
-      description: 'Lei Geral de Proteção de Dados',
-      icon: '🛡️',
-    },
-    {
-      id: 'PHARMA',
-      name: 'ANVISA',
-      description: 'Agência Nacional de Vigilância Sanitária',
-      icon: '💊',
-    },
-    {
-      id: 'INSURANCE',
-      name: 'SUSEP',
-      description: 'Superintendência de Seguros Privados',
-      icon: '📋',
-    },
-    {
-      id: 'CONAR',
-      name: 'CONAR',
-      description: 'Código de Autodisciplina da Publicidade',
-      icon: '📢',
-    },
+    { id: 'LINKEDIN_250', name: 'LinkedIn 250', description: 'Mensagem de conexão (até 300 chars)', icon: '💬' },
+    { id: 'LINKEDIN_500', name: 'LinkedIn 500', description: 'InMail / mensagem direta (até 600 chars)', icon: '📨' },
+    { id: 'EMAIL_T3',     name: 'E-mail',       description: 'Corpo de e-mail de prospecção', icon: '✉️' },
   ]
 
   const handleValidate = async () => {
@@ -103,10 +82,10 @@ export default function CompliancePage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Validador de Compliance
+          Análise de Qualidade de Copy
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Valide suas mensagens contra as exigências regulatórias brasileiras
+          Avalie suas mensagens de prospecção B2B antes de enviar
         </p>
       </div>
 
@@ -117,7 +96,7 @@ export default function CompliancePage() {
             <CardHeader>
               <CardTitle>Validar Mensagem</CardTitle>
               <CardDescription>
-                Verifique se sua mensagem está em conformidade
+                Cole qualquer mensagem e veja pontos de melhoria antes de enviar
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -244,7 +223,7 @@ export default function CompliancePage() {
                 disabled={loading || !message.trim()}
                 className="w-full"
               >
-                {loading ? 'Validando...' : 'Validar Mensagem'}
+                {loading ? 'Analisando...' : 'Analisar Copy'}
               </Button>
             </CardContent>
           </Card>
@@ -263,46 +242,29 @@ export default function CompliancePage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  LGPD
-                </h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">🚫 O que evitar</h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Sem dados pessoais sem consentimento</li>
-                  <li>• Identificação clara do remetente</li>
-                  <li>• Opção de descadastro obrigatória</li>
+                  <li>• Palavras de spam (grátis, urgente, clique agora)</li>
+                  <li>• Tom agressivo (você precisa, última chance)</li>
+                  <li>• Múltiplas perguntas na mesma mensagem</li>
+                  <li>• Superlativas sem evidência (melhor, número 1)</li>
                 </ul>
               </div>
-
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  ANVISA
-                </h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">✅ O que ter</h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Sem alegações de saúde falsas</li>
-                  <li>• Linguagem profissional</li>
-                  <li>• Disclaimers obrigatórios</li>
+                  <li>• Nome, empresa ou cargo do prospect</li>
+                  <li>• Proposta de valor clara</li>
+                  <li>• Uma pergunta ou CTA único</li>
+                  <li>• Tamanho adequado ao canal</li>
                 </ul>
               </div>
-
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  SUSEP
-                </h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">📊 Score</h4>
                 <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Detalhes claros da apólice</li>
-                  <li>• Sem taxas enganosas</li>
-                  <li>• Registro da empresa visível</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  CONAR
-                </h4>
-                <ul className="text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Publicidade verdadeira</li>
-                  <li>• Sem linguagem inapropriada</li>
-                  <li>• Respeito à dignidade do consumidor</li>
+                  <li>• <strong>70–100</strong> → Copy aprovada</li>
+                  <li>• <strong>Crítico</strong> → -25 pts (spam, tamanho)</li>
+                  <li>• <strong>Aviso</strong> → -10 pts (tom, CTA, valor)</li>
                 </ul>
               </div>
             </CardContent>

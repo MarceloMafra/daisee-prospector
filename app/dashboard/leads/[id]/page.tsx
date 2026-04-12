@@ -68,7 +68,6 @@ export default function LeadDetailPage() {
   const [editingLinkedin, setEditingLinkedin] = useState(false)
   const [linkedinInput, setLinkedinInput] = useState('')
   const [savingLinkedin, setSavingLinkedin] = useState(false)
-  const [complianceReg, setComplianceReg] = useState('LGPD')
   const [complianceResults, setComplianceResults] = useState<Record<string, { isValid: boolean; score: number; violations: Array<{ severity: string; message: string }> }>>({})
   const [validatingId, setValidatingId] = useState<string | null>(null)
 
@@ -78,7 +77,7 @@ export default function LeadDetailPage() {
       const res = await fetch('/api/compliance/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: touch.content, regulation: complianceReg }),
+        body: JSON.stringify({ message: touch.content, regulation: touch.type }),
       })
       const data = await res.json()
       setComplianceResults(prev => ({ ...prev, [touch.id]: data }))
@@ -485,20 +484,10 @@ export default function LeadDetailPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Compliance regulation selector */}
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {/* Copy quality info */}
+                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400">
                   <Shield className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Validar compliance:</span>
-                  <select
-                    value={complianceReg}
-                    onChange={e => setComplianceReg(e.target.value)}
-                    className="text-sm border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-red-400"
-                  >
-                    <option value="LGPD">LGPD</option>
-                    <option value="PHARMA">ANVISA</option>
-                    <option value="INSURANCE">SUSEP</option>
-                    <option value="CONAR">CONAR</option>
-                  </select>
+                  Clique em <strong className="text-gray-700 dark:text-gray-300">Qualidade</strong> em cada touch para analisar spam, tom, personalização, CTA e tamanho.
                 </div>
 
                 {lead.cadencia.touches.map((touch) => {
@@ -519,7 +508,7 @@ export default function LeadDetailPage() {
                             className="flex items-center gap-1 text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
                           >
                             <Shield className="w-3 h-3" />
-                            {validatingId === touch.id ? 'Validando...' : 'Compliance'}
+                            {validatingId === touch.id ? 'Analisando...' : 'Qualidade'}
                           </button>
                         </div>
                       </div>
@@ -536,8 +525,8 @@ export default function LeadDetailPage() {
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-1.5 font-semibold">
                               {result.isValid
-                                ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="text-green-700 dark:text-green-300">Aprovado — {complianceReg}</span></>
-                                : <><AlertTriangle className="w-3.5 h-3.5 text-red-600" /><span className="text-red-700 dark:text-red-300">{result.violations.length} problema(s) — {complianceReg}</span></>
+                                ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="text-green-700 dark:text-green-300">Copy aprovada</span></>
+                                : <><AlertTriangle className="w-3.5 h-3.5 text-red-600" /><span className="text-red-700 dark:text-red-300">{result.violations.length} ponto(s) de melhoria</span></>
                               }
                             </div>
                             <span className="font-bold text-gray-700 dark:text-gray-300">Score {result.score}/100</span>
