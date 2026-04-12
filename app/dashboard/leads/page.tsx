@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileText, Search, Trash2 } from 'lucide-react'
+import { Plus, FileText, Search, Trash2, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Lead {
@@ -33,6 +33,28 @@ export default function LeadsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
+
+  const handleRecalculate = async () => {
+    if (!confirm('Recalcular o DAISEE Score de todos os leads com os novos critérios?')) return
+    setRecalculating(true)
+    try {
+      const res = await fetch('/api/leads/recalculate', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        const response = await fetch('/api/leads')
+        if (response.ok) {
+          const d = await response.json()
+          setLeads(d.leads || [])
+        }
+        alert(`${data.updated} leads recalculados com sucesso.`)
+      }
+    } catch {
+      alert('Erro ao recalcular scores.')
+    } finally {
+      setRecalculating(false)
+    }
+  }
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -130,6 +152,15 @@ export default function LeadsPage() {
               {bulkDeleting ? 'Excluindo...' : `Excluir ${selected.size} selecionado(s)`}
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={handleRecalculate}
+            disabled={recalculating}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
+            {recalculating ? 'Recalculando...' : 'Recalcular Scores'}
+          </Button>
           <Link href="/dashboard/leads/import">
             <Button className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
