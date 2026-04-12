@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2, Shield, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2, Shield, AlertTriangle, Send } from 'lucide-react'
 
 interface Touch {
   id: string
@@ -510,6 +510,17 @@ export default function LeadDetailPage() {
                             <Shield className="w-3 h-3" />
                             {validatingId === touch.id ? 'Analisando...' : 'Qualidade'}
                           </button>
+                          {touch.channel === 'EMAIL' && (
+                            <a
+                              href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(lead.email)}&su=${encodeURIComponent(touch.subject || '')}&body=${encodeURIComponent(touch.content)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs px-2 py-1 border border-blue-300 text-blue-600 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            >
+                              <Send className="w-3 h-3" />
+                              Gmail
+                            </a>
+                          )}
                         </div>
                       </div>
                       {touch.subject && (
