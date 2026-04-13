@@ -61,7 +61,7 @@ export default function ImportLeadsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Upload do Arquivo CSV</CardTitle>
-              <CardDescription>Colunas: name, email, company, seniority, linkedin (opcional)</CardDescription>
+              <CardDescription>Colunas: Nome, E-mail, Empresa, Cargo, LinkedIn (opcional)</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -97,7 +97,7 @@ export default function ImportLeadsPage() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Formato do CSV</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <p className="font-mono text-sm bg-gray-100 dark:bg-gray-800 p-3 rounded">name,email,company,seniority,linkedin</p>
+              <p className="font-mono text-sm bg-gray-100 dark:bg-gray-800 p-3 rounded">Nome,E-mail,Empresa,Cargo,LinkedIn</p>
               <div>
                 <h4 className="font-semibold text-sm mb-2">Exemplo:</h4>
                 <div className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded space-y-1">
@@ -106,11 +106,11 @@ export default function ImportLeadsPage() {
                 </div>
               </div>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                <li><strong>name</strong> — nome completo (obrigatório)</li>
-                <li><strong>email</strong> — e-mail único (obrigatório)</li>
-                <li><strong>company</strong> — empresa (obrigatório)</li>
-                <li><strong>seniority</strong> — cargo/nível (obrigatório)</li>
-                <li><strong>linkedin</strong> — URL do perfil (opcional)</li>
+                <li><strong>Nome</strong> — nome completo (obrigatório)</li>
+                <li><strong>E-mail</strong> — e-mail único (obrigatório)</li>
+                <li><strong>Empresa</strong> — empresa (obrigatório)</li>
+                <li><strong>Cargo</strong> — cargo/nível (obrigatório)</li>
+                <li><strong>LinkedIn</strong> — URL do perfil (opcional)</li>
               </ul>
             </CardContent>
           </Card>

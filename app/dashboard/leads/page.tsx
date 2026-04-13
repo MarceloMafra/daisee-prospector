@@ -35,6 +35,9 @@ export default function LeadsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [recalculating, setRecalculating] = useState(false)
   const [recalcMsg, setRecalcMsg] = useState('')
+  const [pageSize, setPageSize] = useState(25)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalLeads, setTotalLeads] = useState(0)
 
   const handleRecalculate = async () => {
     if (!confirm('Recalcular o DAISEE Score de todos os leads com os novos critérios?')) return
@@ -44,10 +47,11 @@ export default function LeadsPage() {
       const res = await fetch('/api/leads/recalculate', { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        const response = await fetch('/api/leads')
+        const response = await fetch(`/api/leads?limit=${pageSize}&page=${currentPage}`)
         if (response.ok) {
           const d = await response.json()
           setLeads(d.leads || [])
+          setTotalLeads(d.pagination?.total || 0)
         }
         setRecalcMsg(`${data.updated} leads recalculados com sucesso.`)
         setTimeout(() => setRecalcMsg(''), 4000)
@@ -61,11 +65,13 @@ export default function LeadsPage() {
 
   useEffect(() => {
     const fetchLeads = async () => {
+      setLoading(true)
       try {
-        const response = await fetch('/api/leads')
+        const response = await fetch(`/api/leads?limit=${pageSize}&page=${currentPage}`)
         if (response.ok) {
           const data = await response.json()
           setLeads(data.leads || [])
+          setTotalLeads(data.pagination?.total || 0)
         }
       } catch (error) {
         console.error('Falha ao buscar leads:', error)
@@ -74,7 +80,7 @@ export default function LeadsPage() {
       }
     }
     fetchLeads()
-  }, [])
+  }, [pageSize, currentPage])
 
   const filteredLeads = leads.filter(
     (lead) =>
@@ -199,9 +205,43 @@ export default function LeadsPage() {
         <CardHeader>
           <CardTitle>Lista de Leads</CardTitle>
           <CardDescription>
-            {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''} encontrado{filteredLeads.length !== 1 ? 's' : ''}
+            Mostrando {filteredLeads.length} de {totalLeads} lead{totalLeads !== 1 ? 's' : ''}
             {someSelected && ` · ${selected.size} selecionado(s)`}
           </CardDescription>
+          <div className="flex items-center gap-3 pt-2">
+            <label className="text-sm text-gray-600 dark:text-gray-400">Exibir:</label>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-800"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-sm text-gray-500">por página</span>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Página {currentPage} de {Math.max(1, Math.ceil(totalLeads / pageSize))}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= Math.ceil(totalLeads / pageSize)}
+                onClick={() => setCurrentPage(p => p + 1)}
+              >
+                Próxima
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
