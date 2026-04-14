@@ -193,11 +193,14 @@ export default function LeadDetailPage() {
         body: JSON.stringify({ tone: selectedTone }),
       })
 
-      if (!genRes.ok) throw new Error('Generation failed')
+      if (!genRes.ok) {
+        const errData = await genRes.json().catch(() => ({}))
+        throw new Error(errData.error || 'Generation failed')
+      }
 
       await fetchLead()
-    } catch {
-      setError('Falha ao gerar cadência. Tente novamente.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao gerar cadência. Tente novamente.')
     } finally {
       setGenerating(false)
     }
