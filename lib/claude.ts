@@ -1,4 +1,4 @@
-import { Anthropic } from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
 interface LeadInfo {
   name: string
@@ -21,7 +21,7 @@ export async function generateCadencia(
   lead: LeadInfo,
   tone: 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO' = 'CONSULTIVO'
 ): Promise<GeneratedTouch[]> {
-  const client = new Anthropic()
+  const client = new OpenAI()
 
   const toneDescriptions = {
     CONSULTIVO:
@@ -99,8 +99,8 @@ Regras importantes:
 
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
-  const message = await client.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
+  const message = await client.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 2000,
     messages: [
       {
@@ -111,8 +111,7 @@ Retorne APENAS os 5 touches no formato especificado acima, com os marcadores cla
   })
 
   // Parse the response
-  const responseText =
-    message.content[0].type === 'text' ? message.content[0].text : ''
+  const responseText = message.choices[0]?.message?.content || ''
   const touches = parseCadenciaResponse(responseText)
 
   return touches
