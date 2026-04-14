@@ -86,22 +86,23 @@ Content: [E-mail final com CTA claro e próximos passos]
 
 Regras importantes:
 - ESCREVA TUDO EM PORTUGUÊS BRASILEIRO
-- Se o perfil do LinkedIn foi fornecido, use informações específicas: experiências anteriores, empresas onde trabalhou, formação, conquistas, interesses — para tornar as mensagens únicas e relevantes
-- Evite mensagens genéricas — o prospect deve sentir que você realmente o conhece
+- Se o perfil do LinkedIn foi fornecido, use informações MUITO ESPECÍFICAS: cite projetos reais, empresas anteriores pelo nome, resultados concretos mencionados no perfil, números, tecnologias, iniciativas específicas — o prospect deve sentir que você leu cada linha do perfil dele
+- NUNCA escreva mensagens genéricas. Cada mensagem deve conter pelo menos 2 referências diretas a algo específico do perfil do prospect
 - **Cargo recente:** Se o cargo atual do prospect foi iniciado há 9 meses ou menos (contando a partir da data de hoje), mencione isso como gancho de abertura no T1 ou T2 — ex: "Parabéns pelo novo cargo de X na Y!" Calcule a partir da data de início informada no perfil. Se a data de início tiver mais de 9 meses, NÃO use esse gancho.
-- Todo conteúdo deve ser personalizado para o prospect
-- Cada touch deve construir sobre os anteriores
-- Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo' : tone === 'DIRETO' ? 'direto' : 'criativo'}
-- Assuntos de e-mail devem ser variados e chamativos
-- Conteúdo deve ser profissional mas envolvente
-- Inclua chamadas para ação específicas em cada mensagem
+- Cada touch deve construir sobre os anteriores e avançar a conversa
+- Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo e educativo, fazendo perguntas abertas que demonstram conhecimento do contexto do prospect' : tone === 'DIRETO' ? 'direto e objetivo, destacando proposta de valor com clareza' : 'criativo, usando storytelling e ângulos inusitados'}
+- Assuntos de e-mail devem ser específicos ao contexto do prospect, nunca genéricos
+- E-mails devem terminar com: "Abraço,\\n[Seu nome]"
+- Mensagens LinkedIn NÃO têm assinatura
+- NÃO invente nomes, cargos ou empresas que não estejam no perfil
 - Use linguagem natural do mercado brasileiro, evite traduções literais
+- Inclua CTAs específicos: perguntas abertas no LinkedIn, links de agendamento nos e-mails
 
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
   const message = await client.chat.completions.create({
     model: 'gpt-4o',
-    max_tokens: 2000,
+    max_tokens: 3000,
     messages: [
       {
         role: 'user',
