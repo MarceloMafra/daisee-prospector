@@ -64,6 +64,7 @@ Content: [Mensagem curta no LinkedIn para iniciar uma conversa. Máx. 250 caract
 **T2: Mensagem LinkedIn (máx. 500 caracteres)**
 Type: LINKEDIN_500
 Channel: LINKEDIN
+Subject: [Título/assunto da mensagem LinkedIn, máx. 40 caracteres]
 Content: [Mensagem de follow-up no LinkedIn com mais contexto sobre como você pode ajudar. Máx. 500 caracteres.]
 
 **T3: E-mail com Assunto**
