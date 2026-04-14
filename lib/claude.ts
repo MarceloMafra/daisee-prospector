@@ -100,7 +100,7 @@ Regras importantes:
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
   const message = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2000,
     messages: [
       {

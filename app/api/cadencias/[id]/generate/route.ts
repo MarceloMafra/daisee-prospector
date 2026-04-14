@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { generateCadencia } from '@/lib/claude'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export async function POST(
   request: NextRequest,
@@ -104,9 +105,10 @@ export async function POST(
       { status: 201 }
     )
   } catch (error) {
-    console.error('Failed to generate cadencia:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('Failed to generate cadencia:', msg)
     return NextResponse.json(
-      { error: 'Failed to generate cadencia' },
+      { error: `Failed to generate cadencia: ${msg}` },
       { status: 500 }
     )
   }
