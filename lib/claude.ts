@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import { Anthropic } from '@anthropic-ai/sdk'
 
 interface LeadInfo {
   name: string
@@ -21,7 +21,7 @@ export async function generateCadencia(
   lead: LeadInfo,
   tone: 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO' = 'CONSULTIVO'
 ): Promise<GeneratedTouch[]> {
-  const client = new OpenAI()
+  const client = new Anthropic()
 
   const toneDescriptions = {
     CONSULTIVO:
@@ -87,28 +87,23 @@ Content: [E-mail final com CTA claro e próximos passos]
 
 Regras importantes:
 - ESCREVA TUDO EM PORTUGUÊS BRASILEIRO
-- Se o perfil do LinkedIn foi fornecido, use informações MUITO ESPECÍFICAS: cite projetos reais, empresas anteriores pelo nome, resultados concretos mencionados no perfil, números, tecnologias, iniciativas específicas — o prospect deve sentir que você leu cada linha do perfil dele
-- NUNCA escreva mensagens genéricas. Cada mensagem deve conter pelo menos 2 referências diretas a algo específico do perfil do prospect
+- Se o perfil do LinkedIn foi fornecido, use informações específicas: experiências anteriores, empresas onde trabalhou, formação, conquistas, interesses — para tornar as mensagens únicas e relevantes
+- Evite mensagens genéricas — o prospect deve sentir que você realmente o conhece
 - **Cargo recente:** Se o cargo atual do prospect foi iniciado há 9 meses ou menos (contando a partir da data de hoje), mencione isso como gancho de abertura no T1 ou T2 — ex: "Parabéns pelo novo cargo de X na Y!" Calcule a partir da data de início informada no perfil. Se a data de início tiver mais de 9 meses, NÃO use esse gancho.
-- Cada touch deve construir sobre os anteriores e avançar a conversa
-- Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo e educativo, fazendo perguntas abertas que demonstram conhecimento do contexto do prospect' : tone === 'DIRETO' ? 'direto e objetivo, destacando proposta de valor com clareza' : 'criativo, usando storytelling e ângulos inusitados'}
-- Assuntos de e-mail devem ser específicos ao contexto do prospect, nunca genéricos
-- E-mails devem terminar com: "Abraço,\\n[Seu nome]"
-- Mensagens LinkedIn NÃO têm assinatura
-- NÃO invente nomes, cargos ou empresas que não estejam no perfil
+- Todo conteúdo deve ser personalizado para o prospect
+- Cada touch deve construir sobre os anteriores
+- Tom deve ser ${tone === 'CONSULTIVO' ? 'consultivo' : tone === 'DIRETO' ? 'direto' : 'criativo'}
+- Assuntos de e-mail devem ser variados e chamativos
+- Conteúdo deve ser profissional mas envolvente
+- Inclua chamadas para ação específicas em cada mensagem
 - Use linguagem natural do mercado brasileiro, evite traduções literais
-- Inclua CTAs específicos: perguntas abertas no LinkedIn, links de agendamento nos e-mails
 
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
-  const message = await client.chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 3000,
+  const message = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 2000,
     messages: [
-      {
-        role: 'system',
-        content: `Você é um copywriter especialista em vendas B2B consultivas no mercado brasileiro. Sua principal habilidade é escrever mensagens ALTAMENTE PERSONALIZADAS que fazem o prospect sentir que você o estudou profundamente. NUNCA escreva mensagens genéricas. SEMPRE cite informações específicas do perfil: nomes de projetos, empresas anteriores, resultados com números, iniciativas específicas, tecnologias mencionadas. Se o perfil não tiver dados suficientes, use os dados básicos disponíveis mas seja criativo e relevante para o cargo/setor.`,
-      },
       {
         role: 'user',
         content: prompt,
@@ -117,7 +112,8 @@ Retorne APENAS os 5 touches no formato especificado acima, com os marcadores cla
   })
 
   // Parse the response
-  const responseText = message.choices[0]?.message?.content || ''
+  const responseText =
+    message.content[0].type === 'text' ? message.content[0].text : ''
   const touches = parseCadenciaResponse(responseText)
 
   return touches
@@ -142,10 +138,10 @@ function parseCadenciaResponse(text: string): GeneratedTouch[] {
     // Determine channel
     const channel = type.includes('LINKEDIN') ? 'LINKEDIN' : 'EMAIL'
 
-    // Extract subject for emails
+    // Extract subject (emails and LinkedIn T2)
     let subject: string | undefined
     const subjectMatch = section.match(/Subject:\s*\[?([^\]\n\r]*)\]?/i)
-    if (subjectMatch && channel === 'EMAIL') {
+    if (subjectMatch) {
       subject = subjectMatch[1].trim().replace(/^["']|["']$/g, '')
     }
 
