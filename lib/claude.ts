@@ -140,7 +140,7 @@ function parseCadenciaResponse(text: string): GeneratedTouch[] {
 
     // Extract subject (emails and LinkedIn T2)
     let subject: string | undefined
-    const subjectMatch = section.match(/Subject:\s*\[?([^\]\n\r]*)\]?/i)
+    const subjectMatch = section.match(/Subject:\s*\[?([^\]\n\r]*?)(?:\s*Content:|\]|$)/i)
     if (subjectMatch) {
       subject = subjectMatch[1].trim().replace(/^["']|["']$/g, '')
     }
