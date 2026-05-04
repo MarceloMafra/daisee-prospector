@@ -59,6 +59,7 @@ Gere exatamente 5 touches na ordem e formato abaixo:
 **T1: Mensagem LinkedIn (máx. 250 caracteres)**
 Type: LINKEDIN_250
 Channel: LINKEDIN
+Subject: [Título/assunto do InMail, máx. 40 caracteres]
 Content: [Mensagem curta no LinkedIn para iniciar uma conversa. Máx. 250 caracteres.]
 
 **T2: Mensagem LinkedIn (máx. 500 caracteres)**
