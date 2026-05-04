@@ -59,14 +59,6 @@ function TouchBadge({ touch, onStatusChange }: { touch: Touch; onStatusChange: (
   const isLinkedin = touch.channel === 'LINKEDIN'
   const [open, setOpen] = useState(false)
 
-  const nextStatus: Record<string, string> = {
-    AGENDADO: 'ENVIADO',
-    ENVIADO: 'RESPONDIDO',
-    RESPONDIDO: 'AGENDADO',
-    ENTREGUE: 'RESPONDIDO',
-    FALHOU: 'AGENDADO',
-  }
-
   return (
     <div className="relative">
       <button
