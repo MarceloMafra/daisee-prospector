@@ -8,7 +8,7 @@ export function Header() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <header className="border-b border-border bg-card sticky top-0 z-40">
+    <header className="bg-card sticky top-0 z-40">
       <div className="flex items-center justify-between h-16 px-6">
         <div className="flex-1" />
 
