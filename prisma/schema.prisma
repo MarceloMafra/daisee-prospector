@@ -28,6 +28,12 @@ model Lead {
   status        LeadStatus   @default(PROSPECTANDO)
   priority      Priority     @default(MEDIA)
 
+  // Contact
+  phone         String?      @db.VarChar(50)
+
+  // Notes
+  notes         String?      @db.Text
+
   // Profile Data
   profileUrl    String?      @db.Text
   profileText   String?      @db.Text

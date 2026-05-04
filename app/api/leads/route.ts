@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     // Pagination
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, parseInt(searchParams.get('limit') || '10'))
+    const limit = Math.min(1000, parseInt(searchParams.get('limit') || '10'))
     const skip = (page - 1) * limit
 
     // Filters

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2, Shield, AlertTriangle, Send } from 'lucide-react'
+import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2, Shield, AlertTriangle, Send, Phone, StickyNote } from 'lucide-react'
 
 interface Touch {
   id: string
@@ -35,6 +35,8 @@ interface Lead {
   linkedinUrl?: string
   profileText?: string
   profileUrl?: string
+  phone?: string
+  notes?: string
   companySize: string
   segmentMatch: number
   cadencia?: Cadencia
@@ -70,6 +72,12 @@ export default function LeadDetailPage() {
   const [savingLinkedin, setSavingLinkedin] = useState(false)
   const [complianceResults, setComplianceResults] = useState<Record<string, { isValid: boolean; score: number; violations: Array<{ severity: string; message: string }> }>>({})
   const [validatingId, setValidatingId] = useState<string | null>(null)
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [phoneInput, setPhoneInput] = useState('')
+  const [savingPhone, setSavingPhone] = useState(false)
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesInput, setNotesInput] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -163,6 +171,44 @@ export default function LeadDetailPage() {
       setError('Falha ao salvar URL do LinkedIn')
     } finally {
       setSavingLinkedin(false)
+    }
+  }
+
+  const handleSavePhone = async () => {
+    if (!lead) return
+    setSavingPhone(true)
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneInput }),
+      })
+      if (!res.ok) throw new Error('Falha ao salvar')
+      setEditingPhone(false)
+      await fetchLead()
+    } catch {
+      setError('Falha ao salvar telefone')
+    } finally {
+      setSavingPhone(false)
+    }
+  }
+
+  const handleSaveNotes = async () => {
+    if (!lead) return
+    setSavingNotes(true)
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notesInput }),
+      })
+      if (!res.ok) throw new Error('Falha ao salvar')
+      setEditingNotes(false)
+      await fetchLead()
+    } catch {
+      setError('Falha ao salvar observações')
+    } finally {
+      setSavingNotes(false)
     }
   }
 
@@ -345,6 +391,65 @@ export default function LeadDetailPage() {
                   </div>
                 </div>
               )}
+              {/* Phone / WhatsApp */}
+              <div className="flex items-start gap-2">
+                <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                {lead.phone ? (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm">
+                      {lead.phone}
+                    </a>
+                    <button
+                      onClick={() => { setEditingPhone(true); setPhoneInput(lead.phone || '') }}
+                      className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                ) : editingPhone ? (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <input
+                      type="tel"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="+55 11 99999-9999"
+                      className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={handleSavePhone} disabled={savingPhone} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                        {savingPhone ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button onClick={() => setEditingPhone(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setEditingPhone(true)} className="text-sm text-gray-400 hover:text-green-600 italic">
+                    + Adicionar WhatsApp/Telefone
+                  </button>
+                )}
+              </div>
+              {editingPhone && lead.phone && (
+                <div className="flex flex-col gap-1 pl-6">
+                  <input
+                    type="tel"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    placeholder="+55 11 99999-9999"
+                    className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={handleSavePhone} disabled={savingPhone} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                      {savingPhone ? 'Salvando...' : 'Salvar'}
+                    </button>
+                    <button onClick={() => setEditingPhone(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <hr className="dark:border-gray-700" />
 
               <div className="flex justify-between">
@@ -356,6 +461,46 @@ export default function LeadDetailPage() {
                 <span className={`font-medium ${lead.priority === 'ALTA' ? 'text-green-600' : lead.priority === 'MEDIA' ? 'text-yellow-600' : 'text-gray-500'}`}>
                   {lead.priority}
                 </span>
+              </div>
+
+              <hr className="dark:border-gray-700" />
+
+              {/* Observações */}
+              <div className="flex items-start gap-2">
+                <StickyNote className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                {editingNotes ? (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <textarea
+                      value={notesInput}
+                      onChange={(e) => setNotesInput(e.target.value)}
+                      placeholder="Adicione observações sobre este lead..."
+                      rows={3}
+                      className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full resize-none"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveNotes} disabled={savingNotes} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                        {savingNotes ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button onClick={() => setEditingNotes(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : lead.notes ? (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
+                    <button
+                      onClick={() => { setEditingNotes(true); setNotesInput(lead.notes || '') }}
+                      className="text-xs text-gray-400 hover:text-gray-600 mt-1"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setEditingNotes(true)} className="text-sm text-gray-400 hover:text-yellow-600 italic">
+                    + Adicionar observações
+                  </button>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -30,7 +30,7 @@ export default function PipelinePage() {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const response = await fetch('/api/leads')
+        const response = await fetch('/api/leads?limit=1000')
         if (response.ok) {
           const data = await response.json()
           setLeads(data.leads || [])

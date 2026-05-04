@@ -97,6 +97,8 @@ export async function PUT(
         status: body.status ?? undefined,
         priority: body.priority ?? undefined,
         linkedinUrl: body.linkedinUrl ?? undefined,
+        phone: body.phone !== undefined ? (body.phone || null) : undefined,
+        notes: body.notes !== undefined ? (body.notes || null) : undefined,
       },
       select: {
         id: true,
@@ -110,6 +112,8 @@ export async function PUT(
         segmentMatch: true,
         status: true,
         priority: true,
+        phone: true,
+        notes: true,
         createdAt: true,
         updatedAt: true,
       },
