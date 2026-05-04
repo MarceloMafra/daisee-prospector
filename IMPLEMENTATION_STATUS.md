@@ -1,236 +1,301 @@
 # DAISEE Prospector - Implementation Status
 
-**Date**: 2026-04-03  
-**Status**: 🟡 Frontend Complete, Backend In Progress
+**Data de Atualização**: 2026-05-04  
+**Status**: 🟢 Produção Ativa com Melhorias Contínuas
 
 ---
 
-## ✅ Completed
+## ✅ Completado (Última Sessão - 2026-05-04)
 
-### Frontend (100%)
-- [x] Root layout with dark mode support
-- [x] Landing page with features overview
-- [x] Dashboard layout with sidebar navigation
-- [x] Dashboard home page with KPI cards
-- [x] Leads list page with filtering
-- [x] Lead import page with CSV upload UI
-- [x] Pipeline page with Kanban board layout
-- [x] Compliance validator page
-- [x] Settings page with API key management
-- [x] UI components (Card, Button with variants)
-- [x] Layout components (Sidebar, Header)
-- [x] Global CSS with Tailwind configuration
-- [x] Providers setup (React Query, Next Themes)
-- [x] TypeScript configuration
+### 🎯 Melhoria #1: Edição Inline de Campos Principais
+- [x] Adicionado componente de edição inline para **Nome do Lead** (header)
+- [x] Adicionado componente de edição inline para **Empresa**
+- [x] Adicionado componente de edição inline para **Senioridade/Cargo**
+- [x] Integração com API PUT `/api/leads/[id]`
+- [x] Estados de carregamento (saving) para feedback visual
+- [x] Cancelamento de edição e refresh automático dos dados
+- **Commit**: `c1c99d9` - "feat: enable inline editing for name, company, and seniority fields"
 
-### Configuration & Setup
-- [x] package.json with all dependencies
-- [x] tsconfig.json with strict mode
-- [x] next.config.js with optimization
-- [x] tailwind.config.ts with dark mode
-- [x] postcss.config.js setup
-- [x] Prisma schema with 8 models
-- [x] .gitignore configuration
-- [x] Middleware for security headers
-- [x] README.md with complete documentation
+### 🎯 Melhorias Implementadas (Sessão Anterior)
+- [x] **Adição de campos de contato**: phone, notes, companyContext ao modelo Lead
+- [x] **Pipeline corrigido**: Aumentado limit de 10 para 1000 leads
+- [x] **Navegação clickable**: Nomes de leads linkáveis em leads e pipeline
+- [x] **Dashboard de Prospecção**: Nova página `/dashboard/prospecting` com monitoramento de touches
+- [x] **Títulos para InMail**: Geração automática de Subject para T1 e T2 LinkedIn
+- [x] **Contexto de Empresa**: Integração com Sales Navigator para personalização de cadência
+- [x] **Edição de Email**: Componente inline para editar email do lead
+- [x] **Remoção de header sticky**: Header agora scrolls com a página
+- [x] **Status de Touches**: Seletores de status (AGENDADO/ENVIADO/ENTREGUE/RESPONDIDO/FALHOU) ao lado de cada touch
 
-### API Routes (Structure Only)
-- [x] `/api/leads` - GET/POST route structure
-- [x] `/api/leads/import` - CSV import endpoint
-- [x] `/api/compliance/validate` - Compliance validation
-- [x] `/api/dashboard/stats` - Dashboard statistics
+### Backend & API (✅ Funcional)
+- [x] Prisma com Neon PostgreSQL configurado
+- [x] Lead CRUD completo (`/api/leads/[id]` - GET/PUT/DELETE)
+- [x] Cadencia generation com Claude AI (`/api/cadencias/[id]/generate`)
+- [x] Touch management com status tracking
+- [x] PDF upload e extração de perfil LinkedIn
+- [x] Claude Anthropic SDK integrado (modelo: claude-opus-4-6)
+- [x] Validação de campos (email, tone, duplicatas)
+- [x] Parsing inteligente de cadência com tratamento de limites de caracteres
 
----
+### Frontend & UI (✅ Funcional)
+- [x] Dashboard com KPI cards
+- [x] Leads list com paginação
+- [x] Lead detail page completo
+- [x] Pipeline Kanban visual
+- [x] Prospecting monitoring dashboard
+- [x] Dark mode support
+- [x] Componentes reutilizáveis de edição inline
+- [x] Toast/error messages
+- [x] Loading states
 
-## 🔄 In Progress
-
-### Backend Implementation
-- [ ] **Prisma Client Setup**: Initialize Prisma singleton
-- [ ] **Lead API**: Full CRUD operations with DAISEE scoring
-- [ ] **CSV Import**: Parse and import leads from CSV files
-- [ ] **DAISEE Algorithm**: Score calculation logic
-- [ ] **Claude Integration**: AI cadencia generation
-- [ ] **PDF Extraction**: LinkedIn profile text extraction
-- [ ] **Compliance Rules**: Validation logic for 4 regulations
-- [ ] **Database Seeding**: Sample data for testing
-
-### Testing Framework
-- [ ] Vitest configuration and unit tests
-- [ ] Playwright E2E tests
-- [ ] Jest setup
-- [ ] GitHub Actions CI/CD pipeline
+### Configuração & Deployment (✅ Ativo)
+- [x] .npmrc configurado com hoisting para @prisma/engines
+- [x] vercel.json com build commands (prisma db push)
+- [x] Environment variables (ANTHROPIC_API_KEY, DATABASE_URL, DIRECT_URL)
+- [x] Deploy automático em push para main
+- [x] Domínio Vercel funcionando
 
 ---
 
-## 🟠 Pending
+## 🔄 Em Progresso
 
-### Core Functionality
-1. **Database Connection**
-   - Create Neon PostgreSQL account
-   - Get DATABASE_URL
-   - Run migrations
-
-2. **API Implementation**
-   - Leads CRUD with filtering and pagination
-   - CSV import with validation and duplicate checking
-   - DAISEE score calculation (30% seniority + 35% company size + 25% segment + 10% other)
-   - Claude API integration for cadencia generation
-   - PDF text extraction from LinkedIn profiles
-   - Compliance validation against LGPD, ANVISA, SUSEP, CONAR
-
-3. **Frontend Components**
-   - Lead detail page with full information
-   - Cadencia builder and editor
-   - Profile upload and analysis
-   - Real data fetching and state management
-   - Form validation and error handling
-
-4. **Testing**
-   - Unit tests for DAISEE algorithm
-   - Unit tests for compliance rules
-   - Integration tests for API endpoints
-   - E2E tests for complete workflows
-
-5. **Deployment**
-   - GitHub Actions setup
-   - Vercel configuration
-   - Environment variables setup
+### Melhorias #2-8 (Pendentes)
+- [ ] **Melhoria #2**: Atualizar dados do lead ao fazer download de PDF
+- [ ] **Melhoria #3**: Adicionar filtro por status na aba de leads
+- [ ] **Melhoria #5**: Adicionar histórico de atividades na página do lead
+- [ ] **Melhoria #8**: Corrigir bug onde import CSV deleta dados existentes
 
 ---
 
-## 📊 File Count Summary
+## 📊 Estatísticas do Projeto
 
+### Dados Atuais
+- **27 leads** na base de dados
+- **Apenas 12 aparecem** na aba prospecting (em revisão)
+- **5 touches por cadência** (T1 LinkedIn 250, T2 LinkedIn 500, T3/T4/T5 Email)
+- **3 tons disponíveis**: Consultivo, Direto, Criativo
+
+### Arquivos Principais Modificados (Última Sessão)
 ```
-Total Files Created: 28
-
-Structure:
-├── app/ (16 files)
-│   ├── (dashboard)/ (8 pages)
-│   ├── api/ (4 routes)
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── providers.tsx
-│   └── globals.css
-├── components/ (4 files)
-│   ├── layout/ (2 files)
-│   └── ui/ (2 files)
-├── lib/ (1 file)
-├── prisma/ (1 file)
-└── Configuration Files (6 files)
+app/dashboard/leads/[id]/page.tsx     - Inline editing components
+prisma/schema.prisma                   - Novos campos (phone, notes, companyContext)
+app/api/leads/[id]/route.ts            - PUT handler atualizado
+app/api/cadencias/[id]/generate/route.ts - Integração companyContext
+lib/claude.ts                          - Subject geração para LinkedIn T1
+components/layout/sidebar.tsx          - Novo item "Prospecções"
+components/layout/header.tsx           - Remoção de sticky border
+app/dashboard/prospecting/page.tsx     - Nova página de monitoramento
+app/dashboard/pipeline/page.tsx        - Fix de limite de leads
+app/dashboard/leads/page.tsx           - Links clickables
+.npmrc                                 - Prisma hoisting
+vercel.json                            - Build command
 ```
 
 ---
 
-## 🚀 Next Steps (Priority Order)
+## 📁 Estrutura de Arquivos
 
-### Phase 1: Database (Day 1)
-1. [ ] Create Neon PostgreSQL account
-2. [ ] Generate DATABASE_URL
-3. [ ] Set up .env.local
-4. [ ] Run `pnpm install` and `npm run db:push`
-5. [ ] Verify database connection with `npm run db:studio`
+```
+app/
+├── api/
+│   ├── cadencias/[id]/generate/route.ts    ✅ Geração de cadência com Claude
+│   ├── leads/[id]/
+│   │   ├── route.ts                        ✅ GET/PUT/DELETE lead
+│   │   └── profile/route.ts                ✅ PDF upload e extração
+│   ├── leads/route.ts                      ✅ GET/POST leads com paginação
+│   ├── touches/[id]/route.ts               ✅ Status update de touches
+│   ├── prospecting/route.ts                ✅ Prospecting data com cadências
+│   ├── cadencias/route.ts                  ✅ CRUD de cadências
+│   └── compliance/validate/route.ts        ✅ Validação de compliance
+├── dashboard/
+│   ├── leads/[id]/page.tsx                 ✅ Lead detail com edição inline
+│   ├── leads/page.tsx                      ✅ Leads list com paginação
+│   ├── pipeline/page.tsx                   ✅ Kanban pipeline visual
+│   ├── prospecting/page.tsx                ✅ Monitoring dashboard
+│   ├── page.tsx                            ✅ Dashboard home
+│   └── layout.tsx                          ✅ Dashboard layout
+├── layout.tsx                              ✅ Root layout
+├── providers.tsx                           ✅ React providers
+└── globals.css                             ✅ Tailwind styles
 
-### Phase 2: Backend Implementation (Days 2-3)
-1. [ ] Implement Lead CRUD API endpoints
-2. [ ] Implement CSV import with validation
-3. [ ] Create DAISEE scoring algorithm
-4. [ ] Set up Claude API wrapper
-5. [ ] Implement compliance validation
-6. [ ] Test all API routes manually
+components/
+├── layout/
+│   ├── header.tsx                          ✅ Header com theme toggle
+│   ├── sidebar.tsx                         ✅ Sidebar com navegação
+│   └── providers.tsx                       ✅ Theme provider
+└── ui/
+    ├── button.tsx                          ✅ Button component
+    └── card.tsx                            ✅ Card component
 
-### Phase 3: Frontend Integration (Day 4)
-1. [ ] Connect frontend to real API endpoints
-2. [ ] Implement data fetching with React Query
-3. [ ] Add form validation and error handling
-4. [ ] Test complete user workflows
+lib/
+├── claude.ts                               ✅ Claude API wrapper + parsing
+├── prisma.ts                               ✅ Prisma client singleton
+├── pdf-extractor.ts                        ✅ PDF text extraction
 
-### Phase 4: Testing (Day 5)
-1. [ ] Write and run unit tests
-2. [ ] Write and run E2E tests
-3. [ ] Fix failing tests
-4. [ ] Generate coverage report
+prisma/
+└── schema.prisma                           ✅ Database schema com 6 models
 
-### Phase 5: Deployment (Day 6)
-1. [ ] Setup GitHub Actions pipeline
-2. [ ] Configure Vercel deployment
-3. [ ] Set production environment variables
-4. [ ] Deploy and test live
+Configuration Files
+├── next.config.js                          ✅ Next.js config
+├── tsconfig.json                           ✅ TypeScript strict mode
+├── tailwind.config.ts                      ✅ Tailwind + dark mode
+├── postcss.config.js                       ✅ PostCSS setup
+├── .npmrc                                  ✅ Prisma hoisting
+├── vercel.json                             ✅ Vercel deploy config
+├── package.json                            ✅ Dependencies
+└── .env.example                            ✅ Environment template
+```
 
 ---
 
-## 💾 Database Schema
+## 🚀 Próximas Melhorias (Ordenadas por Prioridade)
 
-**8 Models Defined:**
-- Lead (main entity)
-- Cadencia (5-touch sequence)
-- Touch (individual touchpoints)
-- ComplianceRule (regulatory requirements)
-- ComplianceLog (validation history)
-- AuditLog (activity tracking)
+### Fase Atual: Otimizações UX (Sessão Atual)
+1. [x] **Melhoria #1**: ✅ CONCLUÍDO - Edição inline de nome, empresa, seniority
+2. [ ] **Melhoria #2**: Atualizar dados do lead ao fazer download de PDF
+3. [ ] **Melhoria #3**: Filtro por status na aba de leads
+4. [ ] **Melhoria #5**: Histórico de atividades (activity timeline)
+5. [ ] **Melhoria #8**: Corrigir bug de CSV import deletando dados
 
-**Plus 5 Enums:**
-- CompanySize, LeadStatus, Priority
-- CadenciaTone, TouchType, TouchStatus
-- Regulation
+### Melhorias Futuras
+- [ ] Integração de webhook para eventos de email
+- [ ] Relatório de performance de cadências
+- [ ] Sugestões automáticas de próximo contato
+- [ ] Integração com LinkedIn API para dados automáticos
+- [ ] Agendamento automático de envios (scheduler)
+- [ ] Templates de cadência customizáveis
+- [ ] A/B testing de cadências
+- [ ] Análise de sentimento em respostas
 
 ---
 
-## 📝 Key Commands
+## 💾 Schema do Banco de Dados
+
+**6 Models Implementados:**
+- **Lead** - Prospect principal com scoring DAISEE
+- **Cadencia** - Sequência de 5 touches de contato
+- **Touch** - Toque individual (LinkedIn ou Email)
+- **ComplianceRule** - Regras de conformidade (LGPD, etc)
+- **ComplianceLog** - Log de validações
+- **AuditLog** - Rastreamento de atividades (planejado)
+
+**Campos principais do Lead:**
+- name, email, company, seniority
+- daiseeScore (0-100), status, priority
+- phone, notes, companyContext
+- linkedinUrl, profileText, profileUrl
+- createdAt, updatedAt
+
+---
+
+## 📝 Comandos Principais
 
 ```bash
-# Development
-pnpm install          # Install dependencies
-pnpm run dev         # Start dev server
+# Desenvolvimento
+pnpm install          # Instalar dependências
+pnpm run dev         # Iniciar dev server (http://localhost:3000)
 
 # Database
-pnpm run db:push     # Apply schema to database
-pnpm run db:studio   # Open Prisma Studio
-pnpm run db:seed     # Seed sample data
-
-# Testing
-pnpm run test:run    # Run all tests
-pnpm run test:e2e    # Run E2E tests
+pnpm run db:push     # Aplicar schema ao banco
+pnpm run db:studio   # Abrir Prisma Studio (visual)
 
 # Build & Deploy
-pnpm run build       # Build for production
-pnpm run start       # Run production server
+pnpm run build       # Build para produção
+pnpm run start       # Rodar servidor produção
 ```
 
 ---
 
-## 🎯 Success Criteria
+## 🔧 Problemas Resolvidos (Sessão Anterior)
 
-- [ ] All API endpoints functional and tested
-- [ ] Database properly migrated and populated
-- [ ] Frontend pages retrieve and display real data
-- [ ] CSV import working end-to-end
-- [ ] DAISEE scores calculating correctly
-- [ ] Claude API integration working
-- [ ] Compliance validation working
-- [ ] All tests passing
-- [ ] Deployed to Vercel
-- [ ] App accessible at production URL
+| Problema | Solução | Commit |
+|----------|---------|--------|
+| Prisma engines não encontrados | `.npmrc` com public-hoist-pattern | vários |
+| ANTHROPIC_API_KEY faltando | Added to Vercel environment | vários |
+| DIRECT_URL não configurado | Added Neon connection string | vários |
+| Pipeline mostrando só 10 leads | Aumentado `limit=1000` no API | vários |
+| Subject não gerado para T1 | Adicionado regex parsing no claude.ts | 141c617 |
 
 ---
 
-## 📌 Important Notes
+## 📊 Histórico de Commits (Última Sessão)
 
-1. **Environment Variables**: Must be set before running
-2. **Database**: Required for any testing beyond frontend
-3. **Claude API Key**: In .env.local file (never commit)
-4. **Git**: Repository initialized, ready for GitHub
-5. **Testing**: Framework configured, tests ready to write
-
----
-
-## 💡 Tips
-
-- Use `pnpm run db:studio` to explore database visually
-- Check API docs in README.md before implementing
-- Run `pnpm run type-check` to catch TS errors early
-- Use Next.js dev tools in browser for debugging
-- Keep API responses aligned with frontend expectations
+```
+c1c99d9 feat: enable inline editing for name, company, and seniority fields
+72ba5da docs: add handoff for next session with detailed roadmap
+8eccd82 fix: prevent subject parser from capturing Content field text
+33c9d78 revert: restore Anthropic SDK with original prompt + T2 LinkedIn subject
+200d5ce fix: add system message to GPT-4o for better personalization quality
+141c617 feat: add subject/title field to LinkedIn T2 touch
+```
 
 ---
 
-**Ready to proceed with Phase 1: Database setup**
+## ⚙️ Stack Tecnológico
+
+**Frontend:**
+- Next.js 14 (App Router)
+- React 18
+- TypeScript
+- Tailwind CSS (dark mode)
+- Lucide React (ícones)
+
+**Backend:**
+- Next.js API Routes
+- Prisma ORM
+- Neon PostgreSQL
+- Claude API (Anthropic SDK)
+
+**Deployment:**
+- Vercel (auto-deploy on push)
+- Environment variables via Vercel dashboard
+
+**Status Atual:**
+- ✅ Desenvolvimento ativo
+- ✅ Em produção (Vercel)
+- ✅ Banco de dados conectado
+- ✅ API funcional
+- ✅ Claude integration operacional
+
+---
+
+## 🎯 Critérios de Sucesso
+
+✅ **Completo:**
+- [x] All API endpoints functioning
+- [x] Database migrated and connected
+- [x] Frontend retrieve real data
+- [x] Claude cadencia generation working
+- [x] Deployed to Vercel
+- [x] Dark mode working
+- [x] Inline editing implemented
+- [x] Status tracking for touches
+
+❌ **Pendente:**
+- [ ] Melhorias #2, #3, #5, #8
+- [ ] Testing suite (unit + E2E)
+- [ ] Activity history tracking
+- [ ] Advanced filtering options
+
+---
+
+## 📌 Notas Importantes
+
+1. **URL Produção**: `https://daisee-prospector.vercel.app` (sempre atualizado)
+2. **URL com Hash (DESATUALIZADO)**: Links salvos com hash não refletem updates
+3. **Lead Limit**: API suporta até 1000 leads (configurável em route.ts)
+4. **Claude Model**: `claude-opus-4-6` para qualidade máxima
+5. **Database**: Neon PostgreSQL com replicação automática
+
+---
+
+## 🎪 Próxima Sessão
+
+**Começa por**: Melhoria #2 (Atualizar dados ao fazer download de PDF) ou qual preferir
+**Tempo estimado**: 2-3 horas para implementar 2-3 melhorias
+**Dependências**: Nenhuma - tudo está pronto para continuar
+
+---
+
+**Data da próxima atualização**: 2026-05-04  
+**Tempo total acumulado**: ~20 horas de desenvolvimento
