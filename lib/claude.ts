@@ -7,6 +7,7 @@ interface LeadInfo {
   seniority: string
   daiseeScore: number
   profileText?: string | null
+  companyContext?: string | null
 }
 
 interface GeneratedTouch {
@@ -41,6 +42,13 @@ ${lead.profileText.substring(0, 3000)}
 
 `
 
+  const companyContextSection = lead.companyContext
+    ? `**Contexto Estratégico da Empresa ${lead.company} (fonte: Sales Navigator — use para referenciar prioridades e desafios reais da empresa nas mensagens):**
+${lead.companyContext.substring(0, 2000)}
+
+`
+    : ''
+
   const prompt = `Você é um especialista em vendas B2B no mercado brasileiro. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. As mensagens devem ser naturais, ALTAMENTE PERSONALIZADAS com base no perfil real do LinkedIn, e adequadas ao mercado brasileiro.
 
 **Dados do Prospect:**
@@ -50,9 +58,7 @@ ${lead.profileText.substring(0, 3000)}
 - E-mail: ${lead.email}
 - Score DAISEE: ${lead.daiseeScore}/100
 
-${profileSection}
-
-**Tom:** ${toneDescriptions[tone]}
+${profileSection}${companyContextSection}**Tom:** ${toneDescriptions[tone]}
 
 Gere exatamente 5 touches na ordem e formato abaixo:
 

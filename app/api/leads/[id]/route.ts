@@ -99,6 +99,7 @@ export async function PUT(
         linkedinUrl: body.linkedinUrl ?? undefined,
         phone: body.phone !== undefined ? (body.phone || null) : undefined,
         notes: body.notes !== undefined ? (body.notes || null) : undefined,
+        companyContext: body.companyContext !== undefined ? (body.companyContext || null) : undefined,
       },
       select: {
         id: true,
@@ -114,6 +115,7 @@ export async function PUT(
         priority: true,
         phone: true,
         notes: true,
+        companyContext: true,
         createdAt: true,
         updatedAt: true,
       },

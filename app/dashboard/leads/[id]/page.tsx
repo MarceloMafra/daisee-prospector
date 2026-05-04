@@ -37,6 +37,7 @@ interface Lead {
   profileUrl?: string
   phone?: string
   notes?: string
+  companyContext?: string
   companySize: string
   segmentMatch: number
   cadencia?: Cadencia
@@ -79,6 +80,9 @@ export default function LeadDetailPage() {
   const [notesInput, setNotesInput] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
   const [updatingTouchId, setUpdatingTouchId] = useState<string | null>(null)
+  const [editingCompanyContext, setEditingCompanyContext] = useState(false)
+  const [companyContextInput, setCompanyContextInput] = useState('')
+  const [savingCompanyContext, setSavingCompanyContext] = useState(false)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -210,6 +214,25 @@ export default function LeadDetailPage() {
       setError('Falha ao salvar observações')
     } finally {
       setSavingNotes(false)
+    }
+  }
+
+  const handleSaveCompanyContext = async () => {
+    if (!lead) return
+    setSavingCompanyContext(true)
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyContext: companyContextInput }),
+      })
+      if (!res.ok) throw new Error('Falha ao salvar')
+      setEditingCompanyContext(false)
+      await fetchLead()
+    } catch {
+      setError('Falha ao salvar contexto da empresa')
+    } finally {
+      setSavingCompanyContext(false)
     }
   }
 
@@ -583,6 +606,72 @@ export default function LeadDetailPage() {
               )}
               {error && error.includes('PDF') && (
                 <p className="text-xs text-red-500">{error}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Company Context */}
+          <Card className={lead.companyContext ? 'border-purple-300 dark:border-purple-700' : ''}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Contexto da Empresa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {editingCompanyContext ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={companyContextInput}
+                    onChange={(e) => setCompanyContextInput(e.target.value)}
+                    placeholder="Cole aqui a análise do Sales Navigator ou qualquer contexto relevante sobre a empresa do lead (prioridades estratégicas, desafios, iniciativas recentes)..."
+                    rows={8}
+                    className="w-full text-sm border rounded px-3 py-2 dark:bg-gray-800 dark:border-gray-600 resize-y"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveCompanyContext}
+                      disabled={savingCompanyContext}
+                      className="text-xs px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {savingCompanyContext ? 'Salvando...' : 'Salvar'}
+                    </button>
+                    <button
+                      onClick={() => setEditingCompanyContext(false)}
+                      className="text-xs px-3 py-1.5 border rounded hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : lead.companyContext ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-xs font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Contexto salvo — será usado na geração da cadência
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-4">
+                    {lead.companyContext}
+                  </p>
+                  <button
+                    onClick={() => { setEditingCompanyContext(true); setCompanyContextInput(lead.companyContext || '') }}
+                    className="text-xs text-gray-400 hover:text-purple-600"
+                  >
+                    Editar contexto
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Cole a análise do Sales Navigator para que a IA use as prioridades e desafios da empresa na personalização das mensagens.
+                  </p>
+                  <button
+                    onClick={() => setEditingCompanyContext(true)}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg border-2 border-dashed border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/10 text-purple-600 text-sm transition-colors"
+                  >
+                    + Adicionar contexto da empresa
+                  </button>
+                </div>
               )}
             </CardContent>
           </Card>

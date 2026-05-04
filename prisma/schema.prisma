@@ -34,6 +34,9 @@ model Lead {
   // Notes
   notes         String?      @db.Text
 
+  // Company context (e.g. Sales Navigator AI analysis)
+  companyContext String?     @db.Text
+
   // Profile Data
   profileUrl    String?      @db.Text
   profileText   String?      @db.Text
