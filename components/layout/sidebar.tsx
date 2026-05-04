@@ -10,6 +10,7 @@ import {
   Shield,
   Settings,
   LogOut,
+  Activity,
 } from 'lucide-react'
 
 const menuItems = [
@@ -27,6 +28,11 @@ const menuItems = [
     label: 'Pipeline',
     href: '/dashboard/pipeline',
     icon: Zap,
+  },
+  {
+    label: 'Prospecções',
+    href: '/dashboard/prospecting',
+    icon: Activity,
   },
   {
     label: 'Compliance',
