@@ -78,6 +78,7 @@ export default function LeadDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false)
   const [notesInput, setNotesInput] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [updatingTouchId, setUpdatingTouchId] = useState<string | null>(null)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -209,6 +210,22 @@ export default function LeadDetailPage() {
       setError('Falha ao salvar observações')
     } finally {
       setSavingNotes(false)
+    }
+  }
+
+  const handleTouchStatusChange = async (touchId: string, newStatus: string) => {
+    setUpdatingTouchId(touchId)
+    try {
+      await fetch(`/api/touches/${touchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      await fetchLead()
+    } catch {
+      setError('Falha ao atualizar status do touch')
+    } finally {
+      setUpdatingTouchId(null)
     }
   }
 
@@ -643,9 +660,29 @@ export default function LeadDetailPage() {
                   return (
                     <div key={touch.id} className="border dark:border-gray-700 rounded-lg p-4 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-500 uppercase">
-                          Touch {touch.sequence} — {touchTypeLabels[touch.type] || touch.type}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-500 uppercase">
+                            Touch {touch.sequence} — {touchTypeLabels[touch.type] || touch.type}
+                          </span>
+                          <select
+                            value={touch.status}
+                            disabled={updatingTouchId === touch.id}
+                            onChange={(e) => handleTouchStatusChange(touch.id, e.target.value)}
+                            className={`text-xs px-2 py-1 rounded border font-medium cursor-pointer disabled:opacity-50 focus:outline-none transition-colors ${
+                              touch.status === 'RESPONDIDO' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700' :
+                              touch.status === 'ENVIADO'    ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700' :
+                              touch.status === 'ENTREGUE'   ? 'bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-700' :
+                              touch.status === 'FALHOU'     ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700' :
+                              'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                            }`}
+                          >
+                            <option value="AGENDADO">Agendado</option>
+                            <option value="ENVIADO">Enviado</option>
+                            <option value="ENTREGUE">Entregue</option>
+                            <option value="RESPONDIDO">Respondido</option>
+                            <option value="FALHOU">Falhou</option>
+                          </select>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
                             {touch.channel}
