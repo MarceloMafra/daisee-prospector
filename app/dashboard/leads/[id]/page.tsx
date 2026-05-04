@@ -14,6 +14,7 @@ interface Touch {
   content: string
   subject?: string
   status: string
+  updatedAt?: string
 }
 
 interface Cadencia {
@@ -21,6 +22,8 @@ interface Cadencia {
   tone: string
   status: string
   touches: Touch[]
+  generatedAt?: string
+  updatedAt?: string
 }
 
 interface Lead {
@@ -42,6 +45,7 @@ interface Lead {
   segmentMatch: number
   cadencia?: Cadencia
   createdAt: string
+  updatedAt?: string
 }
 
 const toneLabels: Record<string, string> = {
@@ -56,6 +60,85 @@ const touchTypeLabels: Record<string, string> = {
   EMAIL_T3: 'E-mail T3',
   EMAIL_T4: 'E-mail T4',
   EMAIL_T5: 'E-mail T5',
+}
+
+const escapeHtml = (value: string | number | null | undefined) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+const formatDateTime = (value?: string) => {
+  if (!value) return '-'
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value))
+}
+
+const formatMultiline = (value: string) => escapeHtml(value).replace(/\n/g, '<br />')
+
+const buildCadenciaPrintHtml = (lead: Lead) => {
+  const generatedAt = lead.cadencia?.generatedAt || lead.cadencia?.updatedAt
+
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Cadência - ${escapeHtml(lead.name)} - ${escapeHtml(lead.company)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px; color: #111827; font-family: Arial, Helvetica, sans-serif; line-height: 1.5; }
+    .header { border-bottom: 2px solid #e5e7eb; margin-bottom: 24px; padding-bottom: 18px; }
+    h1 { font-size: 26px; margin: 0 0 8px; }
+    h2 { border-bottom: 1px solid #e5e7eb; font-size: 18px; margin: 28px 0 12px; padding-bottom: 6px; }
+    .meta { color: #4b5563; font-size: 12px; margin-top: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; margin-top: 16px; }
+    .field { font-size: 13px; }
+    .label { color: #6b7280; display: block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    .touch { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 14px; padding: 14px; page-break-inside: avoid; }
+    .touch-title { align-items: center; display: flex; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+    .touch-title strong { font-size: 13px; text-transform: uppercase; }
+    .badge { background: #f3f4f6; border-radius: 999px; color: #374151; font-size: 11px; padding: 3px 8px; white-space: nowrap; }
+    .subject { font-size: 13px; font-weight: 700; margin: 8px 0; }
+    .content { color: #1f2937; font-size: 13px; }
+    .notes { background: #f9fafb; border-radius: 8px; color: #374151; font-size: 12px; padding: 12px; }
+    @media print { body { padding: 20mm; } }
+  </style>
+</head>
+<body>
+  <section class="header">
+    <h1>Cadência - ${escapeHtml(lead.name)}</h1>
+    <div class="meta">Dados sincronizados em ${escapeHtml(formatDateTime(new Date().toISOString()))}</div>
+    <div class="meta">Cadência gerada em ${escapeHtml(formatDateTime(generatedAt))}</div>
+    <div class="grid">
+      <div class="field"><span class="label">Empresa</span>${escapeHtml(lead.company)}</div>
+      <div class="field"><span class="label">Cargo</span>${escapeHtml(lead.seniority)}</div>
+      <div class="field"><span class="label">E-mail</span>${escapeHtml(lead.email)}</div>
+      <div class="field"><span class="label">Telefone/WhatsApp</span>${escapeHtml(lead.phone || '-')}</div>
+      <div class="field"><span class="label">Status</span>${escapeHtml(lead.status)}</div>
+      <div class="field"><span class="label">Prioridade</span>${escapeHtml(lead.priority)}</div>
+      <div class="field"><span class="label">Score DAISEE</span>${escapeHtml(lead.daiseeScore.toFixed(1))}</div>
+      <div class="field"><span class="label">Tom</span>${escapeHtml(toneLabels[lead.cadencia?.tone || ''] || lead.cadencia?.tone || '-')}</div>
+    </div>
+  </section>
+  ${lead.notes ? `<h2>Observações</h2><div class="notes">${formatMultiline(lead.notes)}</div>` : ''}
+  ${lead.companyContext ? `<h2>Contexto da Empresa</h2><div class="notes">${formatMultiline(lead.companyContext)}</div>` : ''}
+  <h2>Touches</h2>
+  ${(lead.cadencia?.touches || []).map((touch) => `
+    <article class="touch">
+      <div class="touch-title">
+        <strong>Touch ${escapeHtml(touch.sequence)} - ${escapeHtml(touchTypeLabels[touch.type] || touch.type)}</strong>
+        <span class="badge">${escapeHtml(touch.channel)} · ${escapeHtml(touch.status)}</span>
+      </div>
+      ${touch.subject ? `<div class="subject">Assunto: ${escapeHtml(touch.subject)}</div>` : ''}
+      <div class="content">${formatMultiline(touch.content)}</div>
+    </article>
+  `).join('')}
+</body>
+</html>`
 }
 
 export default function LeadDetailPage() {
@@ -95,6 +178,7 @@ export default function LeadDetailPage() {
   const [editingSeniority, setEditingSeniority] = useState(false)
   const [seniorityInput, setSeniorityInput] = useState('')
   const [savingSeniority, setSavingSeniority] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -152,7 +236,7 @@ export default function LeadDetailPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Falha ao enviar PDF')
-      setUploadSuccess(`Perfil extraído com sucesso! ${data.textLength} caracteres processados.`)
+      setUploadSuccess(`${data.message || 'Perfil extraído com sucesso!'} ${data.textLength} caracteres processados.`)
       await fetchLead()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar PDF')
@@ -348,6 +432,47 @@ export default function LeadDetailPage() {
       setError(err instanceof Error ? err.message : 'Falha ao gerar cadência. Tente novamente.')
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const handleDownloadCadenciaPdf = async () => {
+    if (!lead?.cadencia) return
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      setError('Não foi possível abrir a janela do PDF. Verifique o bloqueador de pop-ups.')
+      return
+    }
+
+    printWindow.document.write('<p style="font-family: Arial, sans-serif; padding: 24px;">Sincronizando dados do lead...</p>')
+    setDownloadingPdf(true)
+    setError('')
+
+    try {
+      const response = await fetch(`/api/leads/${params.id}?sync=${Date.now()}`, {
+        cache: 'no-store',
+      })
+      const freshLead: Lead = await response.json()
+
+      if (!response.ok) {
+        throw new Error('Falha ao sincronizar dados do lead')
+      }
+
+      if (!freshLead.cadencia || freshLead.cadencia.touches.length === 0) {
+        throw new Error('Este lead ainda não tem uma cadência pronta para PDF')
+      }
+
+      setLead(freshLead)
+      printWindow.document.open()
+      printWindow.document.write(buildCadenciaPrintHtml(freshLead))
+      printWindow.document.close()
+      printWindow.focus()
+      setTimeout(() => printWindow.print(), 250)
+    } catch (err) {
+      printWindow.close()
+      setError(err instanceof Error ? err.message : 'Falha ao gerar PDF da cadência')
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
@@ -905,14 +1030,25 @@ export default function LeadDetailPage() {
                     <MessageSquare className="w-4 h-4" />
                     Cadência Gerada — Tom {toneLabels[lead.cadencia.tone]}
                   </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateCadencia}
-                    disabled={generating}
-                  >
-                    {generating ? 'Gerando...' : 'Regerar'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateCadencia}
+                      disabled={generating}
+                    >
+                      {generating ? 'Gerando...' : 'Regerar'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadCadenciaPdf}
+                      disabled={downloadingPdf || generating}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      {downloadingPdf ? 'Sincronizando...' : 'Baixar PDF'}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
