@@ -298,7 +298,9 @@ export default function LeadsPage() {
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-gray-900 dark:text-white">{lead.name}</span>
+                        <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer">
+                          {lead.name}
+                        </a>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.email}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.company}</td>
