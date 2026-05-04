@@ -83,6 +83,9 @@ export default function LeadDetailPage() {
   const [editingCompanyContext, setEditingCompanyContext] = useState(false)
   const [companyContextInput, setCompanyContextInput] = useState('')
   const [savingCompanyContext, setSavingCompanyContext] = useState(false)
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [emailInput, setEmailInput] = useState('')
+  const [savingEmail, setSavingEmail] = useState(false)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -217,6 +220,31 @@ export default function LeadDetailPage() {
     }
   }
 
+  const handleSaveEmail = async () => {
+    if (!lead) return
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailInput)) {
+      setError('Formato de e-mail inválido')
+      return
+    }
+    setSavingEmail(true)
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInput }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Falha ao salvar')
+      setEditingEmail(false)
+      await fetchLead()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao salvar e-mail')
+    } finally {
+      setSavingEmail(false)
+    }
+  }
+
   const handleSaveCompanyContext = async () => {
     if (!lead) return
     setSavingCompanyContext(true)
@@ -345,9 +373,37 @@ export default function LeadDetailPage() {
               <CardTitle className="text-base">Informações do Lead</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <span>{lead.email}</span>
+              <div className="flex items-start gap-2">
+                <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                {editingEmail ? (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="email@empresa.com"
+                      className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveEmail} disabled={savingEmail} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                        {savingEmail ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button onClick={() => setEditingEmail(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-gray-700 dark:text-gray-300 truncate">{lead.email}</span>
+                    <button
+                      onClick={() => { setEditingEmail(true); setEmailInput(lead.email) }}
+                      className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                 <Building2 className="w-4 h-4 text-gray-400" />
