@@ -86,6 +86,15 @@ export default function LeadDetailPage() {
   const [editingEmail, setEditingEmail] = useState(false)
   const [emailInput, setEmailInput] = useState('')
   const [savingEmail, setSavingEmail] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [savingName, setSavingName] = useState(false)
+  const [editingCompany, setEditingCompany] = useState(false)
+  const [companyInput, setCompanyInput] = useState('')
+  const [savingCompany, setSavingCompany] = useState(false)
+  const [editingSeniority, setEditingSeniority] = useState(false)
+  const [seniorityInput, setSeniorityInput] = useState('')
+  const [savingSeniority, setSavingSeniority] = useState(false)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -245,6 +254,28 @@ export default function LeadDetailPage() {
     }
   }
 
+  const saveField = async (field: string, value: string, setter: (v: boolean) => void, setSaving: (v: boolean) => void) => {
+    if (!lead || !value.trim()) {
+      setError(`${field} não pode ser vazio`)
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field.toLowerCase()]: value }),
+      })
+      if (!res.ok) throw new Error('Falha ao salvar')
+      setter(false)
+      await fetchLead()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Falha ao salvar ${field}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleSaveCompanyContext = async () => {
     if (!lead) return
     setSavingCompanyContext(true)
@@ -353,9 +384,40 @@ export default function LeadDetailPage() {
         <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/leads')}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
-          <p className="text-gray-600 dark:text-gray-400">{lead.seniority} · {lead.company}</p>
+        <div className="flex-1">
+          {editingName ? (
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Nome do lead"
+                className="text-2xl font-bold border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button onClick={() => saveField('name', nameInput, setEditingName, setSavingName)} disabled={savingName} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                  {savingName ? 'Salvando...' : 'Salvar'}
+                </button>
+                <button onClick={() => setEditingName(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
+                <button
+                  onClick={() => { setEditingName(true); setNameInput(lead.name) }}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Editar
+                </button>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400">{lead.seniority} · {lead.company}</p>
+            </div>
+          )}
         </div>
         <div className="ml-auto">
           <span className={`text-2xl font-bold px-4 py-2 rounded-lg ${scoreColor}`}>
@@ -405,13 +467,73 @@ export default function LeadDetailPage() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Building2 className="w-4 h-4 text-gray-400" />
-                <span>{lead.company}</span>
+              {/* Company */}
+              <div className="flex items-start gap-2">
+                <Building2 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                {editingCompany ? (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <input
+                      type="text"
+                      value={companyInput}
+                      onChange={(e) => setCompanyInput(e.target.value)}
+                      placeholder="Empresa"
+                      className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => saveField('company', companyInput, setEditingCompany, setSavingCompany)} disabled={savingCompany} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                        {savingCompany ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button onClick={() => setEditingCompany(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-gray-700 dark:text-gray-300">{lead.company}</span>
+                    <button
+                      onClick={() => { setEditingCompany(true); setCompanyInput(lead.company) }}
+                      className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <User className="w-4 h-4 text-gray-400" />
-                <span>{lead.seniority}</span>
+              {/* Seniority */}
+              <div className="flex items-start gap-2">
+                <User className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                {editingSeniority ? (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <input
+                      type="text"
+                      value={seniorityInput}
+                      onChange={(e) => setSeniorityInput(e.target.value)}
+                      placeholder="Cargo/Senioridade"
+                      className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => saveField('seniority', seniorityInput, setEditingSeniority, setSavingSeniority)} disabled={savingSeniority} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                        {savingSeniority ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button onClick={() => setEditingSeniority(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-gray-700 dark:text-gray-300">{lead.seniority}</span>
+                    <button
+                      onClick={() => { setEditingSeniority(true); setSeniorityInput(lead.seniority) }}
+                      className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-start gap-2">
                 <Linkedin className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
