@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(npx next:*)",
+      "Bash(node -e ':*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsc:*)",
+      "Bash(gh api *)"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls c:\\\\Users\\\\55439\\\\PROJETOS\\\\daisee-prospector/*.md)",
+      "Bash(npm run:*)",
+      "Bash(npm i:*)",
+      "Bash(pnpm add:*)"
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+melhorias a serem feitas:
+1- adicionar botão para editar cada campo do lead dentro de cada lead
+2- atualizar os dados do lead quando fizer o download do pdf
+3- criar filtro na pagina de leads por status
+4- criar integração com GMAIL para disparo de e-mails direto da pagina do lead 
+5- na pagina de descrição do lead - colocar um histórico de atividades (criado, atualizado, pdf gerado, email enviado, etc)
+6- inserir o campo celular/whatsapp para contato direto
+7- inserir um campo para colocar observações 
+8- erro ao importar arquivo csv, os dados existentes foram apagados.
