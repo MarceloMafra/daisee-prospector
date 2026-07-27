@@ -179,6 +179,7 @@ export default function LeadDetailPage() {
   const [seniorityInput, setSeniorityInput] = useState('')
   const [savingSeniority, setSavingSeniority] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [enriching, setEnriching] = useState(false)
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -243,6 +244,27 @@ export default function LeadDetailPage() {
     } finally {
       setUploadingPdf(false)
       e.target.value = ''
+    }
+  }
+
+  const handleEnrich = async () => {
+    setEnriching(true)
+    setError('')
+    setUploadSuccess('')
+    try {
+      const res = await fetch(`/api/leads/${params.id}/enrich`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Falha ao enriquecer perfil')
+      setUploadSuccess(`${data.message} ${data.textLength} caracteres importados.`)
+      await fetchLead()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enriquecer perfil via LinkedIn')
+    } finally {
+      setEnriching(false)
     }
   }
 
@@ -853,7 +875,7 @@ export default function LeadDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                Perfil LinkedIn (PDF)
+                Perfil LinkedIn
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -871,7 +893,20 @@ export default function LeadDetailPage() {
                   <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded line-clamp-3">
                     {lead.profileText.substring(0, 150)}...
                   </p>
+                  {uploadSuccess && (
+                    <p className="text-xs text-green-600 dark:text-green-400">{uploadSuccess}</p>
+                  )}
                   <div className="flex gap-2">
+                    {lead.linkedinUrl && (
+                      <button
+                        onClick={handleEnrich}
+                        disabled={enriching}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      >
+                        <Zap className="w-3 h-3" />
+                        {enriching ? 'Enriquecendo...' : 'Atualizar via LinkedIn'}
+                      </button>
+                    )}
                     <label className="flex-1 cursor-pointer">
                       <span className="flex items-center justify-center gap-1 text-xs px-3 py-1.5 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <Upload className="w-3 h-3" />
@@ -892,11 +927,22 @@ export default function LeadDetailPage() {
                   <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                     ⚠️ Sem perfil — cadência será genérica
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Exporte o PDF do LinkedIn e faça upload para gerar mensagens altamente personalizadas.
-                  </p>
                   {uploadSuccess && (
                     <p className="text-xs text-green-600 dark:text-green-400">{uploadSuccess}</p>
+                  )}
+                  {lead.linkedinUrl ? (
+                    <button
+                      onClick={handleEnrich}
+                      disabled={enriching}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      <Zap className="w-4 h-4" />
+                      {enriching ? 'Buscando perfil no LinkedIn...' : 'Enriquecer via LinkedIn (automático)'}
+                    </button>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Salve a URL do LinkedIn do lead para enriquecer automaticamente, ou use o upload de PDF abaixo.
+                    </p>
                   )}
                   <label className="block cursor-pointer">
                     <span className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed text-sm transition-colors ${uploadingPdf ? 'opacity-50' : 'border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/10 text-orange-600'}`}>
@@ -907,7 +953,7 @@ export default function LeadDetailPage() {
                   </label>
                 </div>
               )}
-              {error && error.includes('PDF') && (
+              {error && (error.includes('PDF') || error.includes('LinkedIn') || error.includes('Unipile') || error.includes('enriquecer')) && (
                 <p className="text-xs text-red-500">{error}</p>
               )}
             </CardContent>
