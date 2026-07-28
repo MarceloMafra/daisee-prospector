@@ -69,6 +69,7 @@ export function extractLinkedInIdentifier(value?: string | null): string | null 
 export interface UnipileExperience {
   position?: string
   company?: string
+  company_id?: string
   start?: string
   end?: string
   location?: string
@@ -113,6 +114,80 @@ export async function getLinkedInProfile(identifier: string): Promise<UnipilePro
     linkedin_sections: '*',
   })
   return unipileGet(`/users/${encodeURIComponent(identifier)}?${query.toString()}`)
+}
+
+export interface UnipileCompany {
+  name?: string
+  tagline?: string
+  description?: string
+  industry?: string[]
+  website?: string
+  employee_count?: number
+  employee_count_range?: { from?: number; to?: number }
+  followers_count?: number
+  foundation_date?: { year?: number } | string
+  locations?: Array<{
+    is_headquarter?: boolean
+    city?: string
+    area?: string
+    country?: string
+  }>
+  public_identifier?: string
+  profile_url?: string
+}
+
+export async function getLinkedInCompany(identifier: string): Promise<UnipileCompany> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const query = new URLSearchParams({ account_id: accountId })
+  return unipileGet(`/linkedin/company/${encodeURIComponent(identifier)}?${query.toString()}`)
+}
+
+// Mapeia contagem de funcionários para o enum CompanySize do schema Prisma.
+export function mapEmployeeCountToCompanySize(
+  count?: number
+): 'MICRO' | 'PEQUENA' | 'MEDIA' | 'GRANDE' | 'ENTERPRISE' | null {
+  if (typeof count !== 'number' || count <= 0) return null
+  if (count >= 500) return 'ENTERPRISE'
+  if (count >= 250) return 'GRANDE'
+  if (count >= 50) return 'MEDIA'
+  if (count >= 10) return 'PEQUENA'
+  return 'MICRO'
+}
+
+// Converte o perfil da empresa em texto para o campo companyContext,
+// consumido pela geração de cadência personalizada.
+export function buildCompanyContext(company: UnipileCompany): string {
+  const lines: string[] = []
+
+  if (company.name) lines.push(`Empresa: ${company.name}`)
+  if (company.tagline) lines.push(`Tagline: ${company.tagline}`)
+  if (company.industry?.length) lines.push(`Setor: ${company.industry.join(', ')}`)
+
+  if (typeof company.employee_count === 'number') {
+    const range = company.employee_count_range
+    const rangeText =
+      range?.from && range?.to ? ` (faixa ${range.from}-${range.to})` : ''
+    lines.push(`Funcionários: ${company.employee_count}${rangeText}`)
+  }
+
+  const headquarters = company.locations?.find((loc) => loc.is_headquarter) || company.locations?.[0]
+  if (headquarters) {
+    const place = [headquarters.city, headquarters.area, headquarters.country]
+      .filter(Boolean)
+      .join(', ')
+    if (place) lines.push(`Sede: ${place}`)
+  }
+
+  if (company.website) lines.push(`Site: ${company.website}`)
+  if (typeof company.followers_count === 'number') {
+    lines.push(`Seguidores no LinkedIn: ${company.followers_count}`)
+  }
+
+  if (company.description) {
+    lines.push('', 'Sobre a empresa:', company.description.trim())
+  }
+
+  return lines.join('\n').trim()
 }
 
 export function getExperiences(profile: UnipileProfile): UnipileExperience[] {

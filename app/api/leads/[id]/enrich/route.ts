@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import {
   UnipileError,
+  buildCompanyContext,
   buildProfileText,
   extractLinkedInIdentifier,
   getCurrentPosition,
   getFullName,
+  getLinkedInCompany,
   getLinkedInProfile,
   isUnipileConfigured,
+  mapEmployeeCountToCompanySize,
 } from '@/lib/unipile'
+import { calculateDAISEEScore, getScorePriority } from '@/lib/daisee-score'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,6 +78,12 @@ export async function POST(
       company?: string
       seniority?: string
       linkedinUrl?: string
+      companyContext?: string
+      companySize?: 'MICRO' | 'PEQUENA' | 'MEDIA' | 'GRANDE' | 'ENTERPRISE'
+      daiseeScore?: number
+      decisionPower?: number
+      segmentMatch?: number
+      priority?: 'BAIXA' | 'MEDIA' | 'ALTA'
     } = {}
     const updatedFields: string[] = []
     const skippedFields: string[] = []
@@ -123,6 +133,48 @@ export async function POST(
     if (normalizedUrl && normalizedUrl !== lead.linkedinUrl) {
       fieldsToUpdate.linkedinUrl = normalizedUrl
       updatedFields.push('linkedinUrl')
+    }
+
+    // Contexto da empresa atual do lead (não sobrescreve análise manual existente)
+    if (currentPosition?.company_id) {
+      try {
+        const company = await getLinkedInCompany(currentPosition.company_id)
+
+        const companyContext = buildCompanyContext(company)
+        if (companyContext && companyContext.length >= 30) {
+          if (!lead.companyContext?.trim()) {
+            fieldsToUpdate.companyContext = companyContext
+            updatedFields.push('companyContext')
+          } else {
+            skippedFields.push('companyContext')
+          }
+        }
+
+        const companySize = mapEmployeeCountToCompanySize(company.employee_count)
+        if (companySize && companySize !== lead.companySize) {
+          fieldsToUpdate.companySize = companySize
+          updatedFields.push('companySize')
+        }
+      } catch (companyError) {
+        // Falha ao buscar empresa não bloqueia o enriquecimento do perfil
+        console.error('Erro ao buscar empresa na Unipile:', companyError)
+        skippedFields.push('companyContext')
+      }
+    }
+
+    // Recalcula o DAISEE Score com os dados enriquecidos (cargo 40% + porte 35% + segmento 25%)
+    const scoreInput = {
+      seniority: fieldsToUpdate.seniority || lead.seniority,
+      companySize: fieldsToUpdate.companySize || lead.companySize,
+      segmentMatch: lead.segmentMatch,
+    }
+    const daisee = calculateDAISEEScore(scoreInput)
+    if (daisee.score !== lead.daiseeScore) {
+      fieldsToUpdate.daiseeScore = daisee.score
+      fieldsToUpdate.decisionPower = daisee.decisionPower
+      fieldsToUpdate.segmentMatch = daisee.segmentMatch
+      fieldsToUpdate.priority = getScorePriority(daisee.score)
+      updatedFields.push('daiseeScore')
     }
 
     if (body.dryRun) {
