@@ -1012,13 +1012,23 @@ export default function LeadDetailPage() {
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Cole a análise do Sales Navigator para que a IA use as prioridades e desafios da empresa na personalização das mensagens.
+                    Busque automaticamente do LinkedIn ou cole a análise do Sales Navigator para que a IA use as prioridades e desafios da empresa na personalização das mensagens.
                   </p>
+                  {lead.linkedinUrl && (
+                    <button
+                      onClick={handleEnrich}
+                      disabled={enriching}
+                      className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      {enriching ? 'Buscando empresa no LinkedIn...' : 'Buscar contexto via LinkedIn'}
+                    </button>
+                  )}
                   <button
                     onClick={() => setEditingCompanyContext(true)}
                     className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg border-2 border-dashed border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/10 text-purple-600 text-sm transition-colors"
                   >
-                    + Adicionar contexto da empresa
+                    + Adicionar contexto manualmente
                   </button>
                 </div>
               )}
