@@ -41,6 +41,7 @@ model Lead {
   profileUrl    String?      @db.Text
   profileText   String?      @db.Text
   linkedinUrl   String?
+  linkedinProviderId String? @db.VarChar(255) // ID interno do LinkedIn (casa respostas de DM com o lead)
 
   // Relationships
   cadencia      Cadencia?

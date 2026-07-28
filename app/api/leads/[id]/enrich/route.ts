@@ -139,6 +139,7 @@ export async function POST(
       company?: string
       seniority?: string
       linkedinUrl?: string
+      linkedinProviderId?: string
       companyContext?: string
       companySize?: 'MICRO' | 'PEQUENA' | 'MEDIA' | 'GRANDE' | 'ENTERPRISE'
       daiseeScore?: number
@@ -194,6 +195,11 @@ export async function POST(
     if (normalizedUrl && normalizedUrl !== lead.linkedinUrl) {
       fieldsToUpdate.linkedinUrl = normalizedUrl
       updatedFields.push('linkedinUrl')
+    }
+
+    if (profile.provider_id && profile.provider_id !== lead.linkedinProviderId) {
+      fieldsToUpdate.linkedinProviderId = profile.provider_id
+      updatedFields.push('linkedinProviderId')
     }
 
     // Contexto da empresa atual do lead: fatos via Unipile + posts recentes →
