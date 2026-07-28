@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Anthropic } from '@anthropic-ai/sdk'
 import {
   UnipileError,
+  UnipilePost,
   buildCompanyContext,
   buildProfileText,
   extractLinkedInIdentifier,
+  getCompanyPosts,
   getCurrentPosition,
   getFullName,
   getLinkedInCompany,
@@ -15,6 +18,64 @@ import {
 import { calculateDAISEEScore, getScorePriority } from '@/lib/daisee-score'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
+// Sintetiza análise de cenário da empresa (estilo Account IQ do Sales Navigator)
+// a partir dos dados coletados na Unipile. Fallback: texto factual puro.
+async function generateCompanyAnalysis(params: {
+  companyFacts: string
+  posts: UnipilePost[]
+  leadName: string
+  leadSeniority: string
+}): Promise<string | null> {
+  if (!process.env.ANTHROPIC_API_KEY) return null
+
+  const postsText = params.posts
+    .map((post) => `- [${post.date || post.parsed_datetime || 'recente'}] ${(post.text || '').replace(/\s+/g, ' ').trim().substring(0, 400)}`)
+    .filter((line) => line.length > 15)
+    .join('\n')
+
+  try {
+    const client = new Anthropic()
+    const message = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 1500,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'user',
+          content: `Você é um analista de inteligência comercial B2B. Com base APENAS nos dados abaixo, produza uma análise de cenário da empresa para apoiar prospecção, em português do Brasil, neste formato exato (texto puro, sem markdown):
+
+Prioridades estratégicas
+[2 a 3 temas. Cada tema: uma linha com o nome do tema, seguida de um parágrafo de 2-3 frases explicando.]
+
+Desafios de negócios
+[2 a 3 desafios prováveis, no mesmo formato.]
+
+Ganchos de abordagem
+[2 a 3 sugestões práticas para abordar ${params.leadName} (${params.leadSeniority}), conectando as prioridades/desafios acima a uma conversa de prospecção.]
+
+Regras:
+- Baseie-se somente nos dados fornecidos. Onde precisar inferir, use linguagem de hipótese ("provavelmente", "tende a", "sugere").
+- NÃO invente números, aquisições, nomes de produtos ou fatos.
+- Não inclua cabeçalho, saudação ou comentários fora do formato.
+
+Dados da empresa:
+${params.companyFacts}
+
+Posts recentes da empresa no LinkedIn:
+${postsText || '(nenhum post disponível)'}`,
+        },
+      ],
+    })
+
+    const text = message.content[0]?.type === 'text' ? message.content[0].text.trim() : ''
+    return text.length >= 100 ? text : null
+  } catch (error) {
+    console.error('Erro ao gerar análise da empresa com Claude:', error)
+    return null
+  }
+}
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -41,7 +102,7 @@ export async function POST(
       return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 })
     }
 
-    let body: { linkedinUrl?: string; dryRun?: boolean } = {}
+    let body: { linkedinUrl?: string; dryRun?: boolean; regenerateCompanyContext?: boolean } = {}
     try {
       body = await request.json()
     } catch {
@@ -135,25 +196,45 @@ export async function POST(
       updatedFields.push('linkedinUrl')
     }
 
-    // Contexto da empresa atual do lead (não sobrescreve análise manual existente)
+    // Contexto da empresa atual do lead: fatos via Unipile + posts recentes →
+    // análise de cenário sintetizada pelo Claude (estilo Account IQ).
+    // Não sobrescreve contexto existente, exceto com regenerateCompanyContext: true.
     if (currentPosition?.company_id) {
+      const shouldFillContext = !lead.companyContext?.trim() || body.regenerateCompanyContext
       try {
         const company = await getLinkedInCompany(currentPosition.company_id)
-
-        const companyContext = buildCompanyContext(company)
-        if (companyContext && companyContext.length >= 30) {
-          if (!lead.companyContext?.trim()) {
-            fieldsToUpdate.companyContext = companyContext
-            updatedFields.push('companyContext')
-          } else {
-            skippedFields.push('companyContext')
-          }
-        }
 
         const companySize = mapEmployeeCountToCompanySize(company.employee_count)
         if (companySize && companySize !== lead.companySize) {
           fieldsToUpdate.companySize = companySize
           updatedFields.push('companySize')
+        }
+
+        if (shouldFillContext) {
+          const companyFacts = buildCompanyContext(company)
+          let posts: UnipilePost[] = []
+          try {
+            posts = await getCompanyPosts(currentPosition.company_id)
+          } catch {
+            // posts são opcionais — análise segue só com os fatos
+          }
+
+          const analysis = await generateCompanyAnalysis({
+            companyFacts,
+            posts,
+            leadName: fieldsToUpdate.name || lead.name,
+            leadSeniority: fieldsToUpdate.seniority || lead.seniority,
+          })
+
+          const companyContext = analysis
+            ? `${companyFacts}\n\n${analysis}`
+            : companyFacts
+          if (companyContext && companyContext.length >= 30) {
+            fieldsToUpdate.companyContext = companyContext
+            updatedFields.push('companyContext')
+          }
+        } else {
+          skippedFields.push('companyContext')
         }
       } catch (companyError) {
         // Falha ao buscar empresa não bloqueia o enriquecimento do perfil

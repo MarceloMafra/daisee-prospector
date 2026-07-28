@@ -190,6 +190,24 @@ export function buildCompanyContext(company: UnipileCompany): string {
   return lines.join('\n').trim()
 }
 
+export interface UnipilePost {
+  text?: string
+  date?: string
+  parsed_datetime?: string
+}
+
+// Posts recentes da página da empresa (matéria-prima para análise de cenário).
+export async function getCompanyPosts(companyId: string, limit = 8): Promise<UnipilePost[]> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const query = new URLSearchParams({
+    account_id: accountId,
+    is_company: 'true',
+    limit: String(limit),
+  })
+  const data = await unipileGet(`/users/${encodeURIComponent(companyId)}/posts?${query.toString()}`)
+  return data.items || []
+}
+
 export function getExperiences(profile: UnipileProfile): UnipileExperience[] {
   return profile.work_experience || profile.experience || []
 }
