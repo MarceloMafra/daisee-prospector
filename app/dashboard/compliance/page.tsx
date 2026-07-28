@@ -22,7 +22,7 @@ export default function CompliancePage() {
   const [loading, setLoading] = useState(false)
 
   const regulations = [
-    { id: 'LINKEDIN_250', name: 'LinkedIn 250', description: 'Mensagem de conexão (até 300 chars)', icon: '💬' },
+    { id: 'LINKEDIN_250', name: 'LinkedIn T1', description: 'Mensagem de conexão (até 200 chars)', icon: '💬' },
     { id: 'LINKEDIN_500', name: 'LinkedIn 500', description: 'InMail / mensagem direta (até 600 chars)', icon: '📨' },
     { id: 'EMAIL_T3',     name: 'E-mail',       description: 'Corpo de e-mail de prospecção', icon: '✉️' },
   ]

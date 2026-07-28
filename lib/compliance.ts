@@ -112,14 +112,14 @@ const COPY_RULES: CopyRule[] = [
   },
   {
     id: 'linkedin_250_limit',
-    description: 'Limite LinkedIn 250',
+    description: 'Limite LinkedIn T1 (200 chars)',
     check: (text, channel) => {
       if (channel !== 'LINKEDIN_250') return null
-      if (text.length <= 300) return null
+      if (text.length <= 200) return null
       return {
         pass: false,
         severity: 'critical',
-        message: `Mensagem com ${text.length} caracteres — LinkedIn connection request tem limite de 300 caracteres`,
+        message: `Mensagem com ${text.length} caracteres — LinkedIn connection request tem limite de 200 caracteres`,
       }
     },
   },

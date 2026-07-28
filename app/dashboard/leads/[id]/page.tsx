@@ -55,7 +55,7 @@ const toneLabels: Record<string, string> = {
 }
 
 const touchTypeLabels: Record<string, string> = {
-  LINKEDIN_250: 'LinkedIn (250 chars)',
+  LINKEDIN_250: 'LinkedIn (200 chars)',
   LINKEDIN_500: 'LinkedIn (500 chars)',
   EMAIL_T3: 'E-mail T3',
   EMAIL_T4: 'E-mail T4',

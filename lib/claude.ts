@@ -62,11 +62,11 @@ ${profileSection}${companyContextSection}**Tom:** ${toneDescriptions[tone]}
 
 Gere exatamente 5 touches na ordem e formato abaixo:
 
-**T1: Mensagem LinkedIn (máx. 250 caracteres)**
+**T1: Mensagem LinkedIn (máx. 200 caracteres — limite atual do LinkedIn para convite de conexão)**
 Type: LINKEDIN_250
 Channel: LINKEDIN
 Subject: [Título/assunto do InMail, máx. 40 caracteres]
-Content: [Mensagem curta no LinkedIn para iniciar uma conversa. Máx. 250 caracteres.]
+Content: [Mensagem curta no LinkedIn para iniciar uma conversa. IMPORTANTE: máximo 200 caracteres — mire em ~180 para ter margem de segurança.]
 
 **T2: Mensagem LinkedIn (máx. 500 caracteres)**
 Type: LINKEDIN_500
@@ -164,7 +164,7 @@ function parseCadenciaResponse(text: string): GeneratedTouch[] {
 
     // Per-type content limits
     const maxByType: Record<string, number> = {
-      LINKEDIN_250: 300,
+      LINKEDIN_250: 200, // limite atual do LinkedIn para nota de convite
       LINKEDIN_500: 600,
     }
     const maxContent = maxByType[type] ?? 2000

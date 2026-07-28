@@ -167,7 +167,7 @@ enum CadenciaStatus {
 }
 
 enum TouchType {
-  LINKEDIN_250  // T1: LinkedIn 250 chars
+  LINKEDIN_250  // T1: LinkedIn — limite atual 200 chars (nome do enum mantido por compatibilidade)
   LINKEDIN_500  // T2: LinkedIn 500 chars
   EMAIL_T3      // T3: Email
   EMAIL_T4      // T4: Email
