@@ -5,6 +5,9 @@ import { generateCadencia } from '@/lib/claude'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+// Espaçamento (dias corridos a partir de hoje) de cada touch da cadência.
+const TOUCH_OFFSET_DAYS: Record<number, number> = { 1: 0, 2: 4, 3: 7, 4: 11, 5: 15 }
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -63,8 +66,12 @@ export async function POST(
 
     // Create touches in database
     const createdTouches = await Promise.all(
-      generatedTouches.map((touch) =>
-        prisma.touch.create({
+      generatedTouches.map((touch) => {
+        const offsetDays = TOUCH_OFFSET_DAYS[touch.sequence] ?? 0
+        const scheduledFor = new Date()
+        scheduledFor.setDate(scheduledFor.getDate() + offsetDays)
+
+        return prisma.touch.create({
           data: {
             cadenciaId: params.id,
             leadId: cadencia.leadId,
@@ -74,9 +81,10 @@ export async function POST(
             content: touch.content,
             subject: touch.subject,
             status: 'AGENDADO',
+            scheduledFor,
           },
         })
-      )
+      })
     )
 
     // Update cadencia status to PRONTO

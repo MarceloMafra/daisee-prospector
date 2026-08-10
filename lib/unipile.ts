@@ -19,6 +19,17 @@ export function isUnipileConfigured() {
   )
 }
 
+async function parseErrorDetail(response: Response) {
+  let detail = ''
+  try {
+    const body = await response.json()
+    detail = body?.title || body?.type || body?.message || ''
+  } catch {
+    // corpo não-JSON — mantém detail vazio
+  }
+  return detail
+}
+
 async function unipileGet(path: string) {
   const baseUrl = (process.env.UNIPILE_BASE_URL || '').replace(/\/$/, '')
   const response = await fetch(`${baseUrl}${path}`, {
@@ -30,13 +41,61 @@ async function unipileGet(path: string) {
   })
 
   if (!response.ok) {
-    let detail = ''
-    try {
-      const body = await response.json()
-      detail = body?.title || body?.type || ''
-    } catch {
-      // corpo não-JSON — mantém detail vazio
-    }
+    const detail = await parseErrorDetail(response)
+    throw new UnipileError(
+      `Unipile respondeu ${response.status}${detail ? `: ${detail}` : ''}`,
+      response.status
+    )
+  }
+
+  return response.json()
+}
+
+// POST JSON — usado para ações de envio (convite, DM).
+async function unipilePost(path: string, body: unknown) {
+  const baseUrl = (process.env.UNIPILE_BASE_URL || '').replace(/\/$/, '')
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      'X-API-KEY': process.env.UNIPILE_API_KEY || '',
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    const detail = await parseErrorDetail(response)
+    throw new UnipileError(
+      `Unipile respondeu ${response.status}${detail ? `: ${detail}` : ''}`,
+      response.status
+    )
+  }
+
+  return response.json()
+}
+
+// POST multipart/form-data — exigido pelo endpoint de e-mail da Unipile.
+async function unipilePostForm(path: string, fields: Record<string, string>) {
+  const baseUrl = (process.env.UNIPILE_BASE_URL || '').replace(/\/$/, '')
+  const form = new FormData()
+  for (const [key, value] of Object.entries(fields)) {
+    form.append(key, value)
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      'X-API-KEY': process.env.UNIPILE_API_KEY || '',
+      Accept: 'application/json',
+    },
+    body: form,
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    const detail = await parseErrorDetail(response)
     throw new UnipileError(
       `Unipile respondeu ${response.status}${detail ? `: ${detail}` : ''}`,
       response.status
@@ -188,6 +247,92 @@ export function buildCompanyContext(company: UnipileCompany): string {
   }
 
   return lines.join('\n').trim()
+}
+
+// ── Envio: convite, DM, checagem de conexão, e-mail ─────────────────────────
+
+export interface SendConnectionRequestParams {
+  providerId: string
+  message?: string
+  email?: string
+}
+
+export interface UnipileInvitationSent {
+  object?: string
+  invitation_id?: string
+}
+
+// POST /users/invite — convite de conexão (T1). Nota da Unipile: até 300 caracteres.
+export async function sendConnectionRequest(
+  params: SendConnectionRequestParams
+): Promise<UnipileInvitationSent> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  return unipilePost('/users/invite', {
+    account_id: accountId,
+    provider_id: params.providerId,
+    ...(params.message ? { message: params.message } : {}),
+    ...(params.email ? { user_email: params.email } : {}),
+  })
+}
+
+export interface SendLinkedInDMParams {
+  providerId: string
+  text: string
+}
+
+export interface UnipileChatStarted {
+  object?: string
+  chat_id?: string
+  message_id?: string
+}
+
+// POST /chats — mensagem direta para conexão de 1º grau (T2). Requer aceite prévio do convite.
+export async function sendLinkedInDM(params: SendLinkedInDMParams): Promise<UnipileChatStarted> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  return unipilePost('/chats', {
+    account_id: accountId,
+    attendees_ids: [params.providerId],
+    text: params.text,
+  })
+}
+
+interface UnipileRelation {
+  member_id?: string // campo documentado pela Unipile para /users/relations
+  provider_id?: string // fallback, caso a API também exponha esse campo na prática
+}
+
+// GET /users/relations — usado para detectar aceite de convite (polling; a Unipile
+// não garante webhook em tempo real para isso — pode atrasar até 8h).
+export async function checkConnectionAccepted(providerId: string): Promise<boolean> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const query = new URLSearchParams({ account_id: accountId })
+  const data = await unipileGet(`/users/relations?${query.toString()}`)
+  const relations: UnipileRelation[] = data?.items || []
+  return relations.some((r) => r.member_id === providerId || r.provider_id === providerId)
+}
+
+export interface SendEmailParams {
+  to: string
+  subject?: string
+  body: string
+}
+
+export interface UnipileEmailSent {
+  object?: string
+  tracking_id?: string
+  provider_id?: string
+}
+
+// POST /emails (multipart/form-data) — e-mail T3-T5, via conta configurada em UNIPILE_EMAIL_ACCOUNT_ID.
+// "to" vai como array JSON stringificado no campo do form (formato confirmado na doc oficial).
+export async function sendEmail(params: SendEmailParams): Promise<UnipileEmailSent> {
+  const accountId = process.env.UNIPILE_EMAIL_ACCOUNT_ID || ''
+  return unipilePostForm('/emails', {
+    account_id: accountId,
+    to: JSON.stringify([{ identifier: params.to }]),
+    ...(params.subject ? { subject: params.subject } : {}),
+    body: params.body,
+  })
 }
 
 export interface UnipilePost {

@@ -42,6 +42,8 @@ model Lead {
   profileText   String?      @db.Text
   linkedinUrl   String?
   linkedinProviderId String? @db.VarChar(255) // ID interno do LinkedIn (casa respostas de DM com o lead)
+  linkedinConnectedAt DateTime? // Quando o polling confirmou aceite do convite (libera envio de T2/DM)
+  excludedFromAutomation Boolean @default(false) // Lead já trabalhado manualmente — scheduler não dispara touches dele
 
   // Relationships
   cadencia      Cadencia?
@@ -89,6 +91,8 @@ model Touch {
   status     TouchStatus @default(AGENDADO)
   sentAt     DateTime?
   scheduledFor DateTime?
+  errorMessage String? @db.Text // Motivo quando status = FALHOU
+  providerRef  String? @db.VarChar(255) // invitation_id / chat_id / tracking_id retornado pela Unipile
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
