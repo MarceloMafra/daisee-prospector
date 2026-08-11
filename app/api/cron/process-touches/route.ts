@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processScheduledTouches } from '@/lib/scheduler'
+import { processAutoPipeline } from '@/lib/autoPipeline'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -15,15 +16,20 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const dryRun = process.env.AUTO_SEND_ENABLED !== 'true'
+  const pipelineDryRun = process.env.AUTO_PIPELINE_ENABLED !== 'true'
+  const sendDryRun = process.env.AUTO_SEND_ENABLED !== 'true'
 
   try {
-    const result = await processScheduledTouches({ dryRun })
-    console.log('[scheduler] resultado:', JSON.stringify(result))
-    return NextResponse.json(result, { status: 200 })
+    const pipeline = await processAutoPipeline({ dryRun: pipelineDryRun })
+    console.log('[autoPipeline] resultado:', JSON.stringify(pipeline))
+
+    const scheduler = await processScheduledTouches({ dryRun: sendDryRun })
+    console.log('[scheduler] resultado:', JSON.stringify(scheduler))
+
+    return NextResponse.json({ pipeline, scheduler }, { status: 200 })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
-    console.error('Falha no scheduler de touches:', msg)
-    return NextResponse.json({ error: `Falha no scheduler: ${msg}` }, { status: 500 })
+    console.error('Falha no cron de automação:', msg)
+    return NextResponse.json({ error: `Falha no cron: ${msg}` }, { status: 500 })
   }
 }
