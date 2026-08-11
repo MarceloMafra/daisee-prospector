@@ -14,6 +14,7 @@ interface Lead {
   company: string
   daiseeScore: number
   status: string
+  excludedFromAutomation: boolean
   createdAt: string
 }
 
@@ -33,6 +34,7 @@ export default function LeadsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkAutomationUpdating, setBulkAutomationUpdating] = useState(false)
   const [recalculating, setRecalculating] = useState(false)
   const [recalcMsg, setRecalcMsg] = useState('')
   const [pageSize, setPageSize] = useState(25)
@@ -139,6 +141,28 @@ export default function LeadsPage() {
     }
   }
 
+  const handleBulkAutomationToggle = async (excluded: boolean) => {
+    setBulkAutomationUpdating(true)
+    const ids = Array.from(selected)
+    try {
+      await Promise.all(
+        ids.map(id =>
+          fetch(`/api/leads/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ excludedFromAutomation: excluded }),
+          })
+        )
+      )
+      setLeads(prev => prev.map(l => (selected.has(l.id) ? { ...l, excludedFromAutomation: excluded } : l)))
+      setSelected(new Set())
+    } catch (error) {
+      console.error('Falha ao atualizar automação dos leads:', error)
+    } finally {
+      setBulkAutomationUpdating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,15 +175,33 @@ export default function LeadsPage() {
         </div>
         <div className="flex gap-2 items-center">
           {someSelected && (
-            <Button
-              variant="outline"
-              onClick={handleBulkDelete}
-              disabled={bulkDeleting}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {bulkDeleting ? 'Excluindo...' : `Excluir ${selected.size} selecionado(s)`}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkAutomationToggle(false)}
+                disabled={bulkAutomationUpdating}
+                className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+              >
+                {bulkAutomationUpdating ? 'Atualizando...' : `Incluir ${selected.size} na automação`}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleBulkAutomationToggle(true)}
+                disabled={bulkAutomationUpdating}
+                className="text-gray-600 hover:text-gray-700 hover:bg-gray-50 border-gray-300"
+              >
+                {bulkAutomationUpdating ? 'Atualizando...' : `Excluir ${selected.size} da automação`}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {bulkDeleting ? 'Excluindo...' : `Excluir ${selected.size} selecionado(s)`}
+              </Button>
+            </>
           )}
           <div className="flex items-center gap-2">
             {recalcMsg && (
@@ -283,6 +325,7 @@ export default function LeadsPage() {
                     <th className="text-left px-4 py-3 font-semibold text-sm">Empresa</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Score</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold text-sm">Automação</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Ações</th>
                   </tr>
                 </thead>
@@ -318,6 +361,15 @@ export default function LeadsPage() {
                       <td className="px-4 py-3">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {statusLabels[lead.status] || lead.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          lead.excludedFromAutomation
+                            ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                        }`}>
+                          {lead.excludedFromAutomation ? 'Excluído' : 'Ativo'}
                         </span>
                       </td>
                       <td className="px-4 py-3">

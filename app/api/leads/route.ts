@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         daiseeScore: true,
         status: true,
         priority: true,
+        excludedFromAutomation: true,
         createdAt: true,
         updatedAt: true,
       },

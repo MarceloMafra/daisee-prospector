@@ -35,6 +35,7 @@ interface Lead {
   daiseeScore: number
   status: string
   priority: string
+  excludedFromAutomation: boolean
   linkedinUrl?: string
   profileText?: string
   profileUrl?: string
@@ -163,6 +164,7 @@ export default function LeadDetailPage() {
   const [notesInput, setNotesInput] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
   const [updatingTouchId, setUpdatingTouchId] = useState<string | null>(null)
+  const [togglingAutomation, setTogglingAutomation] = useState(false)
   const [editingCompanyContext, setEditingCompanyContext] = useState(false)
   const [companyContextInput, setCompanyContextInput] = useState('')
   const [savingCompanyContext, setSavingCompanyContext] = useState(false)
@@ -414,6 +416,23 @@ export default function LeadDetailPage() {
       setError('Falha ao atualizar status do touch')
     } finally {
       setUpdatingTouchId(null)
+    }
+  }
+
+  const handleToggleAutomation = async () => {
+    if (!lead) return
+    setTogglingAutomation(true)
+    try {
+      await fetch(`/api/leads/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ excludedFromAutomation: !lead.excludedFromAutomation }),
+      })
+      await fetchLead()
+    } catch {
+      setError('Falha ao atualizar automação')
+    } finally {
+      setTogglingAutomation(false)
     }
   }
 
@@ -826,6 +845,21 @@ export default function LeadDetailPage() {
                 <span className={`font-medium ${lead.priority === 'ALTA' ? 'text-green-600' : lead.priority === 'MEDIA' ? 'text-yellow-600' : 'text-gray-500'}`}>
                   {lead.priority}
                 </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Automação</span>
+                <button
+                  onClick={handleToggleAutomation}
+                  disabled={togglingAutomation}
+                  className={`text-xs px-3 py-1 rounded-full font-medium disabled:opacity-50 ${
+                    lead.excludedFromAutomation
+                      ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                      : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                  }`}
+                  title="Clique para alternar se este lead entra no envio automático"
+                >
+                  {togglingAutomation ? 'Salvando...' : lead.excludedFromAutomation ? 'Excluído' : 'Ativo'}
+                </button>
               </div>
 
               <hr className="dark:border-gray-700" />
