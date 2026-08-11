@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
-export function middleware(request: NextRequest) {
+const PUBLIC_PATHS = ['/login', '/api/auth', '/api/webhooks', '/api/cron']
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Log all API requests
   if (pathname.startsWith('/api/')) {
     console.log(`[API] ${request.method} ${pathname}`)
+  }
+
+  if (!isPublicPath(pathname)) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+
+    if (!token) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+      }
+      const loginUrl = new URL('/login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   // Set response headers

@@ -1,11 +1,13 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Moon, Sun, User } from 'lucide-react'
+import { useSession, signOut } from 'next-auth/react'
+import { Moon, Sun, User, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function Header() {
   const { theme, setTheme } = useTheme()
+  const { data: session } = useSession()
 
   return (
     <header className="bg-card sticky top-0 z-40">
@@ -27,9 +29,22 @@ export function Header() {
           </Button>
 
           {/* User Profile */}
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <User className="w-5 h-5" />
-          </Button>
+          {session?.user && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">{session.user.name}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Sair"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>
