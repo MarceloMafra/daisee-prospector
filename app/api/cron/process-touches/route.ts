@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await processScheduledTouches({ dryRun })
+    console.log('[scheduler] resultado:', JSON.stringify(result))
     return NextResponse.json(result, { status: 200 })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
