@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles } from 'lucide-react'
+import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles, Rocket, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Lead {
@@ -38,6 +38,10 @@ export default function LeadsPage() {
   const [bulkPreparing, setBulkPreparing] = useState(false)
   const [bulkPrepareProgress, setBulkPrepareProgress] = useState({ done: 0, total: 0 })
   const [bulkPrepareSummary, setBulkPrepareSummary] = useState('')
+  const [bulkSending, setBulkSending] = useState(false)
+  const [bulkSendProgress, setBulkSendProgress] = useState({ done: 0, total: 0, waitingLabel: '' })
+  const [bulkSendSummary, setBulkSendSummary] = useState('')
+  const bulkSendCancelRef = useRef(false)
   const [recalculating, setRecalculating] = useState(false)
   const [recalcMsg, setRecalcMsg] = useState('')
   const [pageSize, setPageSize] = useState(25)
@@ -220,6 +224,93 @@ export default function LeadsPage() {
     }
   }
 
+  // Aguarda ms milissegundos, atualizando onTick a cada segundo — interrompe cedo se
+  // bulkSendCancelRef for sinalizado (botão Cancelar do lote de disparo).
+  const sleepCancellable = async (ms: number, onTick: (remainingMs: number) => void) => {
+    let elapsed = 0
+    const step = 1000
+    while (elapsed < ms) {
+      if (bulkSendCancelRef.current) return
+      const chunk = Math.min(step, ms - elapsed)
+      await new Promise(resolve => setTimeout(resolve, chunk))
+      elapsed += chunk
+      onTick(Math.max(0, ms - elapsed))
+    }
+  }
+
+  const handleBulkSend = async () => {
+    const ids = Array.from(selected)
+    if (
+      !confirm(
+        `Isso vai disparar de verdade o próximo touch pendente de ${ids.length} lead(s) selecionado(s) — convite/mensagem real no LinkedIn (ou e-mail, se for a vez do touch de e-mail).\n\nEnvio um de cada vez, com intervalo aleatório de 30 a 90 segundos entre cada. Mantenha esta aba aberta até terminar — se fechar ou navegar pra outra página, o processo para.\n\nConfirmar?`
+      )
+    )
+      return
+
+    bulkSendCancelRef.current = false
+    setBulkSending(true)
+    setBulkSendSummary('')
+    setBulkSendProgress({ done: 0, total: ids.length, waitingLabel: '' })
+
+    const results: Array<{ id: string; name: string; outcome: string; reason?: string }> = []
+    let rateLimited = false
+
+    for (let i = 0; i < ids.length; i++) {
+      if (bulkSendCancelRef.current) break
+      const id = ids[i]
+      const name = leads.find(l => l.id === id)?.name || id
+
+      try {
+        const leadRes = await fetch(`/api/leads/${id}`)
+        const leadData: { cadencia?: { touches?: Array<{ id: string; status: string }> } } = await leadRes.json()
+        const nextTouch = leadData.cadencia?.touches?.find(t => t.status === 'AGENDADO')
+
+        if (!nextTouch) {
+          results.push({ id, name, outcome: 'pulado', reason: 'Sem touch pendente (cadência ausente ou já concluída).' })
+        } else {
+          const sendRes = await fetch(`/api/touches/${nextTouch.id}/send`, { method: 'POST' })
+          const sendData = await sendRes.json()
+          if (sendRes.status === 429) {
+            rateLimited = true
+            results.push({ id, name, outcome: 'pulado', reason: sendData.error })
+          } else if (!sendRes.ok) {
+            results.push({ id, name, outcome: 'falhou', reason: sendData.error })
+          } else {
+            results.push({ id, name, outcome: sendData.outcome, reason: sendData.reason })
+          }
+        }
+      } catch (err) {
+        results.push({ id, name, outcome: 'falhou', reason: err instanceof Error ? err.message : 'Erro desconhecido' })
+      }
+
+      setBulkSendProgress(prev => ({ ...prev, done: prev.done + 1 }))
+
+      if (rateLimited || bulkSendCancelRef.current || i === ids.length - 1) continue
+
+      const waitMs = (30 + Math.random() * 60) * 1000
+      await sleepCancellable(waitMs, remainingMs => {
+        setBulkSendProgress(prev => ({ ...prev, waitingLabel: `Aguardando ${Math.ceil(remainingMs / 1000)}s pro próximo...` }))
+      })
+      setBulkSendProgress(prev => ({ ...prev, waitingLabel: '' }))
+    }
+
+    const sent = results.filter(r => r.outcome === 'enviado').length
+    const skipped = results.filter(r => r.outcome === 'pulado')
+    const failed = results.filter(r => r.outcome === 'falhou')
+    let summary = `${sent}/${ids.length} enviados com sucesso.`
+    if (bulkSendCancelRef.current) summary += ' Cancelado pelo usuário.'
+    if (rateLimited) summary += ' Parado por limite de ritmo atingido — tente novamente mais tarde.'
+    if (skipped.length) summary += ` ${skipped.length} pulados: ` + skipped.map(s => `${s.name} (${s.reason})`).join('; ')
+    if (failed.length) summary += ` ${failed.length} falharam: ` + failed.map(f => `${f.name} (${f.reason})`).join('; ')
+    setBulkSendSummary(summary)
+    setBulkSending(false)
+    setSelected(new Set())
+  }
+
+  const handleCancelBulkSend = () => {
+    bulkSendCancelRef.current = true
+  }
+
   const handleBulkAutomationToggle = async (excluded: boolean) => {
     setBulkAutomationUpdating(true)
     const ids = Array.from(selected)
@@ -266,6 +357,26 @@ export default function LeadsPage() {
                   ? `Processando ${bulkPrepareProgress.done}/${bulkPrepareProgress.total}...`
                   : `Enriquecer + Gerar Cadência (${selected.size})`}
               </Button>
+              {bulkSending ? (
+                <Button
+                  variant="outline"
+                  onClick={handleCancelBulkSend}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancelar envio ({bulkSendProgress.done}/{bulkSendProgress.total}{bulkSendProgress.waitingLabel ? ` · ${bulkSendProgress.waitingLabel}` : ''})
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={handleBulkSend}
+                  disabled={bulkPreparing}
+                  className="text-sky-700 hover:text-sky-800 hover:bg-sky-50 border-sky-300"
+                >
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Disparar próximo touch ({selected.size})
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => handleBulkAutomationToggle(false)}
@@ -319,6 +430,12 @@ export default function LeadsPage() {
       {bulkPrepareSummary && (
         <div className="text-sm text-purple-800 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg px-4 py-3">
           {bulkPrepareSummary}
+        </div>
+      )}
+
+      {bulkSendSummary && (
+        <div className="text-sm text-sky-800 dark:text-sky-200 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg px-4 py-3">
+          {bulkSendSummary}
         </div>
       )}
 

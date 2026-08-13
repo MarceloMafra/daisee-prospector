@@ -105,6 +105,15 @@ async function markSent(touch: Touch, providerRef?: string) {
   await logAudit(touch.leadId, 'TOUCH_ENVIADO', `T${touch.sequence} (${touch.type}) enviado com sucesso.`)
 }
 
+export class SchedulerError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'SchedulerError'
+    this.status = status
+  }
+}
+
 async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<ActionResult> {
   const base = { touchId: touch.id, leadId: touch.leadId, sequence: touch.sequence, type: touch.type }
 
@@ -197,6 +206,44 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
     await markFailed(touch, reason)
     return { ...base, outcome: 'falhou', reason }
   }
+}
+
+// Disparo manual de um único touch (botão "Enviar agora" na UI, individual ou em lote
+// a partir da tela de Leads). Sempre real (nunca dry-run) — o clique já é a confirmação
+// do usuário — mas respeita o mesmo limite de ritmo (rate limit) do scheduler automático,
+// pra não estourar a cota semanal/diária da conta do LinkedIn só porque foi manual.
+export async function sendTouchNow(touchId: string): Promise<ActionResult> {
+  const touch = (await prisma.touch.findUnique({
+    where: { id: touchId },
+    include: { lead: true },
+  })) as TouchWithLead | null
+
+  if (!touch) {
+    throw new SchedulerError('Touch não encontrado.', 404)
+  }
+  if (SENT_STATUSES.includes(touch.status as typeof SENT_STATUSES[number])) {
+    throw new SchedulerError('Este touch já foi enviado.', 409)
+  }
+
+  const limits = getRateLimits()
+  const now = new Date()
+  const quotaKey = touch.type === 'LINKEDIN_250' ? 'LINKEDIN_250' : touch.type === 'LINKEDIN_500' ? 'LINKEDIN_500' : 'EMAIL'
+
+  const [used, limit] =
+    quotaKey === 'LINKEDIN_250'
+      ? [await countSentSince(['LINKEDIN_250'], startOfWeek(now)), limits.invitesPerWeek]
+      : quotaKey === 'LINKEDIN_500'
+        ? [await countSentSince(['LINKEDIN_500'], startOfDay(now)), limits.messagesPerDay]
+        : [await countSentSince(['EMAIL_T3', 'EMAIL_T4', 'EMAIL_T5'], startOfDay(now)), limits.emailsPerDay]
+
+  if (used >= limit) {
+    throw new SchedulerError(
+      `Limite de ritmo atingido para este canal (${used}/${limit}). Tente novamente mais tarde.`,
+      429
+    )
+  }
+
+  return processTouch(touch, false)
 }
 
 export async function processScheduledTouches({ dryRun }: { dryRun: boolean }): Promise<SchedulerResult> {

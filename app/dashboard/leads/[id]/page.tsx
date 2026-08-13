@@ -182,6 +182,8 @@ export default function LeadDetailPage() {
   const [savingSeniority, setSavingSeniority] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [enriching, setEnriching] = useState(false)
+  const [sendingTouchId, setSendingTouchId] = useState<string | null>(null)
+  const [sendResult, setSendResult] = useState<Record<string, string>>({})
 
   const handleValidateTouch = async (touch: Touch) => {
     setValidatingId(touch.id)
@@ -197,6 +199,27 @@ export default function LeadDetailPage() {
       // ignore
     } finally {
       setValidatingId(null)
+    }
+  }
+
+  const handleSendTouch = async (touch: Touch) => {
+    const actionLabel = touch.type === 'LINKEDIN_250' ? 'o convite de conexão' : 'a mensagem'
+    if (!confirm(`Isso vai enviar ${actionLabel} de verdade no LinkedIn agora, pro lead "${lead?.name}". Confirmar?`)) return
+    setSendingTouchId(touch.id)
+    try {
+      const res = await fetch(`/api/touches/${touch.id}/send`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Falha ao enviar')
+      const label =
+        data.outcome === 'enviado' ? 'Enviado com sucesso.' :
+        data.outcome === 'pulado' ? `Não enviado: ${data.reason}` :
+        `Falhou: ${data.reason}`
+      setSendResult(prev => ({ ...prev, [touch.id]: label }))
+      await fetchLead()
+    } catch (err) {
+      setSendResult(prev => ({ ...prev, [touch.id]: err instanceof Error ? err.message : 'Erro ao enviar' }))
+    } finally {
+      setSendingTouchId(null)
     }
   }
 
@@ -1201,8 +1224,21 @@ export default function LeadDetailPage() {
                               Gmail
                             </a>
                           )}
+                          {touch.channel === 'LINKEDIN' && (touch.status === 'AGENDADO' || touch.status === 'FALHOU') && (
+                            <button
+                              onClick={() => handleSendTouch(touch)}
+                              disabled={sendingTouchId === touch.id}
+                              className="flex items-center gap-1 text-xs px-2 py-1 border border-sky-300 text-sky-700 dark:text-sky-400 rounded hover:bg-sky-50 dark:hover:bg-sky-900/20 disabled:opacity-50 transition-colors"
+                            >
+                              <Send className="w-3 h-3" />
+                              {sendingTouchId === touch.id ? 'Enviando...' : 'Enviar agora'}
+                            </button>
+                          )}
                         </div>
                       </div>
+                      {sendResult[touch.id] && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{sendResult[touch.id]}</p>
+                      )}
                       {touch.subject && (
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
                           Assunto: {touch.subject}
