@@ -126,7 +126,7 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
       const result = await sendConnectionRequest({
         providerId: touch.lead.linkedinProviderId,
         message: touch.content,
-        email: touch.lead.email,
+        email: touch.lead.email ?? undefined,
       })
       await markSent(touch, result.invitation_id)
       return { ...base, outcome: 'enviado' }
@@ -177,6 +177,12 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
   }
 
   // EMAIL_T3 / EMAIL_T4 / EMAIL_T5
+  if (!touch.lead.email) {
+    const reason = 'Lead sem e-mail cadastrado — não é possível enviar touch de e-mail.'
+    if (!dryRun) await markFailed(touch, reason)
+    return { ...base, outcome: dryRun ? 'simulado' : 'falhou', reason }
+  }
+
   if (dryRun) return { ...base, outcome: 'simulado', reason: `Enviaria e-mail para ${touch.lead.email}.` }
   try {
     const result = await sendEmail({

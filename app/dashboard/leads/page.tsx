@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 interface Lead {
   id: string
   name: string
-  email: string
+  email: string | null
   company: string
   daiseeScore: number
   status: string
@@ -87,7 +87,7 @@ export default function LeadsPage() {
   const filteredLeads = leads.filter(
     (lead) =>
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       lead.company.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -345,7 +345,7 @@ export default function LeadsPage() {
                           {lead.name}
                         </a>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.email || '—'}</td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{lead.company}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${

@@ -29,7 +29,7 @@ interface Cadencia {
 interface Lead {
   id: string
   name: string
-  email: string
+  email: string | null
   company: string
   seniority: string
   daiseeScore: number
@@ -117,7 +117,7 @@ const buildCadenciaPrintHtml = (lead: Lead) => {
     <div class="grid">
       <div class="field"><span class="label">Empresa</span>${escapeHtml(lead.company)}</div>
       <div class="field"><span class="label">Cargo</span>${escapeHtml(lead.seniority)}</div>
-      <div class="field"><span class="label">E-mail</span>${escapeHtml(lead.email)}</div>
+      <div class="field"><span class="label">E-mail</span>${escapeHtml(lead.email || '-')}</div>
       <div class="field"><span class="label">Telefone/WhatsApp</span>${escapeHtml(lead.phone || '-')}</div>
       <div class="field"><span class="label">Status</span>${escapeHtml(lead.status)}</div>
       <div class="field"><span class="label">Prioridade</span>${escapeHtml(lead.priority)}</div>
@@ -623,9 +623,11 @@ export default function LeadDetailPage() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-gray-700 dark:text-gray-300 truncate">{lead.email}</span>
+                    <span className={`truncate ${lead.email ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 italic'}`}>
+                      {lead.email || 'Sem e-mail cadastrado'}
+                    </span>
                     <button
-                      onClick={() => { setEditingEmail(true); setEmailInput(lead.email) }}
+                      onClick={() => { setEditingEmail(true); setEmailInput(lead.email || '') }}
                       className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0"
                     >
                       Editar
@@ -1188,7 +1190,7 @@ export default function LeadDetailPage() {
                             <Shield className="w-3 h-3" />
                             {validatingId === touch.id ? 'Analisando...' : 'Qualidade'}
                           </button>
-                          {touch.channel === 'EMAIL' && (
+                          {touch.channel === 'EMAIL' && lead.email && (
                             <a
                               href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(lead.email)}&su=${encodeURIComponent(touch.subject || '')}&body=${encodeURIComponent(touch.content)}`}
                               target="_blank"

@@ -2,7 +2,7 @@ import { Anthropic } from '@anthropic-ai/sdk'
 
 interface LeadInfo {
   name: string
-  email: string
+  email?: string | null
   company: string
   seniority: string
   daiseeScore: number
@@ -55,8 +55,7 @@ ${lead.companyContext.substring(0, 2000)}
 - Nome: ${lead.name}
 - Empresa: ${lead.company}
 - Cargo: ${lead.seniority}
-- E-mail: ${lead.email}
-- Score DAISEE: ${lead.daiseeScore}/100
+${lead.email ? `- E-mail: ${lead.email}\n` : ''}- Score DAISEE: ${lead.daiseeScore}/100
 
 ${profileSection}${companyContextSection}**Tom:** ${toneDescriptions[tone]}
 

@@ -249,6 +249,77 @@ export function buildCompanyContext(company: UnipileCompany): string {
   return lines.join('\n').trim()
 }
 
+// ── Sales Navigator: busca por lista de leads salva ─────────────────────────
+
+export interface SalesNavCurrentPosition {
+  company?: string
+  company_id?: string
+  role?: string
+  location?: string
+  industry?: string[]
+}
+
+export interface SalesNavLeadListItem {
+  id?: string // provider_id — usado para convite/DM e como chave de deduplicação
+  name?: string
+  first_name?: string
+  last_name?: string
+  public_identifier?: string
+  public_profile_url?: string
+  profile_url?: string // URL no formato linkedin.com/sales/lead/...
+  location?: string
+  headline?: string
+  summary?: string
+  network_distance?: string
+  current_positions?: SalesNavCurrentPosition[]
+  recently_hired?: boolean
+}
+
+interface SalesNavSearchResponse {
+  object?: string
+  items?: SalesNavLeadListItem[]
+  cursor?: string | null
+  paging?: { start?: number; page_count?: number; total_count?: number }
+}
+
+// POST /linkedin/search — filtro lead_lists exige uma Sales Navigator saved list;
+// listId "ALL" busca em todas as listas salvas da conta.
+async function searchSalesNavLeadListPage(
+  listId: string,
+  opts: { limit?: number; cursor?: string } = {}
+): Promise<SalesNavSearchResponse> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const query = new URLSearchParams({ account_id: accountId, limit: String(opts.limit || 100) })
+  if (opts.cursor) query.set('cursor', opts.cursor)
+  return unipilePost(`/linkedin/search?${query.toString()}`, {
+    api: 'sales_navigator',
+    category: 'people',
+    lead_lists: { include: [listId] },
+  })
+}
+
+// Pagina automaticamente até esgotar o cursor (ou atingir maxItems, teto de segurança).
+export async function fetchAllSalesNavLeadListMembers(
+  listId: string,
+  maxItems = 500
+): Promise<SalesNavLeadListItem[]> {
+  const items: SalesNavLeadListItem[] = []
+  let cursor: string | undefined
+
+  do {
+    const page = await searchSalesNavLeadListPage(listId, { limit: 100, cursor })
+    items.push(...(page.items || []))
+    cursor = page.cursor || undefined
+  } while (cursor && items.length < maxItems)
+
+  return items
+}
+
+export function getSalesNavFullName(item: SalesNavLeadListItem): string | null {
+  const name = item.name || [item.first_name, item.last_name].filter(Boolean).join(' ').trim()
+  return name || null
+}
+
 // ── Envio: convite, DM, checagem de conexão, e-mail ─────────────────────────
 
 export interface SendConnectionRequestParams {
