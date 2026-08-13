@@ -12,7 +12,7 @@ import { validateMessage } from '@/lib/compliance'
 import type { Touch, Lead } from '@prisma/client'
 
 interface RateLimits {
-  invitesPerWeek: number
+  invitesPerDay: number
   messagesPerDay: number
   emailsPerDay: number
   maxActionsPerRun: number
@@ -20,7 +20,7 @@ interface RateLimits {
 
 function getRateLimits(): RateLimits {
   return {
-    invitesPerWeek: Number(process.env.LINKEDIN_INVITES_PER_WEEK || 15),
+    invitesPerDay: Number(process.env.LINKEDIN_INVITES_PER_DAY || 10),
     messagesPerDay: Number(process.env.LINKEDIN_MESSAGES_PER_DAY || 50),
     emailsPerDay: Number(process.env.EMAILS_PER_DAY || 100),
     maxActionsPerRun: Number(process.env.MAX_ACTIONS_PER_RUN || 5),
@@ -30,14 +30,6 @@ function getRateLimits(): RateLimits {
 function startOfDay(date: Date) {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
-  return d
-}
-
-function startOfWeek(date: Date) {
-  const d = startOfDay(date)
-  const day = d.getDay() // 0 = domingo
-  const diff = day === 0 ? 6 : day - 1 // segunda-feira como início da semana
-  d.setDate(d.getDate() - diff)
   return d
 }
 
@@ -211,7 +203,7 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
 // Disparo manual de um único touch (botão "Enviar agora" na UI, individual ou em lote
 // a partir da tela de Leads). Sempre real (nunca dry-run) — o clique já é a confirmação
 // do usuário — mas respeita o mesmo limite de ritmo (rate limit) do scheduler automático,
-// pra não estourar a cota semanal/diária da conta do LinkedIn só porque foi manual.
+// pra não estourar a cota diária da conta do LinkedIn só porque foi manual.
 export async function sendTouchNow(touchId: string): Promise<ActionResult> {
   const touch = (await prisma.touch.findUnique({
     where: { id: touchId },
@@ -231,7 +223,7 @@ export async function sendTouchNow(touchId: string): Promise<ActionResult> {
 
   const [used, limit] =
     quotaKey === 'LINKEDIN_250'
-      ? [await countSentSince(['LINKEDIN_250'], startOfWeek(now)), limits.invitesPerWeek]
+      ? [await countSentSince(['LINKEDIN_250'], startOfDay(now)), limits.invitesPerDay]
       : quotaKey === 'LINKEDIN_500'
         ? [await countSentSince(['LINKEDIN_500'], startOfDay(now)), limits.messagesPerDay]
         : [await countSentSince(['EMAIL_T3', 'EMAIL_T4', 'EMAIL_T5'], startOfDay(now)), limits.emailsPerDay]
@@ -251,13 +243,13 @@ export async function processScheduledTouches({ dryRun }: { dryRun: boolean }): 
   const limits = getRateLimits()
 
   const [invitesUsed, messagesUsed, emailsUsed] = await Promise.all([
-    countSentSince(['LINKEDIN_250'], startOfWeek(now)),
+    countSentSince(['LINKEDIN_250'], startOfDay(now)),
     countSentSince(['LINKEDIN_500'], startOfDay(now)),
     countSentSince(['EMAIL_T3', 'EMAIL_T4', 'EMAIL_T5'], startOfDay(now)),
   ])
 
   const quotas = {
-    invites: { used: invitesUsed, limit: limits.invitesPerWeek },
+    invites: { used: invitesUsed, limit: limits.invitesPerDay },
     messages: { used: messagesUsed, limit: limits.messagesPerDay },
     emails: { used: emailsUsed, limit: limits.emailsPerDay },
   }
