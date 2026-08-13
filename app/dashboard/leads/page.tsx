@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileText, Search, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Lead {
@@ -35,6 +35,9 @@ export default function LeadsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [bulkAutomationUpdating, setBulkAutomationUpdating] = useState(false)
+  const [bulkPreparing, setBulkPreparing] = useState(false)
+  const [bulkPrepareProgress, setBulkPrepareProgress] = useState({ done: 0, total: 0 })
+  const [bulkPrepareSummary, setBulkPrepareSummary] = useState('')
   const [recalculating, setRecalculating] = useState(false)
   const [recalcMsg, setRecalcMsg] = useState('')
   const [pageSize, setPageSize] = useState(25)
@@ -141,6 +144,82 @@ export default function LeadsPage() {
     }
   }
 
+  // Melhor esforço: tenta enriquecer via LinkedIn (pode falhar sem interromper o lote,
+  // já que a geração de cadência funciona mesmo sem perfil completo) e garante que
+  // exista uma cadência com os 5 touches gerados pra esse lead.
+  const enrichAndGenerateForLead = async (id: string, name: string): Promise<{ id: string; name: string; outcome: 'ok' | 'falhou'; reason?: string }> => {
+    try {
+      await fetch(`/api/leads/${id}/enrich`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }).catch(() => null)
+
+      let cadenciaId: string | undefined
+      const existing = await fetch(`/api/cadencias?leadId=${id}&limit=1`).then(r => (r.ok ? r.json() : null))
+      cadenciaId = existing?.cadencias?.[0]?.id
+
+      if (!cadenciaId) {
+        const cadRes = await fetch('/api/cadencias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leadId: id, tone: 'CONSULTIVO', name: `Cadência - ${name}` }),
+        })
+        if (!cadRes.ok) throw new Error('Falha ao criar cadência')
+        const cad = await cadRes.json()
+        cadenciaId = cad.id
+      }
+
+      const genRes = await fetch(`/api/cadencias/${cadenciaId}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tone: 'CONSULTIVO' }),
+      })
+      if (!genRes.ok) {
+        const errData = await genRes.json().catch(() => ({}))
+        throw new Error(errData.error || 'Falha ao gerar cadência')
+      }
+
+      return { id, name, outcome: 'ok' }
+    } catch (err) {
+      return { id, name, outcome: 'falhou', reason: err instanceof Error ? err.message : 'Erro desconhecido' }
+    }
+  }
+
+  const handleBulkEnrichAndGenerate = async () => {
+    const ids = Array.from(selected)
+    if (!confirm(`Enriquecer via LinkedIn e gerar cadência de IA pra ${ids.length} lead(s)?\n\nOs leads são processados um de cada vez (evita sobrecarregar a Unipile), então isso pode levar alguns minutos.`)) return
+
+    setBulkPreparing(true)
+    setBulkPrepareSummary('')
+    setBulkPrepareProgress({ done: 0, total: ids.length })
+
+    const results: Array<{ id: string; name: string; outcome: 'ok' | 'falhou'; reason?: string }> = []
+    for (const id of ids) {
+      const lead = leads.find(l => l.id === id)
+      const result = await enrichAndGenerateForLead(id, lead?.name || id)
+      results.push(result)
+      setBulkPrepareProgress(prev => ({ ...prev, done: prev.done + 1 }))
+    }
+
+    const ok = results.filter(r => r.outcome === 'ok').length
+    const failed = results.filter(r => r.outcome === 'falhou')
+    let summary = `${ok}/${ids.length} cadências geradas com sucesso.`
+    if (failed.length > 0) {
+      summary += ` ${failed.length} falharam: ` + failed.map(f => `${f.name} (${f.reason})`).join('; ')
+    }
+    setBulkPrepareSummary(summary)
+    setBulkPreparing(false)
+    setSelected(new Set())
+
+    const response = await fetch(`/api/leads?limit=${pageSize}&page=${currentPage}`)
+    if (response.ok) {
+      const data = await response.json()
+      setLeads(data.leads || [])
+      setTotalLeads(data.pagination?.total || 0)
+    }
+  }
+
   const handleBulkAutomationToggle = async (excluded: boolean) => {
     setBulkAutomationUpdating(true)
     const ids = Array.from(selected)
@@ -176,6 +255,17 @@ export default function LeadsPage() {
         <div className="flex gap-2 items-center">
           {someSelected && (
             <>
+              <Button
+                variant="outline"
+                onClick={handleBulkEnrichAndGenerate}
+                disabled={bulkPreparing}
+                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {bulkPreparing
+                  ? `Processando ${bulkPrepareProgress.done}/${bulkPrepareProgress.total}...`
+                  : `Enriquecer + Gerar Cadência (${selected.size})`}
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => handleBulkAutomationToggle(false)}
@@ -225,6 +315,12 @@ export default function LeadsPage() {
           </Link>
         </div>
       </div>
+
+      {bulkPrepareSummary && (
+        <div className="text-sm text-purple-800 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg px-4 py-3">
+          {bulkPrepareSummary}
+        </div>
+      )}
 
       {/* Search */}
       <Card>
