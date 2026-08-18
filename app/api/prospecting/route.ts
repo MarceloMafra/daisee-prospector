@@ -16,6 +16,7 @@ export async function GET() {
         email: true,
         daiseeScore: true,
         status: true,
+        linkedinConnectedAt: true,
         cadencia: {
           select: {
             id: true,

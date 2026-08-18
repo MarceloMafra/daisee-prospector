@@ -9,6 +9,7 @@ import {
   sendEmail,
 } from '@/lib/unipile'
 import { validateMessage } from '@/lib/compliance'
+import { notifySdr } from '@/lib/notifySdr'
 import type { Touch, Lead } from '@prisma/client'
 
 interface RateLimits {
@@ -153,6 +154,14 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
           await prisma.lead.update({
             where: { id: touch.leadId },
             data: { linkedinConnectedAt: new Date() },
+          })
+          await notifySdr({
+            leadId: touch.leadId,
+            leadName: touch.lead.name,
+            company: touch.lead.company,
+            event: 'CONEXAO_ACEITA',
+            detail: 'Aceite detectado na hora do envio do T2 — a DM de follow-up está sendo enviada agora.',
+            linkedinUrl: touch.lead.linkedinUrl,
           })
         }
       } catch (error) {

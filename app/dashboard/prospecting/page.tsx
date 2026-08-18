@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Send, Linkedin, Mail, CheckCircle2, Clock, XCircle, MessageSquare } from 'lucide-react'
+import { Send, Linkedin, Mail, CheckCircle2, Clock, XCircle, MessageSquare, UserCheck } from 'lucide-react'
 
 interface Touch {
   id: string
@@ -27,6 +27,7 @@ interface Lead {
   email: string
   daiseeScore: number
   status: string
+  linkedinConnectedAt: string | null
   cadencia: Cadencia | null
 }
 
@@ -131,18 +132,21 @@ export default function ProspectingPage() {
     total: leads.length,
     agendado: allTouches.filter(t => t.status === 'AGENDADO').length,
     enviado: allTouches.filter(t => t.status === 'ENVIADO').length,
+    conectado: leads.filter(l => l.linkedinConnectedAt).length,
     respondido: allTouches.filter(t => t.status === 'RESPONDIDO').length,
   }
 
   const FILTERS = [
     { value: 'ALL', label: 'Todos' },
     { value: 'AGENDADO', label: 'Com pendências' },
+    { value: 'CONECTADO', label: 'Conexão aceita' },
     { value: 'RESPONDIDO', label: 'Com resposta' },
   ]
 
   const filtered = leads.filter(lead => {
     if (filter === 'ALL') return true
     if (filter === 'AGENDADO') return lead.cadencia?.touches.some(t => t.status === 'AGENDADO')
+    if (filter === 'CONECTADO') return Boolean(lead.linkedinConnectedAt)
     if (filter === 'RESPONDIDO') return lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO')
     return true
   })
@@ -157,7 +161,7 @@ export default function ProspectingPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Leads em cadência</p>
@@ -174,6 +178,12 @@ export default function ProspectingPage() {
           <CardContent className="pt-4">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Touches enviados</p>
             <p className="text-3xl font-bold text-blue-600 mt-1">{stats.enviado}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Conexões aceitas</p>
+            <p className="text-3xl font-bold text-emerald-600 mt-1">{stats.conectado}</p>
           </CardContent>
         </Card>
         <Card>
@@ -233,9 +243,20 @@ export default function ProspectingPage() {
                     return (
                       <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="py-4 pr-4">
-                          <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white hover:text-red-600 hover:underline text-sm">
-                            {lead.name}
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white hover:text-red-600 hover:underline text-sm">
+                              {lead.name}
+                            </a>
+                            {lead.linkedinConnectedAt && (
+                              <span
+                                title={`Conexão aceita em ${new Date(lead.linkedinConnectedAt).toLocaleDateString('pt-BR')}`}
+                                className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
+                              >
+                                <UserCheck className="w-3 h-3" />
+                                Conectado
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 mt-0.5">{lead.company}</p>
                         </td>
                         <td className="py-4 pr-4 hidden lg:table-cell">

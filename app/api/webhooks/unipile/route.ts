@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { notifySdr } from '@/lib/notifySdr'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -95,6 +96,15 @@ export async function POST(request: NextRequest) {
         detail: `Resposta recebida no LinkedIn de ${senderName}.${preview ? ` Mensagem: "${preview}"` : ''}`,
       })
 
+      await notifySdr({
+        leadId: lead.id,
+        leadName: lead.name,
+        company: lead.company,
+        event: 'RESPOSTA_LINKEDIN',
+        detail: preview ? `Mensagem: "${preview}"` : null,
+        linkedinUrl: lead.linkedinUrl,
+      })
+
       return NextResponse.json({ ok: true, matched: true, leadId: lead.id, touchUpdated: Boolean(touch) })
     }
 
@@ -121,6 +131,15 @@ export async function POST(request: NextRequest) {
         leadId: lead.id,
         channel: 'EMAIL',
         detail: `Resposta recebida por e-mail de ${fromEmail}. Assunto: "${subject}".`,
+      })
+
+      await notifySdr({
+        leadId: lead.id,
+        leadName: lead.name,
+        company: lead.company,
+        event: 'RESPOSTA_EMAIL',
+        detail: `Assunto: "${subject}"`,
+        linkedinUrl: lead.linkedinUrl,
       })
 
       return NextResponse.json({ ok: true, matched: true, leadId: lead.id, touchUpdated: Boolean(touch) })
