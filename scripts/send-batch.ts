@@ -49,9 +49,15 @@ async function main() {
 
     try {
       const result = await sendTouchNow(touch.id)
-      sent++
-      console.log(`${label}: T${touch.sequence} (${touch.type}) → ${result.outcome} ✔`)
-      results.push({ name: lead.name, outcome: 'enviado' })
+      // sendTouchNow devolve falha como outcome (não lança) — só conta envio real.
+      if (result.outcome === 'enviado') {
+        sent++
+        console.log(`${label}: T${touch.sequence} (${touch.type}) → enviado ✔`)
+        results.push({ name: lead.name, outcome: 'enviado' })
+      } else {
+        console.log(`${label}: T${touch.sequence} (${touch.type}) → ${result.outcome}${result.reason ? ` — ${result.reason}` : ''}`)
+        results.push({ name: lead.name, outcome: `${result.outcome}${result.reason ? `: ${result.reason}` : ''}` })
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.log(`${label}: FALHOU — ${msg}`)
