@@ -1,6 +1,7 @@
 {
   "buildCommand": "npx prisma generate && npx prisma db push && next build",
   "crons": [
-    { "path": "/api/cron/process-touches", "schedule": "0 13 * * *" }
+    { "path": "/api/cron/process-touches", "schedule": "0 13 * * *" },
+    { "path": "/api/cron/monitorar-interacoes", "schedule": "0 11,20 * * *" }
   ]
 }

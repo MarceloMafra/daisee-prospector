@@ -18,6 +18,9 @@ export async function GET(
             },
           },
         },
+        interacoes: {
+          orderBy: { recebidaEm: 'desc' },
+        },
       },
     })
 

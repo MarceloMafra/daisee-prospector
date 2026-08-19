@@ -382,6 +382,36 @@ export async function checkConnectionAccepted(providerId: string): Promise<boole
   return relations.some((r) => r.member_id === providerId || r.provider_id === providerId)
 }
 
+export interface UnipileChat {
+  id: string
+  attendee_provider_id?: string
+  timestamp?: string
+  unread_count?: number
+}
+
+export interface UnipileMessage {
+  id: string
+  text?: string
+  timestamp?: string
+  is_sender?: number // 1 = enviada por nós, 0 = recebida do lead
+  sender_id?: string
+}
+
+// GET /chats — conversas do inbox do LinkedIn, mais recentes primeiro.
+export async function listChats(limit = 40): Promise<UnipileChat[]> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const query = new URLSearchParams({ account_id: accountId, limit: String(limit) })
+  const data = await unipileGet(`/chats?${query.toString()}`)
+  return data?.items || []
+}
+
+// GET /chats/{id}/messages — histórico de uma conversa.
+export async function listChatMessages(chatId: string, limit = 25): Promise<UnipileMessage[]> {
+  const query = new URLSearchParams({ limit: String(limit) })
+  const data = await unipileGet(`/chats/${chatId}/messages?${query.toString()}`)
+  return data?.items || []
+}
+
 export interface SendEmailParams {
   to: string
   subject?: string

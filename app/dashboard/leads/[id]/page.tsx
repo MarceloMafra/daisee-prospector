@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2, Shield, AlertTriangle, Send, Phone, StickyNote } from 'lucide-react'
+import { ArrowLeft, Linkedin, Mail, Building2, User, Zap, MessageSquare, Upload, FileText, Trash2, CheckCircle2, Shield, AlertTriangle, Send, Phone, StickyNote, Copy, Inbox, Archive } from 'lucide-react'
 
 interface Touch {
   id: string
@@ -45,8 +45,18 @@ interface Lead {
   companySize: string
   segmentMatch: number
   cadencia?: Cadencia
+  interacoes?: Interacao[]
   createdAt: string
   updatedAt?: string
+}
+
+interface Interacao {
+  id: string
+  canal: string
+  mensagem: string
+  recebidaEm: string
+  sugestao?: string | null
+  status: string
 }
 
 const toneLabels: Record<string, string> = {
@@ -164,6 +174,7 @@ export default function LeadDetailPage() {
   const [notesInput, setNotesInput] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
   const [updatingTouchId, setUpdatingTouchId] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [togglingAutomation, setTogglingAutomation] = useState(false)
   const [editingCompanyContext, setEditingCompanyContext] = useState(false)
   const [companyContextInput, setCompanyContextInput] = useState('')
@@ -426,6 +437,19 @@ export default function LeadDetailPage() {
     }
   }
 
+  const handleInteracaoStatus = async (interacaoId: string, status: string) => {
+    try {
+      await fetch(`/api/interacoes/${interacaoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      await fetchLead()
+    } catch {
+      setError('Falha ao atualizar a interação')
+    }
+  }
+
   const handleTouchStatusChange = async (touchId: string, newStatus: string) => {
     setUpdatingTouchId(touchId)
     try {
@@ -615,6 +639,105 @@ export default function LeadDetailPage() {
           <p className="text-xs text-center text-gray-500 mt-1">DAISEE Score</p>
         </div>
       </div>
+
+      {/* Respostas do lead + sugestão da IA */}
+      {(lead.interacoes || []).filter((i) => i.status === 'NOVA').length > 0 && (
+        <Card className="border-green-400 dark:border-green-700 border-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Inbox className="w-4 h-4 text-green-600" />
+              Respostas aguardando você
+              <span className="text-xs font-normal bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded-full px-2 py-0.5">
+                {(lead.interacoes || []).filter((i) => i.status === 'NOVA').length}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(lead.interacoes || [])
+              .filter((i) => i.status === 'NOVA')
+              .map((interacao) => {
+                // A sugestão é gravada como "[TEMPERATURA] leitura\n\ntexto da réplica".
+                const match = interacao.sugestao?.match(/^\[(\w+)\]\s*([\s\S]*?)\n\n([\s\S]*)$/)
+                const temperatura = match?.[1] || ''
+                const leitura = match?.[2] || ''
+                const replica = match?.[3] || interacao.sugestao || ''
+                const tempColor =
+                  temperatura === 'QUENTE' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                  : temperatura === 'MORNO' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+                  : temperatura === 'NEGATIVO' ? 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'
+
+                return (
+                  <div key={interacao.id} className="rounded-lg border dark:border-gray-700 p-4 space-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-gray-500">
+                        {interacao.canal === 'LINKEDIN' ? 'LinkedIn' : 'E-mail'} ·{' '}
+                        {new Date(interacao.recebidaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                      {temperatura && (
+                        <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${tempColor}`}>{temperatura}</span>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-3 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                      {interacao.mensagem}
+                    </div>
+
+                    {leitura && <p className="text-xs text-gray-500 italic">{leitura}</p>}
+
+                    {replica && (
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3 space-y-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-green-700 dark:text-green-400">
+                          Sugestão de resposta
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{replica}</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(replica)
+                          setCopiedId(interacao.id)
+                          setTimeout(() => setCopiedId(null), 2000)
+                        }}
+                      >
+                        <Copy className="w-3.5 h-3.5 mr-1.5" />
+                        {copiedId === interacao.id ? 'Copiado!' : 'Copiar sugestão'}
+                      </Button>
+                      {lead.linkedinUrl && (
+                        <Button size="sm" variant="outline" asChild>
+                          <a href={lead.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                            <Linkedin className="w-3.5 h-3.5 mr-1.5" />
+                            Abrir conversa
+                          </a>
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleInteracaoStatus(interacao.id, 'RESPONDIDA')}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                        Já respondi
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleInteracaoStatus(interacao.id, 'ARQUIVADA')}
+                      >
+                        <Archive className="w-3.5 h-3.5 mr-1.5" />
+                        Arquivar
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lead Info */}

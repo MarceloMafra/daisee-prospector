@@ -125,6 +125,106 @@ Retorne APENAS os 5 touches no formato especificado acima, com os marcadores cla
   return touches
 }
 
+export interface SugestaoContexto {
+  lead: LeadInfo & { notes?: string | null }
+  touchesEnviados: Array<{ sequence: number; type: string; content: string }>
+  historicoConversa: Array<{ de: 'NOS' | 'LEAD'; texto: string }>
+  mensagemNova: string
+  recebidaEm?: Date | null // quando o lead escreveu — evita erro de "amanhã/hoje"
+}
+
+export interface SugestaoResposta {
+  leitura: string // como a IA interpretou a resposta do lead
+  temperatura: 'QUENTE' | 'MORNO' | 'FRIO' | 'NEGATIVO'
+  sugestao: string // a réplica pronta para o SDR revisar e enviar
+}
+
+// Lê a resposta de um lead no contexto da cadência já enviada e sugere a réplica.
+// Nunca envia nada — a saída é sempre revisada por uma pessoa antes de ir.
+export async function sugerirRespostaParaLead(ctx: SugestaoContexto): Promise<SugestaoResposta> {
+  const client = new Anthropic()
+
+  const perfil = ctx.lead.profileText
+    ? `PERFIL DO LEAD NO LINKEDIN:\n${ctx.lead.profileText.substring(0, 2500)}\n`
+    : ''
+  const empresa = ctx.lead.companyContext
+    ? `CONTEXTO DA EMPRESA:\n${ctx.lead.companyContext.substring(0, 1500)}\n`
+    : ''
+  const cadencia = ctx.touchesEnviados
+    .map((t) => `[T${t.sequence} — ${t.type}] ${t.content}`)
+    .join('\n\n')
+  const historico = ctx.historicoConversa
+    .map((m) => `${m.de === 'NOS' ? 'MARCELO' : ctx.lead.name.toUpperCase()}: ${m.texto}`)
+    .join('\n')
+
+  const fmt = (d: Date) =>
+    d.toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Sao_Paulo' })
+  const agora = `HOJE É ${fmt(new Date())} (horário de Brasília).`
+  const quando = ctx.recebidaEm ? ` A mensagem do lead chegou em ${fmt(ctx.recebidaEm)}.` : ''
+
+  // Histórico de negociação registrado manualmente (briefing de reunião etc).
+  const notas = ctx.lead.notes?.trim()
+    ? `HISTÓRICO INTERNO DESTE LEAD (registrado pela equipe — pode conter reuniões já realizadas e combinados em aberto):\n${ctx.lead.notes.substring(0, 2500)}\n`
+    : ''
+
+  const prompt = `Você assessora Marcelo Mafra, fundador da MasterVendas, na prospecção B2B pelo LinkedIn.
+Ele vende duas soluções: a DAISEE (IA privada de gestão documental — indexa normas, POPs, contratos e evidências, permite "conversar" com esses documentos e compara versões, tudo em ambiente fechado do cliente) e o MASTERBOT (plataforma de gestão de atendimento em WhatsApp, com painel, indicadores, histórico e supervisão).
+
+Um lead respondeu a uma mensagem da cadência. Sua tarefa é ler a resposta e sugerir a réplica que o Marcelo deve enviar.
+
+${agora}${quando}
+
+${perfil}${empresa}${notas}
+CARGO: ${ctx.lead.seniority}
+EMPRESA: ${ctx.lead.company}
+
+MENSAGENS QUE JÁ ENVIAMOS NA CADÊNCIA:
+${cadencia || '(nenhuma registrada)'}
+
+HISTÓRICO DA CONVERSA:
+${historico}
+
+ÚLTIMA MENSAGEM DO LEAD (é a esta que devemos responder):
+"${ctx.mensagemNova}"
+
+REGRAS PARA A RÉPLICA:
+- Português do Brasil, tom consultivo e humano, primeira pessoa (é o Marcelo falando).
+- Continue a conversa de onde ela parou. NUNCA repita o que já foi dito na cadência nem reapresente a empresa se ela já foi apresentada.
+- Se o lead só respondeu por cortesia ao convite (ex.: "claro, pode me adicionar"), o objetivo é abrir assunto de negócio com naturalidade — uma pergunta sobre a rotina/desafio dele, ancorada no cargo e na empresa. NÃO faça pitch ainda.
+- Se o lead demonstrou interesse concreto, o objetivo é propor uma conversa de 15 a 20 minutos, oferecendo escolha de horário.
+- Se o lead levantou objeção ou desinteresse, responda com respeito, sem insistir, deixando a porta aberta.
+- Se o lead puxou assunto pessoal ou fora do tema (política, mercado, carreira), acompanhe o assunto com genuinidade e só então faça a ponte para o trabalho dele — sem forçar.
+- Máximo de 600 caracteres. Sem emoji. Sem "espero que esteja bem". Sem jargão de vendas.
+- Não invente fatos sobre a empresa do lead nem prometa números.
+- Ortografia impecável em português, COM todos os acentos e a pontuação correta.
+- Atenção às datas: use a data de hoje informada acima para dizer "hoje", "amanhã" ou "semana que vem". Se o histórico interno indica que uma reunião JÁ aconteceu, jamais fale dela como se fosse acontecer.
+- Se o histórico interno mostra combinados em aberto (material a enviar, retorno prometido), a réplica deve respeitar e dar sequência a eles.
+
+Responda EXATAMENTE neste formato, sem nenhum texto extra:
+
+LEITURA: <uma frase sobre o que o lead quis dizer e o que ele espera agora>
+TEMPERATURA: <QUENTE, MORNO, FRIO ou NEGATIVO>
+SUGESTAO: <a mensagem pronta para enviar>`
+
+  const message = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 1200,
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+
+  const leitura = text.match(/LEITURA:\s*([\s\S]*?)(?=\nTEMPERATURA:|$)/i)?.[1]?.trim() || ''
+  const temperaturaRaw = text.match(/TEMPERATURA:\s*(\w+)/i)?.[1]?.toUpperCase() || 'MORNO'
+  const sugestao = text.match(/SUGESTAO:\s*([\s\S]*)$/i)?.[1]?.trim() || text.trim()
+
+  const temperatura = (['QUENTE', 'MORNO', 'FRIO', 'NEGATIVO'].includes(temperaturaRaw)
+    ? temperaturaRaw
+    : 'MORNO') as SugestaoResposta['temperatura']
+
+  return { leitura, temperatura, sugestao }
+}
+
 function parseCadenciaResponse(text: string): GeneratedTouch[] {
   const touches: GeneratedTouch[] = []
 

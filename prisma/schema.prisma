@@ -58,6 +58,7 @@ model Lead {
   touches       Touch[]
   complianceLog ComplianceLog[]
   auditLog      AuditLog[]
+  interacoes    Interacao[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -142,7 +143,36 @@ model AuditLog {
   createdAt DateTime @default(now())
 }
 
+// Resposta recebida de um lead + sugestão de réplica gerada pela IA.
+// Alimentada pelo monitor de interações (lib/monitorInteracoes.ts), que roda
+// no cron e também sob demanda por script local.
+model Interacao {
+  id     String @id @default(cuid())
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  canal       String   @db.VarChar(30) // LINKEDIN | EMAIL
+  mensagem    String   @db.Text // o que o lead escreveu
+  recebidaEm  DateTime
+  providerRef String?  @unique @db.VarChar(255) // id da mensagem no provedor — evita duplicar
+
+  sugestao String?         @db.Text // réplica sugerida pela IA (nunca enviada automaticamente)
+  status   InteracaoStatus @default(NOVA)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([status])
+}
+
 // Enums
+
+enum InteracaoStatus {
+  NOVA       // detectada e com sugestão pronta, aguardando o SDR
+  RESPONDIDA // já foi respondida manualmente
+  ARQUIVADA  // não exige ação
+}
 
 enum CompanySize {
   MICRO      // 1-9
