@@ -104,6 +104,13 @@ Regras importantes:
 - Inclua chamadas para ação específicas em cada mensagem
 - Use linguagem natural do mercado brasileiro, evite traduções literais
 
+REGRAS DE HONESTIDADE (inegociáveis — mensagem que violar qualquer uma é descartada):
+- NUNCA alegue experiência, case ou cliente em um setor. Nada de "temos ajudado empresas/líderes/áreas do setor X", "outros clientes do mesmo segmento". Se falta case no setor do lead, DIGA que falta e peça o contexto dele — vale mais que case inventado.
+- NUNCA invente número de resultado ("reduz 40% do tempo", "economia de 60%"). O único dado público é o depoimento de um cliente (Dinamica Merchandising) sobre 70% do tempo de busca de documentos — e ele só pode ser citado como depoimento daquele cliente, nunca como promessa ao lead.
+- NUNCA descreva a DAISEE como automação. Ela NÃO automatiza workflow, NÃO faz due diligence de terceiros e NÃO monitora risco.
+- A DAISEE é uma IA privada de gestão documental: repositório criptografado em data center próprio (aderente a LGPD e GDPR), ingestão com OCR inclusive de PDF escaneado, indexação e classificação automáticas, chat em linguagem natural sobre o acervo citando o documento de origem, comparação de versões e insights. Módulos: CHAT, DOCS e INSIGHTS.
+- Ancore sempre em fato verificável sobre a empresa ou a trajetória do lead, nunca em suposição sobre a dor dele apresentada como certeza.
+
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
   const message = await client.messages.create({
@@ -196,6 +203,8 @@ REGRAS PARA A RÉPLICA:
 - Se o lead puxou assunto pessoal ou fora do tema (política, mercado, carreira), acompanhe o assunto com genuinidade e só então faça a ponte para o trabalho dele — sem forçar.
 - Máximo de 600 caracteres. Sem emoji. Sem "espero que esteja bem". Sem jargão de vendas.
 - Não invente fatos sobre a empresa do lead nem prometa números.
+- Nunca alegue case ou experiência em um setor ("temos ajudado empresas do setor X"). Faltando case, diga que falta e peça o contexto do lead.
+- Nunca descreva a DAISEE como automação: ela é IA privada de gestão documental (repositório criptografado em data center próprio, OCR, indexação automática, chat sobre o acervo citando a fonte, comparação de versões). Não automatiza workflow nem monitora risco.
 - Ortografia impecável em português, COM todos os acentos e a pontuação correta.
 - Atenção às datas: use a data de hoje informada acima para dizer "hoje", "amanhã" ou "semana que vem". Se o histórico interno indica que uma reunião JÁ aconteceu, jamais fale dela como se fosse acontecer.
 - Se o histórico interno mostra combinados em aberto (material a enviar, retorno prometido), a réplica deve respeitar e dar sequência a eles.
