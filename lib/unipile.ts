@@ -412,6 +412,33 @@ export async function listChatMessages(chatId: string, limit = 25): Promise<Unip
   return data?.items || []
 }
 
+export interface UnipileRelationItem {
+  member_id?: string
+  provider_id?: string
+  created_at?: number // epoch ms
+}
+
+// GET /users/relations paginado — devolve as conexões de 1º grau indexadas
+// pelo provider id, para casar com lead.linkedinProviderId.
+export async function listRelations(): Promise<Map<string, UnipileRelationItem>> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const byId = new Map<string, UnipileRelationItem>()
+  let cursor: string | null = null
+
+  do {
+    const query = new URLSearchParams({ account_id: accountId, limit: '100' })
+    if (cursor) query.set('cursor', cursor)
+    const data = await unipileGet(`/users/relations?${query.toString()}`)
+    for (const item of (data?.items || []) as UnipileRelationItem[]) {
+      const id = item.member_id || item.provider_id
+      if (id) byId.set(id, item)
+    }
+    cursor = data?.cursor || null
+  } while (cursor)
+
+  return byId
+}
+
 export interface SendEmailParams {
   to: string
   subject?: string
