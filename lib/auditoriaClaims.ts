@@ -4,7 +4,7 @@
 //
 // É detecção por texto: aponta o que precisa de leitura humana, não julga sozinha.
 
-export type RegraId = 'CASE' | 'NUMERO' | 'AUTOMACAO'
+export type RegraId = 'CASE' | 'NUMERO' | 'AUTOMACAO' | 'REPERTORIO'
 
 export interface Violacao {
   regra: RegraId
@@ -16,7 +16,14 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
   {
     id: 'CASE',
     rotulo: 'case/experiência em setor',
-    re: /\b(temos ajudad\w*|temos apoiad\w*|venho ajudand\w*|ajudamos \w+ (empresas|líderes|lideres|áreas|areas|times|gestores|bancos)|outros clientes|clientes d\w+ (mesmo )?(setor|segmento|área|area)|empresas d\w+ (setor|segmento)|casos? (parecid\w+|similar\w*)|já (ajudamos|apoiamos|atendemos)|em (empresas|bancos|instituições) como)\b/gi,
+    // A oração subordinada ("os bancos estrangeiros QUE ATENDEMOS aqui") diz a mesma
+    // coisa que "temos ajudado bancos" e passava batido na versão anterior.
+    re: /\b(temos ajudad\w*|temos apoiad\w*|venho ajudand\w*|ajudamos \w+ (empresas|líderes|lideres|áreas|areas|times|gestores|bancos)|outros clientes|nossos clientes|clientes nossos|clientes d\w+ (mesmo )?(setor|segmento|área|area)|empresas d\w+ (setor|segmento)|casos? (parecid\w+|similar\w*)|já (ajudamos|apoiamos|atendemos)|que (atendemos|atendo|apoiamos|apoio|ajudamos|ajudo)\b|atendemos (aqui|hoje|no brasil)|(d|n)a nossa (carteira|base de clientes|experiência|experiencia)|em (empresas|bancos|instituições) como)\b/gi,
+  },
+  {
+    id: 'REPERTORIO',
+    rotulo: 'repertório/receita de casos que não existem',
+    re: /\b(costuma\w* (funcionar|dar certo|resolver)|o que funciona nesses casos|n(a|as) maioria (das vezes|dos casos)|vejo (muito|sempre|com frequ[êe]ncia)|escuto (muito|com frequ[êe]ncia)|ou[çc]o (muito|com frequ[êe]ncia)|o padr[ãa]o que (a gente|n[óo]s) observ\w*|nesses casos,? o que)\b/gi,
   },
   {
     id: 'NUMERO',
