@@ -1,0 +1,13 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 720, "title": "1 · Capa", "print": "fixed" },
+    { "file": "Cenario.dc.html", "x": 1380, "y": 0, "w": 1280, "h": 720, "title": "2 · O retrato de hoje", "print": "fixed" },
+    { "file": "Premissa.dc.html", "x": 2760, "y": 0, "w": 1280, "h": 720, "title": "3 · A premissa", "print": "fixed" },
+    { "file": "Painel.dc.html", "x": 4140, "y": 0, "w": 1280, "h": 720, "title": "4 · Uma tela para os 240 grupos", "print": "fixed" },
+    { "file": "Supervisao.dc.html", "x": 0, "y": 820, "w": 1280, "h": 720, "title": "5 · Para quem coordena", "print": "fixed" },
+    { "file": "Dados.dc.html", "x": 1380, "y": 820, "w": 1280, "h": 720, "title": "6 · O que hoje não existe", "print": "fixed" },
+    { "file": "Assistente.dc.html", "x": 2760, "y": 820, "w": 1280, "h": 720, "title": "7 · Assistente (camada opcional)", "print": "fixed" },
+    { "file": "Proximo.dc.html", "x": 4140, "y": 820, "w": 1280, "h": 720, "title": "8 · Próximo passo", "print": "fixed" }
+  ],
+  "launch": { "view": "canvas" }
+}

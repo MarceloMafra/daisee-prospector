@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #f59e0b; } a:hover { color: #d97706; }
+  </style>
+</helmet>
+<div style="width: 1280px; height: 720px; background: #F8FAFC; color: #0B1120; font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif; padding: 68px 84px; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px;">
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 12px; letter-spacing: 0.16em; color: #B45309; text-transform: uppercase;">06 — Camada opcional</div>
+    <h2 style="margin: 0; font-size: 44px; font-weight: 700; letter-spacing: -0.028em; line-height: 1.1; max-width: 950px; text-wrap: pretty;">Uma assistente que trabalha para a supervisão — não para o parceiro</h2>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 42px; align-items: center; flex-grow: 1;">
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', system-ui, sans-serif;">
+        Ela não entra nos grupos e não responde ninguém. Ela lê o que já aconteceu e avisa a coordenação quando algo foge do padrão — o papel de uma auxiliar que acompanha tudo e chega com o resumo pronto.
+      </p>
+      <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', system-ui, sans-serif;">
+        É uma camada opcional: a plataforma entrega valor sem ela, e ela pode ser ligada depois, quando fizer sentido para vocês.
+      </p>
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 20px 22px; font-size: 15px; line-height: 1.55; color: #334155; font-family: 'Segoe UI', system-ui, sans-serif;">
+        Quem fala com o parceiro continua sendo a sua equipe. Sempre.
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+
+      <div style="background: #0B1120; border-radius: 12px; padding: 22px 24px; display: flex; gap: 16px; align-items: flex-start;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 3px; flex-shrink: 0;"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div style="font-size: 15px; color: #F1F5F9; font-weight: 600;">Alerta de silêncio</div>
+          <div style="font-size: 14px; color: #94A3B8; line-height: 1.5; font-family: 'Segoe UI', system-ui, sans-serif;">“A agência Vertex fez uma pergunta há 40 minutos e ninguém respondeu.”</div>
+        </div>
+      </div>
+
+      <div style="background: #0B1120; border-radius: 12px; padding: 22px 24px; display: flex; gap: 16px; align-items: flex-start;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 3px; flex-shrink: 0;"><path d="M3 3v18h18"></path><path d="m7 15 4-4 3 3 5-6"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div style="font-size: 15px; color: #F1F5F9; font-weight: 600;">Resumo do dia</div>
+          <div style="font-size: 14px; color: #94A3B8; line-height: 1.5; font-family: 'Segoe UI', system-ui, sans-serif;">O que entrou, o que ficou aberto e quais assuntos mais apareceram nos grupos.</div>
+        </div>
+      </div>
+
+      <div style="background: #0B1120; border-radius: 12px; padding: 22px 24px; display: flex; gap: 16px; align-items: flex-start;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 3px; flex-shrink: 0;"><path d="m12 3 9 16H3z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div style="font-size: 15px; color: #F1F5F9; font-weight: 600;">Desvio de padrão</div>
+          <div style="font-size: 14px; color: #94A3B8; line-height: 1.5; font-family: 'Segoe UI', system-ui, sans-serif;">Parceiro ativo que sumiu, reclamação recorrente, volume fora da curva.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

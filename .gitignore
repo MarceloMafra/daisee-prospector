@@ -3,3 +3,7 @@ node_modules
 .env.local
 .env*.local
 *.log
+
+# Canvas de apresentação já montado (~2 MB cada: traz o editor embutido).
+# É gerado a partir dos .dc.html + canvas.json da mesma pasta — não versionar.
+docs/**/apresentacoes/**/*-cambio.html

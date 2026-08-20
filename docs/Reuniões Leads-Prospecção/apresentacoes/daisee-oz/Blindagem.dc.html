@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #38BDF8; } a:hover { color: #0EA5E9; }
+  </style>
+</helmet>
+<div style="width: 1280px; height: 720px; background: #061224; color: #F1F5F9; font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif; padding: 68px 84px; box-sizing: border-box; display: flex; flex-direction: column; gap: 34px;">
+
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 12px; letter-spacing: 0.16em; color: #38BDF8; text-transform: uppercase;">04 — A questão que vem primeiro</div>
+    <h2 style="margin: 0; font-size: 46px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; max-width: 980px; text-wrap: pretty;">
+      Documento de instituição regulada não sai de casa
+    </h2>
+    <p style="margin: 0; max-width: 900px; font-size: 18px; line-height: 1.55; color: #94A3B8; font-family: 'Segoe UI', system-ui, sans-serif;">
+      Esta é a diferença entre a Daisee e qualquer assistente público: a base documental fica em ambiente fechado da OZ. Nada é enviado para fora, nada alimenta modelo de terceiro.
+    </p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; flex-grow: 1;">
+
+    <div style="background: #0B1B33; border: 1px solid #16233C; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+      <div style="font-size: 18px; font-weight: 600;">Ambiente fechado</div>
+      <div style="font-size: 15px; line-height: 1.55; color: #94A3B8; font-family: 'Segoe UI', system-ui, sans-serif;">
+        A documentação não fica exposta em nuvem pública nem acessível de fora. O perímetro é da OZ.
+      </div>
+    </div>
+
+    <div style="background: #0B1B33; border: 1px solid #16233C; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.4 8.6 8 9.7 4.6-1.1 8-4.7 8-9.7V6z"></path><path d="m9 12 2 2 4-4"></path></svg>
+      <div style="font-size: 18px; font-weight: 600;">Não treina modelo externo</div>
+      <div style="font-size: 15px; line-height: 1.55; color: #94A3B8; font-family: 'Segoe UI', system-ui, sans-serif;">
+        O conteúdo de contratos, dossiês e políticas não vira insumo de treinamento de ninguém.
+      </div>
+    </div>
+
+    <div style="background: #0B1B33; border: 1px solid #16233C; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"></path><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"></path><circle cx="12" cy="12" r="10"></circle></svg>
+      <div style="font-size: 18px; font-weight: 600;">Sem consulta à internet</div>
+      <div style="font-size: 15px; line-height: 1.55; color: #94A3B8; font-family: 'Segoe UI', system-ui, sans-serif;">
+        As respostas saem apenas da documentação indexada de vocês, com a fonte citada em cada uma — sem misturar conteúdo público.
+      </div>
+    </div>
+
+    <div style="background: #0B1B33; border: 1px solid #16233C; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+      <div style="font-size: 18px; font-weight: 600;">Rastro de consulta</div>
+      <div style="font-size: 15px; line-height: 1.55; color: #94A3B8; font-family: 'Segoe UI', system-ui, sans-serif;">
+        Quem perguntou o quê e qual documento sustentou a resposta — histórico útil quando alguém pede evidência depois.
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

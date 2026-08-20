@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 720, "title": "1 · Capa", "print": "fixed" },
+    { "file": "Contexto.dc.html", "x": 1380, "y": 0, "w": 1280, "h": 720, "title": "2 · Onde isso pesa", "print": "fixed" },
+    { "file": "Conversa.dc.html", "x": 2760, "y": 0, "w": 1280, "h": 720, "title": "3 · Como se usa", "print": "fixed" },
+    { "file": "Versoes.dc.html", "x": 4140, "y": 0, "w": 1280, "h": 720, "title": "4 · Controle de versões", "print": "fixed" },
+    { "file": "Blindagem.dc.html", "x": 0, "y": 820, "w": 1280, "h": 720, "title": "5 · A questão que vem primeiro", "print": "fixed" },
+    { "file": "Acessos.dc.html", "x": 1380, "y": 820, "w": 1280, "h": 720, "title": "6 · Segregação por área", "print": "fixed" },
+    { "file": "Proximo.dc.html", "x": 2760, "y": 820, "w": 1280, "h": 720, "title": "7 · Próximo passo", "print": "fixed" }
+  ],
+  "launch": { "view": "canvas" }
+}
