@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles, Rocket, X } from 'lucide-react'
+import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles, Rocket, X, UserPlus } from 'lucide-react'
+import { NovoLeadDialog } from '@/components/leads/novo-lead-dialog'
 import { useRouter } from 'next/navigation'
 
 interface Lead {
@@ -47,6 +48,7 @@ export default function LeadsPage() {
   const [pageSize, setPageSize] = useState(25)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalLeads, setTotalLeads] = useState(0)
+  const [novoLeadAberto, setNovoLeadAberto] = useState(false)
 
   const handleRecalculate = async () => {
     if (!confirm('Recalcular o DAISEE Score de todos os leads com os novos critérios?')) return
@@ -418,6 +420,14 @@ export default function LeadsPage() {
               {recalculating ? 'Recalculando...' : 'Recalcular Scores'}
             </Button>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => setNovoLeadAberto(true)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            Novo Lead
+          </Button>
           <Link href="/dashboard/leads/import">
             <Button className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
@@ -426,6 +436,16 @@ export default function LeadsPage() {
           </Link>
         </div>
       </div>
+
+      <NovoLeadDialog
+        aberto={novoLeadAberto}
+        onFechar={() => setNovoLeadAberto(false)}
+        onCriado={(leadId, aviso) => {
+          setNovoLeadAberto(false)
+          if (aviso) alert(aviso)
+          router.push(`/dashboard/leads/${leadId}`)
+        }}
+      />
 
       {bulkPrepareSummary && (
         <div className="text-sm text-purple-800 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg px-4 py-3">

@@ -90,58 +90,68 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Cria um lead. Serve tanto ao cadastro manual do painel quanto a chamadas diretas.
+//
+// Só nome, empresa e cargo são obrigatórios: um contato que aparece no meio de uma
+// conversa raramente vem com e-mail, e o LinkedIn costuma bastar para abrir o canal.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Validate required fields
-    const { name, email, company, seniority } = body
+    const name = String(body.name ?? '').trim()
+    const company = String(body.company ?? '').trim()
+    const seniority = String(body.seniority ?? '').trim()
+    const email = String(body.email ?? '').trim() || null
+    const phone = String(body.phone ?? '').trim() || null
+    const linkedinUrl = String(body.linkedinUrl ?? '').trim() || null
+    const notes = String(body.notes ?? '').trim() || null
 
-    if (!name || !email || !company || !seniority) {
+    if (!name || !company || !seniority) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, email, company, seniority' },
+        { error: 'Informe pelo menos nome, empresa e cargo.' },
         { status: 400 }
       )
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return NextResponse.json({ error: 'E-mail inválido.' }, { status: 400 })
+      }
+
+      const existing = await prisma.lead.findUnique({ where: { email } })
+      if (existing) {
+        return NextResponse.json(
+          { error: `Já existe um lead com esse e-mail: ${existing.name} (${existing.company}).` },
+          { status: 409 }
+        )
+      }
     }
 
-    // Check for duplicates
-    const existing = await prisma.lead.findUnique({
-      where: { email },
-    })
+    // Sem e-mail não há chave única, então avisamos sobre o homônimo na mesma
+    // empresa em vez de barrar — pode ser cadastro repetido, pode ser xará.
+    const homonimo = !email
+      ? await prisma.lead.findFirst({ where: { name, company } })
+      : null
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Lead with this email already exists' },
-        { status: 409 }
-      )
-    }
-
-    // Import DAISEE calculation
     const { calculateDAISEEScore } = await import('@/lib/daisee-score')
 
-    // Calculate score
     const scoreResult = calculateDAISEEScore({
       seniority,
       companySize: body.companySize || 'MEDIA',
-      segmentMatch: body.segmentMatch || 50,
+      segmentMatch: body.segmentMatch ?? 50,
     })
 
-    // Create lead
     const lead = await prisma.lead.create({
       data: {
         name,
         email,
         company,
         seniority,
+        phone,
+        linkedinUrl,
+        profileUrl: linkedinUrl,
+        notes,
         daiseeScore: scoreResult.score,
         decisionPower: scoreResult.decisionPower,
         companySize: body.companySize || 'MEDIA',
@@ -161,11 +171,33 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(lead, { status: 201 })
+    await prisma.auditLog.create({
+      data: {
+        leadId: lead.id,
+        action: 'LEAD_CRIADO_MANUALMENTE',
+        details: `Cadastro digitado no painel. Cargo: ${seniority}. Canais: ${[
+          email && 'e-mail',
+          phone && 'telefone',
+          linkedinUrl && 'LinkedIn',
+        ]
+          .filter(Boolean)
+          .join(', ') || 'nenhum informado'}.`,
+      },
+    })
+
+    return NextResponse.json(
+      {
+        ...lead,
+        aviso: homonimo
+          ? `Já havia um lead com o mesmo nome nessa empresa (cadastrado em ${homonimo.createdAt.toLocaleDateString('pt-BR')}). Confira se não é duplicado.`
+          : undefined,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Failed to create lead:', error)
     return NextResponse.json(
-      { error: 'Failed to create lead' },
+      { error: 'Falha ao criar o lead.' },
       { status: 500 }
     )
   }
