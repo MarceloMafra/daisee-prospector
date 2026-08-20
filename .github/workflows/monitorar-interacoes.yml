@@ -1,0 +1,37 @@
+name: Monitorar interações de leads
+
+# Chama a rota de monitoramento no daisee-prospector duas vezes por dia.
+# Fica aqui, e não no vercel.json, porque o plano Hobby da Vercel só permite
+# cron diário — o agendador do GitHub não tem essa limitação.
+#
+# A rota lê as respostas novas dos leads no LinkedIn, gera a sugestão de
+# réplica e avisa por WhatsApp. Nada é enviado ao lead automaticamente.
+
+on:
+  schedule:
+    # Horários em UTC. Brasília = UTC-3.
+    - cron: '0 11 * * *' # 08:00 de Brasília
+    - cron: '0 20 * * *' # 17:00 de Brasília
+  workflow_dispatch: # permite rodar sob demanda pela aba Actions
+
+jobs:
+  monitorar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar a rota de monitoramento
+        run: |
+          resposta=$(curl --silent --show-error --max-time 300 \
+            --write-out "\n%{http_code}" \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://daisee-prospector.vercel.app/api/cron/monitorar-interacoes")
+
+          corpo=$(echo "$resposta" | sed '$d')
+          status=$(echo "$resposta" | tail -n1)
+
+          echo "HTTP $status"
+          echo "$corpo"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Monitoramento falhou com HTTP $status"
+            exit 1
+          fi
