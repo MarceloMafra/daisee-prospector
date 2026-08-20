@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   Activity,
+  Inbox,
 } from 'lucide-react'
 
 const menuItems = [
@@ -23,6 +24,11 @@ const menuItems = [
     label: 'Leads',
     href: '/dashboard/leads',
     icon: Users,
+  },
+  {
+    label: 'Respostas',
+    href: '/dashboard/interacoes',
+    icon: Inbox,
   },
   {
     label: 'Pipeline',
