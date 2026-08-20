@@ -105,3 +105,71 @@ export async function ensureCadenciaGenerated(
 
   return generateTouchesForCadencia(cadencia.id, tone)
 }
+
+// Regenera SOMENTE os touches ainda não enviados de uma cadência, preservando
+// os que já saíram (sentAt, providerRef, status). Usado para limpar cadências
+// antigas geradas antes das regras de honestidade entrarem no prompt: reescrever
+// frase a frase não resolvia, porque o pitch de fundo descrevia produto errado.
+//
+// O que já foi enviado entra no prompt como contexto, para o texto novo não
+// repetir nem reapresentar a empresa a quem já leu o T1.
+export async function regenerarTouchesPendentes(
+  cadenciaId: string,
+  tone: CadenciaTone = 'CONSULTIVO'
+): Promise<{ atualizados: Touch[]; preservados: number; semGerado: number[] }> {
+  const cadencia = await prisma.cadencia.findUnique({
+    where: { id: cadenciaId },
+    include: { lead: true, touches: { orderBy: { sequence: 'asc' } } },
+  })
+
+  if (!cadencia) throw new CadenciaGenerationError('Cadencia not found', 404)
+  if (!cadencia.lead) throw new CadenciaGenerationError('Lead not found for this cadencia', 404)
+
+  const pendentes = cadencia.touches.filter((t) => t.status === 'AGENDADO')
+  const enviados = cadencia.touches.filter((t) => t.status !== 'AGENDADO')
+
+  if (pendentes.length === 0) {
+    return { atualizados: [], preservados: enviados.length, semGerado: [] }
+  }
+
+  const generatedTouches = await generateCadencia(
+    {
+      name: cadencia.lead.name,
+      email: cadencia.lead.email,
+      company: cadencia.lead.company,
+      seniority: cadencia.lead.seniority,
+      daiseeScore: cadencia.lead.daiseeScore,
+      profileText: cadencia.lead.profileText,
+      companyContext: cadencia.lead.companyContext,
+    },
+    tone,
+    enviados.map((t) => ({
+      sequence: t.sequence,
+      type: t.type,
+      subject: t.subject,
+      content: t.content,
+    }))
+  )
+
+  const atualizados: Touch[] = []
+  const semGerado: number[] = []
+
+  for (const pendente of pendentes) {
+    const novo = generatedTouches.find((g) => g.sequence === pendente.sequence)
+    if (!novo) {
+      // Sem substituto para essa sequência, o texto antigo continuaria no ar —
+      // melhor devolver o número e deixar o chamador decidir do que sobrescrever.
+      semGerado.push(pendente.sequence)
+      continue
+    }
+
+    // Só content/subject mudam: id, scheduledFor, status e canal seguem intactos.
+    const touch = await prisma.touch.update({
+      where: { id: pendente.id },
+      data: { content: novo.content, subject: novo.subject },
+    })
+    atualizados.push(touch)
+  }
+
+  return { atualizados, preservados: enviados.length, semGerado }
+}

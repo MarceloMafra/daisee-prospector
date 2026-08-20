@@ -18,9 +18,19 @@ interface GeneratedTouch {
   subject?: string
 }
 
+// Touch que o lead já recebeu. Entra no prompt só como contexto, para a
+// regeneração não repetir o que ele já leu nem reapresentar a empresa.
+export interface TouchJaEnviado {
+  sequence: number
+  type: string
+  subject?: string | null
+  content: string
+}
+
 export async function generateCadencia(
   lead: LeadInfo,
-  tone: 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO' = 'CONSULTIVO'
+  tone: 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO' = 'CONSULTIVO',
+  jaEnviados: TouchJaEnviado[] = []
 ): Promise<GeneratedTouch[]> {
   const client = new Anthropic()
 
@@ -49,7 +59,18 @@ ${lead.companyContext.substring(0, 2000)}
 `
     : ''
 
-  const prompt = `Você é um especialista em vendas B2B no mercado brasileiro. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. As mensagens devem ser naturais, ALTAMENTE PERSONALIZADAS com base no perfil real do LinkedIn, e adequadas ao mercado brasileiro.
+  const enviadosSection = jaEnviados.length
+    ? `**JÁ ENVIADO A ESTE LEAD — contexto apenas (estes touches não serão reescritos):**
+${jaEnviados
+  .map((t) => `T${t.sequence} (${t.type})${t.subject ? ` — assunto: ${t.subject}` : ''}: ${t.content}`)
+  .join('\n')}
+
+Os touches acima já foram lidos pelo lead. Não os repita, não reapresente a empresa como se fosse o primeiro contato e mantenha a mesma voz. Se algum deles contiver afirmação que hoje seria proibida pelas REGRAS DE HONESTIDADE abaixo, NÃO a reforce nem a retome — siga adiante sem mencioná-la.
+
+`
+    : ''
+
+  const prompt = `Você assessora Marcelo Mafra, fundador da MasterVendas, na prospecção B2B. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. Quem escreve e assina todas as mensagens é o Marcelo — homem. Faça toda concordância de gênero da PRIMEIRA PESSOA no masculino ("prefiro ser honesto", "fico à disposição"), independentemente do gênero do prospect. As mensagens devem ser naturais, ALTAMENTE PERSONALIZADAS com base no perfil real do LinkedIn, e adequadas ao mercado brasileiro.
 
 **Dados do Prospect:**
 - Nome: ${lead.name}
@@ -57,7 +78,7 @@ ${lead.companyContext.substring(0, 2000)}
 - Cargo: ${lead.seniority}
 ${lead.email ? `- E-mail: ${lead.email}\n` : ''}- Score DAISEE: ${lead.daiseeScore}/100
 
-${profileSection}${companyContextSection}**Tom:** ${toneDescriptions[tone]}
+${profileSection}${companyContextSection}${enviadosSection}**Tom:** ${toneDescriptions[tone]}
 
 Gere exatamente 5 touches na ordem e formato abaixo:
 
@@ -103,6 +124,7 @@ Regras importantes:
 - Conteúdo deve ser profissional mas envolvente
 - Inclua chamadas para ação específicas em cada mensagem
 - Use linguagem natural do mercado brasileiro, evite traduções literais
+- Quem fala é o Marcelo (masculino). Nunca flexione a primeira pessoa no feminino para acompanhar o gênero do prospect — "avaliarmos juntos", nunca "juntas"
 
 REGRAS DE HONESTIDADE (inegociáveis — mensagem que violar qualquer uma é descartada):
 - NUNCA alegue experiência, case ou cliente em um setor. Nada de "temos ajudado empresas/líderes/áreas do setor X", "outros clientes do mesmo segmento". Se falta case no setor do lead, DIGA que falta e peça o contexto dele — vale mais que case inventado.

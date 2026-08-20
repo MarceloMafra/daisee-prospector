@@ -110,6 +110,34 @@ export class SchedulerError extends Error {
 async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<ActionResult> {
   const base = { touchId: touch.id, leadId: touch.leadId, sequence: touch.sequence, type: touch.type }
 
+  // Guardas de contexto. O LINKEDIN_500 já tinha a sua (não manda DM sem
+  // conexão aceita); e-mail não tinha nenhuma, então um T3 agendado saía por
+  // cima de conversa humana em curso, ou sem o touch anterior ter saído.
+  const irmaos = await prisma.touch.findMany({
+    where: { leadId: touch.leadId },
+    select: { sequence: true, status: true },
+  })
+
+  if (irmaos.some((t) => t.status === 'RESPONDIDO')) {
+    return {
+      ...base,
+      outcome: 'pulado',
+      reason: 'Lead já respondeu em algum touch — cadência automática pausada para não atropelar a conversa.',
+    }
+  }
+
+  if (touch.sequence > 1) {
+    const anterior = irmaos.find((t) => t.sequence === touch.sequence - 1)
+    const anteriorSaiu = anterior && (SENT_STATUSES as readonly string[]).includes(anterior.status)
+    if (!anteriorSaiu) {
+      return {
+        ...base,
+        outcome: 'pulado',
+        reason: `T${touch.sequence - 1} ainda não saiu (${anterior?.status ?? 'inexistente'}) — a sequência não pode pular etapa.`,
+      }
+    }
+  }
+
   const validation = validateMessage(touch.content, touch.type)
   if (!validation.isValid) {
     const reason = `Reprovado na validação de copy (score ${validation.score}/100): ${validation.summary}`
