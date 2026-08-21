@@ -3,11 +3,27 @@
 // aleatório de 30-90s entre envios — mesmo comportamento do botão em lote da UI.
 // A quota diária (LINKEDIN_INVITES_PER_DAY) é validada pelo próprio sendTouchNow().
 //
-// Uso: npx dotenv -e .env.local -- npx tsx scripts/send-batch.ts [quantidade]
+// Uso:
+//   npx dotenv -e .env.local -- npx tsx scripts/send-batch.ts [quantidade] --dry-run
+//   npx dotenv -e .env.local -- npx tsx scripts/send-batch.ts [quantidade] --apply
+//
+// Este script ENVIA de verdade. Sem --apply ele só lista quem seria convidado:
+// argumento desconhecido aborta, em vez de ser ignorado e virar disparo real.
 import { prisma } from '../lib/prisma'
 import { sendTouchNow } from '../lib/scheduler'
 
-const TARGET = parseInt(process.argv[2] || '10', 10)
+const FLAGS_CONHECIDAS = new Set(['--dry-run', '--apply'])
+const extras = process.argv.slice(2).filter((a) => a.startsWith('-'))
+const desconhecidas = extras.filter((a) => !FLAGS_CONHECIDAS.has(a))
+
+if (desconhecidas.length) {
+  console.error(`Argumento não reconhecido: ${desconhecidas.join(', ')}`)
+  console.error('Use --dry-run para simular ou --apply para enviar de verdade.')
+  process.exit(1)
+}
+
+const APPLY = process.argv.includes('--apply')
+const TARGET = parseInt(process.argv.find((a) => /^\d+$/.test(a)) || '10', 10)
 const MIN_GAP_MS = 30_000
 const MAX_GAP_MS = 90_000
 
@@ -15,14 +31,17 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const randomGap = () => MIN_GAP_MS + Math.floor(Math.random() * (MAX_GAP_MS - MIN_GAP_MS))
 
 async function main() {
-  // Todos os leads elegíveis pra automação, na ordem da lista (ordem de criação).
+  // Elegíveis pra automação, do maior score DAISEE para o menor. A quota diária
+  // do LinkedIn é o recurso escasso: com a base grande, gastar os convites de
+  // hoje em ordem de importação deixaria diretor de compliance esperando dias
+  // atrás de analista. Empate cai na ordem de criação, que preserva a fila antiga.
   const leads = await prisma.lead.findMany({
     where: {
       excludedFromAutomation: false,
       cadencia: { isNot: null },
     },
     include: { cadencia: { include: { touches: { orderBy: { sequence: 'asc' } } } } },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ daiseeScore: 'desc' }, { createdAt: 'asc' }],
   })
 
   // Só leads "frescos": cadência completa (5 touches) e próximo touch é o T1
@@ -36,8 +55,18 @@ async function main() {
     return next?.sequence === 1
   })
 
-  console.log(`Meta: ${TARGET} envios. Candidatos na fila (ordem da lista): ${candidates.length}`)
-  candidates.slice(0, TARGET + 5).forEach((l, i) => console.log(`  ${i + 1}. ${l.name} (${l.company})`))
+  console.log(`Meta: ${TARGET} envios. Candidatos na fila (maior score primeiro): ${candidates.length}`)
+  candidates.slice(0, TARGET + 5).forEach((l, i) =>
+    console.log(`  ${i + 1}. ${l.name} (${l.company}) — score ${l.daiseeScore}`)
+  )
+
+  if (!APPLY) {
+    console.log(`\nDRY-RUN — nada foi enviado.`)
+    console.log(`Seriam convidados os ${Math.min(TARGET, candidates.length)} primeiros da lista acima.`)
+    console.log(`Para enviar de verdade: repita o comando com --apply`)
+    await prisma.$disconnect()
+    return
+  }
 
   let sent = 0
   const results: Array<{ name: string; outcome: string }> = []

@@ -38,13 +38,24 @@ async function withDbRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
 async function main() {
   const statusOnly = process.argv.includes('--status')
 
+  // Maior score primeiro: preparar custa tempo e chamada de IA, então quando o
+  // lote é grande vale garantir que os melhores leads fiquem prontos antes.
   const leads = await prisma.lead.findMany({
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ daiseeScore: 'desc' }, { createdAt: 'asc' }],
     include: { cadencia: { include: { touches: { select: { id: true } } } } },
   })
 
-  const pending = leads.filter((l) => !l.cadencia || l.cadencia.touches.length === 0)
-  const done = leads.length - pending.length
+  const limiteArg = process.argv.includes('--limite')
+    ? Number(process.argv[process.argv.indexOf('--limite') + 1])
+    : null
+  const limite = limiteArg && limiteArg > 0 ? limiteArg : null
+
+  const todosPendentes = leads.filter((l) => !l.cadencia || l.cadencia.touches.length === 0)
+  const pending = limite ? todosPendentes.slice(0, limite) : todosPendentes
+  if (limite && todosPendentes.length > limite) {
+    console.log(`Limite de ${limite} lead(s) nesta rodada — ${todosPendentes.length - limite} ficam para a próxima.\n`)
+  }
+  const done = leads.length - todosPendentes.length
   // Cadência com 1-4 touches = geração interrompida no meio. Não regeneramos
   // automaticamente (poderia apagar touch já enviado) — só reportamos.
   const partial = leads.filter((l) => l.cadencia && l.cadencia.touches.length > 0 && l.cadencia.touches.length < 5)
