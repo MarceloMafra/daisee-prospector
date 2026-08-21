@@ -1,0 +1,674 @@
+<title>Daisee na OZ Câmbio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&display=swap">
+
+<style>
+  /* ---- Página (enquadramento). Tokens completos no :root = tema claro ---- */
+  :root {
+    --paper: #F4F5F8;
+    --paper-2: #FFFFFF;
+    --ink: #131A2B;
+    --ink-soft: #55607A;
+    --rule: #DCE0E9;
+    --mark: #1D4ED8;
+
+    /* ---- Produto Daisee: sempre escuro, é a interface real ---- */
+    --app-bg: #0F1729;
+    --app-side: #0B1120;
+    --app-surface: #16203A;
+    --app-surface-2: #1B2647;
+    --app-line: #24304F;
+    --app-text: #E8ECF5;
+    --app-muted: #8B95AD;
+    --app-accent: #2563EB;
+    --app-sky: #38BDF8;
+    --doc: #3B82F6;
+    --pop: #22C55E;
+    --norma: #EAB308;
+    --dossie: #F87171;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0A0E18;
+      --paper-2: #111827;
+      --ink: #E9EDF6;
+      --ink-soft: #97A1B8;
+      --rule: #212B42;
+      --mark: #60A5FA;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0A0E18;
+    --paper-2: #111827;
+    --ink: #E9EDF6;
+    --ink-soft: #97A1B8;
+    --rule: #212B42;
+    --mark: #60A5FA;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Libre Franklin", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  header.intro { display: flex; flex-direction: column; gap: 14px; max-width: 62ch; }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .intro p { margin: 0; color: var(--ink-soft); font-size: 16px; }
+
+  .slide-tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mark);
+  }
+
+  section.tela { display: flex; flex-direction: column; gap: 16px; }
+
+  .tela-head { display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+  .tela-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .tela-head p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+
+  /* ---- Moldura de janela ---- */
+  .frame {
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--app-bg);
+    border: 1px solid var(--app-line);
+    box-shadow: 0 24px 60px -28px rgba(9, 14, 28, 0.55);
+  }
+
+  .frame-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 14px;
+    background: var(--app-side);
+    border-bottom: 1px solid var(--app-line);
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #33405F; }
+
+  .frame-scroll { overflow-x: auto; }
+
+  /* ---- App Daisee ---- */
+  .app {
+    display: grid;
+    grid-template-columns: 196px 1fr;
+    min-width: 900px;
+    font-family: Poppins, "Segoe UI", system-ui, sans-serif;
+    color: var(--app-text);
+    background: var(--app-bg);
+  }
+
+  .side {
+    background: var(--app-side);
+    border-right: 1px solid var(--app-line);
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-height: 520px;
+  }
+
+  .logo { display: flex; align-items: center; gap: 9px; padding-left: 6px; }
+  .logo-mark {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: linear-gradient(140deg, #3B82F6, #0EA5E9);
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 700; color: #06122A;
+  }
+  .logo-name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+
+  .nav { display: flex; flex-direction: column; gap: 3px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--app-muted);
+  }
+  .nav-item.on { background: var(--app-accent); color: #FFF; font-weight: 500; }
+  .nav-ico { width: 15px; text-align: center; opacity: 0.9; font-size: 12px; }
+
+  .tree { display: flex; flex-direction: column; gap: 2px; padding-left: 16px; margin-top: 3px; }
+  .tree-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px;
+    font-size: 12px; color: var(--app-muted);
+  }
+  .tree-item.on { background: var(--app-surface-2); color: var(--app-text); }
+  .tree-item .sq { width: 7px; height: 7px; border-radius: 2px; }
+
+  .side-foot { margin-top: auto; font-size: 11px; color: var(--app-muted); padding-left: 8px; }
+
+  .main { padding: 20px 22px 24px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .page-title { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+  .crumb { font-size: 11px; color: var(--app-muted); margin-top: 2px; }
+
+  .who {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--app-surface); border: 1px solid var(--app-line);
+    border-radius: 999px; padding: 5px 13px 5px 5px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--app-accent); color: #FFF;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .who-name { font-size: 12px; font-weight: 500; line-height: 1.25; }
+  .who-role { font-size: 10px; color: var(--app-muted); }
+
+  /* pergunta */
+  .ask {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--app-surface); border: 1px solid var(--app-line);
+    border-radius: 999px; padding: 13px 18px;
+  }
+  .ask-text { font-size: 13px; color: var(--app-text); flex: 1; min-width: 0; }
+  .ask-send {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--app-accent); color: #FFF;
+    display: grid; place-items: center; font-size: 12px; flex: none;
+  }
+
+  .split { display: grid; grid-template-columns: 1fr 288px; gap: 16px; align-items: start; }
+
+  .answer {
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    padding: 17px 19px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .answer-label {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--app-sky); font-weight: 600;
+  }
+  .answer p { margin: 0; font-size: 13px; line-height: 1.65; color: #D5DCEC; }
+  .answer .cite {
+    font-size: 12px; color: var(--app-sky);
+    border-left: 2px solid var(--app-sky);
+    padding-left: 10px;
+  }
+
+  .sources {
+    background: var(--app-side);
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .sources-head {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 600; color: var(--app-text);
+    padding-bottom: 2px;
+  }
+  .src {
+    background: var(--app-surface);
+    border: 1px solid var(--app-line);
+    border-radius: 9px;
+    padding: 10px 11px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .src-name { font-size: 11px; font-weight: 600; color: var(--app-text); }
+  .src-loc { font-size: 10px; color: var(--app-sky); font-variant-numeric: tabular-nums; }
+  .src-txt { font-size: 10px; line-height: 1.5; color: var(--app-muted); }
+
+  /* categorias / arquivos */
+  .search {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--app-surface); border: 1px solid var(--app-line);
+    border-radius: 10px; padding: 11px 15px;
+    font-size: 12px; color: var(--app-muted);
+  }
+
+  .section-label { font-size: 13px; font-weight: 600; margin-bottom: -4px; }
+
+  .cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 11px; }
+  .cat {
+    background: var(--app-surface); border: 1px solid var(--app-line);
+    border-radius: 11px; padding: 13px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .cat-ico {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: grid; place-items: center; font-size: 15px; color: #06122A; font-weight: 700;
+  }
+  .cat-name { font-size: 12px; font-weight: 600; }
+  .cat-count { font-size: 10px; color: var(--app-muted); font-variant-numeric: tabular-nums; }
+
+  .rows { display: flex; flex-direction: column; }
+  .row {
+    display: grid;
+    grid-template-columns: 26px 1fr 118px 74px 58px 16px;
+    align-items: center; gap: 12px;
+    padding: 11px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(36, 48, 79, 0.55);
+  }
+  .row.on { background: var(--app-surface-2); border-bottom-color: transparent; }
+  .row-ico { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 10px; color: #06122A; font-weight: 700; }
+  .row-name { font-weight: 500; }
+  .row-meta { color: var(--app-muted); font-size: 11px; }
+  .row-num { color: var(--app-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .row-dots { color: var(--app-muted); text-align: right; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    color: var(--app-sky);
+    border-radius: 999px; padding: 5px 11px;
+    font-size: 10px; font-weight: 500;
+  }
+
+  /* versões */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .ver {
+    background: var(--app-surface); border: 1px solid var(--app-line);
+    border-radius: 12px; overflow: hidden;
+  }
+  .ver-head {
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--app-line);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .ver-name { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
+  .tag {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .tag.old { background: rgba(139, 149, 173, 0.14); color: var(--app-muted); }
+  .tag.now { background: rgba(34, 197, 94, 0.14); color: #4ADE80; }
+
+  .ver-body { padding: 13px 15px; display: flex; flex-direction: column; gap: 9px; }
+  .line { font-size: 11.5px; line-height: 1.6; color: #B9C2D6; padding: 6px 9px; border-radius: 6px; }
+  .line.changed-old { background: rgba(248, 113, 113, 0.11); border-left: 2px solid #F87171; color: #E2C4C4; }
+  .line.changed-new { background: rgba(74, 222, 128, 0.11); border-left: 2px solid #4ADE80; color: #C6E6D2; }
+  .line b { color: var(--app-text); font-weight: 600; }
+
+  .impact {
+    background: var(--app-side);
+    border: 1px solid var(--app-line);
+    border-left: 3px solid var(--app-sky);
+    border-radius: 10px;
+    padding: 13px 15px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .impact-label {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--app-sky); font-weight: 600;
+  }
+  .impact p { margin: 0; font-size: 12px; line-height: 1.6; color: #C4CCDE; }
+
+  /* perfis lado a lado */
+  .perfis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .perfil {
+    background: var(--app-surface); border: 1px solid var(--app-line);
+    border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .perfil-head { display: flex; align-items: center; gap: 9px; }
+  .perfil-name { font-size: 12px; font-weight: 600; }
+  .perfil-sub { font-size: 10px; color: var(--app-muted); }
+  .perfil-list { display: flex; flex-direction: column; gap: 6px; }
+  .pf {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 11px; color: #C2CADC;
+    padding: 7px 9px; border-radius: 7px;
+    background: rgba(11, 17, 32, 0.6);
+  }
+  .pf .sq { width: 7px; height: 7px; border-radius: 2px; flex: none; }
+
+  .nota {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 12px; color: var(--ink-soft);
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 13px 15px;
+  }
+  .nota strong { color: var(--ink); font-weight: 600; }
+
+  .ilustrativo {
+    font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--app-muted); font-weight: 600;
+    padding-top: 2px;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 22px;
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: 13px; color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 36px 16px 56px; gap: 40px; }
+    .vs, .perfis { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="intro">
+    <span class="eyebrow">Material de apoio · OZ Câmbio · ago/2026</span>
+    <h1>As telas da Daisee no vocabulário da OZ</h1>
+    <p>Três telas do produto adaptadas ao que os slides afirmam — com POPs de cadastro, manual de PLD/FT e dossiês de parceiro no lugar dos exemplos genéricos do material institucional. O layout, a navegação e o painel de fontes são os da interface real.</p>
+  </header>
+
+  <!-- ============ TELA 1 ============ -->
+  <section class="tela">
+    <div class="tela-head">
+      <span class="slide-tag">Slide 02 · Como se usa</span>
+      <h2>Pergunta em português. Resposta com a fonte.</h2>
+      <p>É a tela que sustenta a frase do slide: a resposta chega com os documentos que a originaram no painel lateral, para quem atende o parceiro conferir antes de repassar.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="frame-scroll">
+        <div class="app">
+          <aside class="side">
+            <div class="logo">
+              <span class="logo-mark">D</span>
+              <span class="logo-name">Daisee</span>
+            </div>
+            <nav class="nav">
+              <span class="nav-item on"><span class="nav-ico">◈</span>Início</span>
+              <span class="nav-item"><span class="nav-ico">◎</span>Explorar</span>
+              <span class="nav-item"><span class="nav-ico">◔</span>Usuários</span>
+              <span class="nav-item"><span class="nav-ico">▤</span>Arquivos</span>
+            </nav>
+            <div class="tree">
+              <span class="tree-item on"><span class="sq" style="background:var(--doc)"></span>Cadastro</span>
+              <span class="tree-item"><span class="sq" style="background:var(--norma)"></span>Compliance</span>
+              <span class="tree-item"><span class="sq" style="background:var(--pop)"></span>Operações</span>
+            </div>
+            <div class="side-foot">Minimizar barra</div>
+          </aside>
+
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="page-title">Início</div>
+                <div class="crumb">Início · Consulta ao acervo</div>
+              </div>
+              <div class="who">
+                <span class="avatar">AR</span>
+                <span>
+                  <span class="who-name">Ana Ribeiro</span><br>
+                  <span class="who-role">Analista de Cadastro</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="ask">
+              <span class="ask-text">Para um parceiro pessoa jurídica que vai operar acima do limite simplificado, quais documentos são exigidos no cadastro e qual norma sustenta isso?</span>
+              <span class="ask-send">▸</span>
+            </div>
+
+            <div class="split">
+              <div class="answer">
+                <span class="answer-label">Resposta</span>
+                <p>Segundo os documentos internos vigentes, a exigência para esse perfil está descrita em três pontos, com uma exceção quando o parceiro já possui cadastro ativo há mais de 12 meses.</p>
+                <p class="cite">A exceção não dispensa a atualização do quadro societário — ela apenas altera o prazo em que a documentação precisa ser revalidada.</p>
+                <p style="color:var(--app-muted);font-size:11.5px">Cada trecho acima aponta o documento e a seção de origem no painel ao lado.</p>
+              </div>
+
+              <div class="sources">
+                <div class="sources-head"><span style="color:var(--app-sky)">◫</span> 3 fontes usadas na resposta</div>
+                <div class="src">
+                  <span class="src-name">POP de Cadastro PJ</span>
+                  <span class="src-loc">v4 · pág. 12</span>
+                  <span class="src-txt">Relação de documentos exigidos por faixa de volume operado.</span>
+                </div>
+                <div class="src">
+                  <span class="src-name">Manual de PLD/FT</span>
+                  <span class="src-loc">seção 5.3</span>
+                  <span class="src-txt">Critérios de diligência reforçada e periodicidade de revalidação.</span>
+                </div>
+                <div class="src">
+                  <span class="src-name">Política de Aceitação de Parceiros</span>
+                  <span class="src-loc">anexo II</span>
+                  <span class="src-txt">Exceções aplicáveis a cadastro ativo há mais de 12 meses.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ilustrativo">Exemplo ilustrativo — nomes e trechos fictícios</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TELA 2 ============ -->
+  <section class="tela">
+    <div class="tela-head">
+      <span class="slide-tag">Slide 03 · Controle de versões</span>
+      <h2>O que mudou entre uma versão e outra — e por quê</h2>
+      <p>Não existe tela equivalente no material institucional da Daisee. Construí esta no mesmo design, a partir do exemplo que já está no slide: o prazo de revalidação que caiu de 24 para 12 meses.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="frame-scroll">
+        <div class="app">
+          <aside class="side">
+            <div class="logo">
+              <span class="logo-mark">D</span>
+              <span class="logo-name">Daisee</span>
+            </div>
+            <nav class="nav">
+              <span class="nav-item"><span class="nav-ico">◈</span>Início</span>
+              <span class="nav-item"><span class="nav-ico">◎</span>Explorar</span>
+              <span class="nav-item"><span class="nav-ico">◔</span>Usuários</span>
+              <span class="nav-item on"><span class="nav-ico">▤</span>Arquivos</span>
+            </nav>
+            <div class="tree">
+              <span class="tree-item on"><span class="sq" style="background:var(--doc)"></span>POPs de cadastro</span>
+              <span class="tree-item"><span class="sq" style="background:var(--norma)"></span>Normas e circulares</span>
+              <span class="tree-item"><span class="sq" style="background:var(--dossie)"></span>Dossiês de parceiro</span>
+            </div>
+            <div class="side-foot">Minimizar barra</div>
+          </aside>
+
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="page-title">Comparar versões</div>
+                <div class="crumb">Arquivos · POPs de cadastro · POP Cadastro PJ</div>
+              </div>
+              <div class="who">
+                <span class="avatar">AR</span>
+                <span>
+                  <span class="who-name">Ana Ribeiro</span><br>
+                  <span class="who-role">Analista de Cadastro</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="vs">
+              <div class="ver">
+                <div class="ver-head">
+                  <span class="ver-name">POP CADASTRO PJ — V3</span>
+                  <span class="tag old">Anterior</span>
+                </div>
+                <div class="ver-body">
+                  <div class="line">4.1 — Documentos exigidos na abertura de cadastro PJ.</div>
+                  <div class="line changed-old">4.2 — Prazo de revalidação documental: <b>24 meses</b>.</div>
+                  <div class="line">4.3 — Comprovação de endereço da sede.</div>
+                  <div class="line" style="opacity:.45">4.4 — <i>Sem correspondente nesta versão.</i></div>
+                </div>
+              </div>
+
+              <div class="ver">
+                <div class="ver-head">
+                  <span class="ver-name">POP CADASTRO PJ — V4</span>
+                  <span class="tag now">Vigente</span>
+                </div>
+                <div class="ver-body">
+                  <div class="line">4.1 — Documentos exigidos na abertura de cadastro PJ.</div>
+                  <div class="line changed-new">4.2 — Prazo de revalidação documental: <b>12 meses</b>.</div>
+                  <div class="line">4.3 — Comprovação de endereço da sede.</div>
+                  <div class="line changed-new">4.4 — <b>Atualização do quadro societário</b> a cada revalidação.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="impact">
+              <span class="impact-label">Efeito prático</span>
+              <p>Parceiros cadastrados na vigência da v3 passam a exigir revalidação um ano antes do previsto. A v4 também acrescenta a atualização do quadro societário, que antes só era pedida na abertura.</p>
+            </div>
+
+            <div class="ilustrativo">Exemplo ilustrativo — nomes e trechos fictícios</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TELA 3 ============ -->
+  <section class="tela">
+    <div class="tela-head">
+      <span class="slide-tag">Slide 05 · Segregação por área</span>
+      <h2>Cada área enxerga o que é dela</h2>
+      <p>O slide afirma que o documento sigiloso do jurídico "simplesmente não existe" para quem é do cadastro. Duas contas, a mesma pergunta: o que muda é o conjunto de fontes — não há item bloqueado à vista, porque ele nem aparece.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="frame-scroll">
+        <div class="app">
+          <aside class="side">
+            <div class="logo">
+              <span class="logo-mark">D</span>
+              <span class="logo-name">Daisee</span>
+            </div>
+            <nav class="nav">
+              <span class="nav-item"><span class="nav-ico">◈</span>Início</span>
+              <span class="nav-item"><span class="nav-ico">◎</span>Explorar</span>
+              <span class="nav-item on"><span class="nav-ico">◔</span>Usuários</span>
+              <span class="nav-item"><span class="nav-ico">▤</span>Arquivos</span>
+            </nav>
+            <div class="tree">
+              <span class="tree-item"><span class="sq" style="background:var(--doc)"></span>Cadastro</span>
+              <span class="tree-item"><span class="sq" style="background:var(--norma)"></span>Compliance</span>
+              <span class="tree-item"><span class="sq" style="background:var(--dossie)"></span>Jurídico</span>
+              <span class="tree-item"><span class="sq" style="background:var(--pop)"></span>Operações</span>
+            </div>
+            <div class="side-foot">Minimizar barra</div>
+          </aside>
+
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="page-title">Perfis de acesso</div>
+                <div class="crumb">Usuários · Recortes por área</div>
+              </div>
+              <span class="chip">Mesma pergunta · dois perfis</span>
+            </div>
+
+            <div class="search">🔍 &nbsp; Quais exigências se aplicam ao parceiro que opera acima do limite simplificado?</div>
+
+            <div class="perfis">
+              <div class="perfil">
+                <div class="perfil-head">
+                  <span class="avatar" style="background:var(--doc)">AR</span>
+                  <span>
+                    <span class="perfil-name">Ana Ribeiro</span><br>
+                    <span class="perfil-sub">Cadastro · 3 fontes retornadas</span>
+                  </span>
+                </div>
+                <div class="perfil-list">
+                  <span class="pf"><span class="sq" style="background:var(--doc)"></span>POP de Cadastro PJ — v4, pág. 12</span>
+                  <span class="pf"><span class="sq" style="background:var(--norma)"></span>Manual de PLD/FT — seção 5.3</span>
+                  <span class="pf"><span class="sq" style="background:var(--norma)"></span>Política de Aceitação de Parceiros — anexo II</span>
+                </div>
+              </div>
+
+              <div class="perfil">
+                <div class="perfil-head">
+                  <span class="avatar" style="background:var(--dossie);color:#2A0A0A">MF</span>
+                  <span>
+                    <span class="perfil-name">Marco Freire</span><br>
+                    <span class="perfil-sub">Jurídico · 5 fontes retornadas</span>
+                  </span>
+                </div>
+                <div class="perfil-list">
+                  <span class="pf"><span class="sq" style="background:var(--doc)"></span>POP de Cadastro PJ — v4, pág. 12</span>
+                  <span class="pf"><span class="sq" style="background:var(--norma)"></span>Manual de PLD/FT — seção 5.3</span>
+                  <span class="pf"><span class="sq" style="background:var(--norma)"></span>Política de Aceitação de Parceiros — anexo II</span>
+                  <span class="pf"><span class="sq" style="background:var(--dossie)"></span>Parecer jurídico 214/2025 — cláusula de rescisão</span>
+                  <span class="pf"><span class="sq" style="background:var(--dossie)"></span>Contrato de parceria — minuta v7</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="impact">
+              <span class="impact-label">O que a Ana vê</span>
+              <p>Os dois documentos do jurídico não aparecem na lista dela, não são citados na resposta e não retornam em nenhuma busca. Não é um cadeado na tela — é ausência.</p>
+            </div>
+
+            <div class="ilustrativo">Exemplo ilustrativo — nomes e trechos fictícios</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="nota">
+    <span style="color:var(--mark);font-weight:700">!</span>
+    <span><strong>Sobre os números.</strong> A apresentação institucional da Daisee traz "tempo operacional reduzido em até 70%" e descreve "automação de análises". Nenhuma das duas frases entra no material da OZ: o 70% é depoimento de um cliente específico (Dinamica Merchandising) e só pode ser citado como tal, e a Daisee não automatiza processo — ela encontra, compara e cita documento. As telas acima seguem essa régua.</span>
+  </div>
+
+  <footer>
+    <span><strong>Fonte do design:</strong> apresentação institucional Daisee 2026 — telas de Início, Arquivos e painel de fontes.</span>
+    <span>Marcelo Mafra · MasterVendas · mafra@mastervendas.com.br</span>
+  </footer>
+
+</div>

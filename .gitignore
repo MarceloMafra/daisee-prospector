@@ -9,3 +9,6 @@ node_modules
 docs/**/apresentacoes/**/*-cambio.html
 .vercel
 .env*
+
+# Prints de ambiente real: contem dados de clientes (nomes, telefones, conversas)
+docs/Reuni*/apresentacoes/telas-reais/
