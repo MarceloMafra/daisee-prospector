@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Send, Linkedin, Mail, CheckCircle2, Clock, XCircle, MessageSquare, UserCheck } from 'lucide-react'
+import { Send, Linkedin, Mail, CheckCircle2, Clock, XCircle, MessageSquare, UserCheck, PauseCircle } from 'lucide-react'
 
 interface Touch {
   id: string
@@ -20,6 +20,12 @@ interface Cadencia {
   touches: Touch[]
 }
 
+interface Interacao {
+  id: string
+  status: string
+  recebidaEm: string
+}
+
 interface Lead {
   id: string
   name: string
@@ -28,7 +34,27 @@ interface Lead {
   daiseeScore: number
   status: string
   linkedinConnectedAt: string | null
+  excludedFromAutomation: boolean
+  interacoes: Interacao[]
   cadencia: Cadencia | null
+}
+
+// De quem é a vez na conversa. "Respondido" num touch só diz que o lead
+// escreveu algum dia — não diz se alguém já retornou para ele.
+type Vez = 'VOCE' | 'LEAD' | null
+
+function vezDe(lead: Lead): Vez {
+  const interacoes = lead.interacoes || []
+  if (interacoes.some(i => i.status === 'NOVA')) return 'VOCE'
+  if (interacoes.length > 0) return 'LEAD'
+  return null
+}
+
+// A cadência para de avançar sozinha quando o lead responde ou quando o lead
+// sai da automação — vale dizer isso na tela, senão parece que travou.
+function cadenciaPausada(lead: Lead): boolean {
+  if (lead.excludedFromAutomation) return true
+  return Boolean(lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO'))
 }
 
 const TOUCH_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -136,20 +162,33 @@ export default function ProspectingPage() {
     respondido: allTouches.filter(t => t.status === 'RESPONDIDO').length,
   }
 
+  const aguardandoVoce = leads.filter(l => vezDe(l) === 'VOCE').length
+
   const FILTERS = [
     { value: 'ALL', label: 'Todos' },
+    { value: 'SUA_VEZ', label: `Aguardando você${aguardandoVoce ? ` (${aguardandoVoce})` : ''}` },
     { value: 'AGENDADO', label: 'Com pendências' },
     { value: 'CONECTADO', label: 'Conexão aceita' },
     { value: 'RESPONDIDO', label: 'Com resposta' },
   ]
 
-  const filtered = leads.filter(lead => {
-    if (filter === 'ALL') return true
-    if (filter === 'AGENDADO') return lead.cadencia?.touches.some(t => t.status === 'AGENDADO')
-    if (filter === 'CONECTADO') return Boolean(lead.linkedinConnectedAt)
-    if (filter === 'RESPONDIDO') return lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO')
-    return true
-  })
+  const filtered = leads
+    .filter(lead => {
+      if (filter === 'ALL') return true
+      if (filter === 'SUA_VEZ') return vezDe(lead) === 'VOCE'
+      if (filter === 'AGENDADO') return lead.cadencia?.touches.some(t => t.status === 'AGENDADO')
+      if (filter === 'CONECTADO') return Boolean(lead.linkedinConnectedAt)
+      if (filter === 'RESPONDIDO') return lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO')
+      return true
+    })
+    // Quem está esperando resposta vai para o topo: é a única coisa da lista
+    // que depende de uma pessoa agir hoje.
+    .sort((a, b) => {
+      const peso = (l: Lead) => (vezDe(l) === 'VOCE' ? 0 : vezDe(l) === 'LEAD' ? 1 : 2)
+      const d = peso(a) - peso(b)
+      if (d !== 0) return d
+      return b.daiseeScore - a.daiseeScore
+    })
 
   return (
     <div className="space-y-6">
@@ -230,6 +269,7 @@ export default function ProspectingPage() {
                 <thead>
                   <tr className="border-b dark:border-gray-700">
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium">Lead</th>
+                    <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium">Situação</th>
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium hidden lg:table-cell">Status</th>
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium hidden lg:table-cell">Score</th>
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium">Progresso</th>
@@ -258,6 +298,40 @@ export default function ProspectingPage() {
                             )}
                           </div>
                           <p className="text-xs text-gray-500 mt-0.5">{lead.company}</p>
+                        </td>
+                        <td className="py-4 pr-4 align-middle">
+                          <div className="flex flex-col items-start gap-1">
+                            {vezDe(lead) === 'VOCE' && (
+                              <span
+                                title="O lead escreveu e ainda não foi respondido"
+                                className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 whitespace-nowrap"
+                              >
+                                <MessageSquare className="w-3 h-3" />
+                                Sua vez
+                              </span>
+                            )}
+                            {vezDe(lead) === 'LEAD' && (
+                              <span
+                                title="Você respondeu por último — a bola está com o lead"
+                                className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
+                              >
+                                <Clock className="w-3 h-3" />
+                                Aguardando lead
+                              </span>
+                            )}
+                            {cadenciaPausada(lead) && (
+                              <span
+                                title="A cadência automática não avança mais neste lead"
+                                className="inline-flex items-center gap-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
+                              >
+                                <PauseCircle className="w-3 h-3" />
+                                Cadência pausada
+                              </span>
+                            )}
+                            {!vezDe(lead) && !cadenciaPausada(lead) && (
+                              <span className="text-[11px] text-gray-400 dark:text-gray-600">—</span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-4 pr-4 hidden lg:table-cell">
                           <span className="text-xs text-gray-600 dark:text-gray-400">

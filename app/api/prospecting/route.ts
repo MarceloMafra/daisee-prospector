@@ -17,6 +17,14 @@ export async function GET() {
         daiseeScore: true,
         status: true,
         linkedinConnectedAt: true,
+        excludedFromAutomation: true,
+        // De quem é a vez: uma interação NOVA significa que o lead escreveu e
+        // ninguém respondeu ainda. Sem isso a lista não distingue "respondeu
+        // algum dia" de "está esperando você agora".
+        interacoes: {
+          select: { id: true, status: true, recebidaEm: true },
+          orderBy: { recebidaEm: 'desc' },
+        },
         cadencia: {
           select: {
             id: true,
