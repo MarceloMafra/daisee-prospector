@@ -62,7 +62,17 @@ export function violacoesEmTexto(texto: string): Violacao[] {
     let m: RegExpExecArray | null
 
     while ((m = regra.re.exec(texto)) !== null) {
-      if (regra.id === 'NUMERO' && EXCECAO_DEPOIMENTO.test(texto)) continue
+      // O depoimento da Dinamica é o único caso liberado — e ele cita cliente
+      // e número juntos, então libera as duas regras, não só a do número.
+      if ((regra.id === 'NUMERO' || regra.id === 'CASE') && EXCECAO_DEPOIMENTO.test(texto)) continue
+
+      // "concordo 100%", "migração 100% pra cloud", "dados 100% em infra própria":
+      // 100% nunca é promessa de eficiência plausível, é reforço de linguagem.
+      // Só conta se vier junto de verbo de ganho ou redução.
+      if (regra.id === 'NUMERO' && /^100\s?%$/.test(m[0].trim())) {
+        const contexto = texto.slice(Math.max(0, m.index - 50), m.index)
+        if (!/(redu|econom|ganho|aument|corta|poupa)/i.test(contexto)) continue
+      }
       // Olha os 60 caracteres logo antes do match atrás de uma negação.
       const antes = texto.slice(Math.max(0, m.index - 60), m.index)
       const antesLongo = texto.slice(Math.max(0, m.index - 160), m.index)
