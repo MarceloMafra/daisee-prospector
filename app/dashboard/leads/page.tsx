@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -49,6 +49,32 @@ export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalLeads, setTotalLeads] = useState(0)
   const [novoLeadAberto, setNovoLeadAberto] = useState(false)
+  // O que já foi consultado no servidor. Difere de searchQuery enquanto o
+  // usuário ainda está digitando.
+  const [buscaAplicada, setBuscaAplicada] = useState('')
+
+  // A busca precisa varrer a base inteira, não a página carregada: com 25 por
+  // página, procurar um lead da página 6 não devolvia nada. A rota já aceitava
+  // o parâmetro — faltava mandar.
+  const urlDaListagem = useCallback(
+    (pagina = currentPage) => {
+      const params = new URLSearchParams({ limit: String(pageSize), page: String(pagina) })
+      if (buscaAplicada) params.set('search', buscaAplicada)
+      return `/api/leads?${params}`
+    },
+    [pageSize, currentPage, buscaAplicada]
+  )
+
+  // Uma consulta por pausa na digitação, não uma por tecla.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setBuscaAplicada(searchQuery.trim())
+      // Resultado novo, paginação nova: seguir na página 4 da lista anterior
+      // cairia numa página que a busca talvez nem tenha.
+      setCurrentPage(1)
+    }, 350)
+    return () => clearTimeout(id)
+  }, [searchQuery])
 
   const handleRecalculate = async () => {
     if (!confirm('Recalcular o DAISEE Score de todos os leads com os novos critérios?')) return
@@ -58,7 +84,7 @@ export default function LeadsPage() {
       const res = await fetch('/api/leads/recalculate', { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        const response = await fetch(`/api/leads?limit=${pageSize}&page=${currentPage}`)
+        const response = await fetch(urlDaListagem())
         if (response.ok) {
           const d = await response.json()
           setLeads(d.leads || [])
@@ -75,39 +101,39 @@ export default function LeadsPage() {
   }
 
   useEffect(() => {
+    let cancelado = false
     const fetchLeads = async () => {
       setLoading(true)
       try {
-        const response = await fetch(`/api/leads?limit=${pageSize}&page=${currentPage}`)
+        const response = await fetch(urlDaListagem())
         if (response.ok) {
           const data = await response.json()
+          // Digitar rápido dispara buscas em sequência; sem isso a resposta de
+          // uma consulta antiga pode chegar depois e sobrescrever a atual.
+          if (cancelado) return
           setLeads(data.leads || [])
           setTotalLeads(data.pagination?.total || 0)
         }
       } catch (error) {
         console.error('Falha ao buscar leads:', error)
       } finally {
-        setLoading(false)
+        if (!cancelado) setLoading(false)
       }
     }
     fetchLeads()
-  }, [pageSize, currentPage])
+    return () => {
+      cancelado = true
+    }
+  }, [urlDaListagem])
 
-  const filteredLeads = leads.filter(
-    (lead) =>
-      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-      lead.company.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const allFilteredSelected = filteredLeads.length > 0 && filteredLeads.every(l => selected.has(l.id))
+  const allFilteredSelected = leads.length > 0 && leads.every(l => selected.has(l.id))
   const someSelected = selected.size > 0
 
   const toggleSelectAll = () => {
     if (allFilteredSelected) {
       setSelected(new Set())
     } else {
-      setSelected(new Set(filteredLeads.map(l => l.id)))
+      setSelected(new Set(leads.map(l => l.id)))
     }
   }
 
@@ -218,7 +244,7 @@ export default function LeadsPage() {
     setBulkPreparing(false)
     setSelected(new Set())
 
-    const response = await fetch(`/api/leads?limit=${pageSize}&page=${currentPage}`)
+    const response = await fetch(urlDaListagem())
     if (response.ok) {
       const data = await response.json()
       setLeads(data.leads || [])
@@ -480,7 +506,8 @@ export default function LeadsPage() {
         <CardHeader>
           <CardTitle>Lista de Leads</CardTitle>
           <CardDescription>
-            Mostrando {filteredLeads.length} de {totalLeads} lead{totalLeads !== 1 ? 's' : ''}
+            Mostrando {leads.length} de {totalLeads} lead{totalLeads !== 1 ? 's' : ''}
+            {buscaAplicada && ` encontrado${totalLeads !== 1 ? 's' : ''} para “${buscaAplicada}”`}
             {someSelected && ` · ${selected.size} selecionado(s)`}
           </CardDescription>
           <div className="flex items-center gap-3 pt-2">
@@ -523,15 +550,15 @@ export default function LeadsPage() {
             <div className="flex justify-center py-8">
               <p className="text-gray-500">Carregando leads...</p>
             </div>
-          ) : filteredLeads.length === 0 ? (
+          ) : leads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mb-4" />
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {leads.length === 0
-                  ? 'Nenhum lead ainda. Importe sua primeira lista para começar.'
-                  : 'Nenhum lead encontrado para esta busca.'}
+                {buscaAplicada
+                  ? `Nenhum lead encontrado para “${buscaAplicada}” em toda a base.`
+                  : 'Nenhum lead ainda. Importe sua primeira lista para começar.'}
               </p>
-              {leads.length === 0 && (
+              {!buscaAplicada && (
                 <Link href="/dashboard/leads/import">
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
@@ -563,7 +590,7 @@ export default function LeadsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredLeads.map((lead) => (
+                  {leads.map((lead) => (
                     <tr key={lead.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selected.has(lead.id) ? 'bg-red-50 dark:bg-red-950/20' : ''}`}>
                       <td className="px-4 py-3">
                         <input
