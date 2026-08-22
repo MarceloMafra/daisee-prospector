@@ -28,11 +28,26 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { company: { contains: search, mode: 'insensitive' } },
-      ]
+      // "cambio" precisa achar "OZ Câmbio": quem digita o nome de um lead
+      // brasileiro raramente põe o acento, e o `contains` do Prisma compara
+      // byte a byte — o acento fazia a busca devolver zero e o operador
+      // concluía que o lead não estava na base.
+      //
+      // unaccent() não existe no Prisma, então a comparação vai em SQL e
+      // devolve só os ids; o resto da consulta (score, status, prioridade,
+      // ordenação, paginação) continua no Prisma. Traz todos os ids que casam,
+      // o que é adequado a uma base de prospecção — se um dia forem centenas
+      // de milhares, a busca inteira tem que descer para SQL.
+      // Sem escapar, "50%" viraria curinga e traria qualquer coisa com "50".
+      const termo = `%${search.replace(/[\\%_]/g, c => `\\${c}`)}%`
+
+      const casam = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Lead"
+        WHERE unaccent(name) ILIKE unaccent(${termo})
+           OR unaccent(coalesce(email, '')) ILIKE unaccent(${termo})
+           OR unaccent(company) ILIKE unaccent(${termo})
+      `
+      where.id = { in: casam.map(l => l.id) }
     }
 
     if (status) {
