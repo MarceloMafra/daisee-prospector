@@ -54,6 +54,26 @@ const DOCUMENTO_DE = /(relat[óo]rios?|documentos?|evid[êe]ncias?|arquivos?|dos
 const TRAJETORIA_DO_LEAD =
   /(sua (experi[êe]ncia|trajet[óo]ria|passagem|carreira|atua[çc][ãa]o|viv[êe]ncia|bagagem)|voc[êe] (\w+ou|liderou|esteve|j[áa]|manteve|fez|teve)|conselheir[oa]|quando (voc[êe]|ele|ela)|na sua (rotina|[áa]rea|opera[çc][ãa]o)|no seu (time|trabalho)|no [A-Z]\w+, voc[êe])[^.!?]{0,120}$/i
 
+// A frase toda em volta do match — a violação de AUTOMACAO depende de quem é o
+// sujeito, e isso só dá pra ver no período inteiro, não nos 60 caracteres antes.
+function fraseAoRedor(texto: string, index: number) {
+  const ini = Math.max(0, texto.lastIndexOf('.', index - 1) + 1, texto.lastIndexOf('\n', index - 1) + 1)
+  const fim = texto.slice(index).search(/[.!?\n]/)
+  return texto.slice(ini, fim === -1 ? texto.length : index + fim)
+}
+
+// Quando a DAISEE (ou nós) é o sujeito, "automação" vira promessa do produto.
+const SUJEITO_NOSSO =
+  /\b(daisee|nossa? (solu[çc][ãa]o|plataforma|ferramenta|produto|ia)|a (plataforma|ferramenta)|n[óo]s\b|a gente)\b/i
+
+// "automação de dossiês na Caju", "due diligence de parceiros", "automação de
+// chamados no iFood": o sujeito é o lead ou a empresa dele. TRAJETORIA_DO_LEAD
+// já cobria isso, mas só com verbo terminado em -ou ("você liderou") — "você
+// coordena", "você construiu", "você trabalha" e "você descreveu" passavam
+// batido e a auditoria acusava justamente os textos corretos.
+const CONTEXTO_DO_LEAD =
+  /\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time)|voc[êe]\b|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b/i
+
 export function violacoesEmTexto(texto: string): Violacao[] {
   const achados: Violacao[] = []
 
@@ -79,6 +99,11 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       if (NEGACAO.test(antes)) continue
       if (/^due diligence$/i.test(m[0]) && DOCUMENTO_DE.test(antes)) continue
       if (TRAJETORIA_DO_LEAD.test(antesLongo)) continue
+
+      if (regra.id === 'AUTOMACAO') {
+        const frase = fraseAoRedor(texto, m.index)
+        if (!SUJEITO_NOSSO.test(frase) && CONTEXTO_DO_LEAD.test(frase)) continue
+      }
 
       const ini = Math.max(0, m.index - 60)
       achados.push({
