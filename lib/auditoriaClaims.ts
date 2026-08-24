@@ -44,6 +44,11 @@ const EXCECAO_DEPOIMENTO = /din[âa]mica/i
 // não prometendo. Sem isso a auditoria acusaria justamente as cadências limpas.
 const NEGACAO = /\b(n[ãa]o|nada de|nem|sem ser|longe de|diferente de|ao contr[áa]rio de)\b[^.!?]{0,70}$/i
 
+// "Sem automação de workflow, sem promessas genéricas" nega tanto quanto "não é automação",
+// mas "sem" sozinho só vale para esta regra: em "reduza sem esforço em 40%" o
+// "sem" não desmente o número, e liberar aí seria abrir buraco na regra NUMERO.
+const NEGACAO_AUTOMACAO = /\bsem\b[^.!?]{0,70}$/i
+
 // "relatórios de due diligence" é um TIPO DE DOCUMENTO que a DAISEE indexa —
 // diferente de prometer que ela executa a due diligence.
 const DOCUMENTO_DE = /(relat[óo]rios?|documentos?|evid[êe]ncias?|arquivos?|dossi[êe]s?|pareceres?|pol[íi]ticas?|contratos?)\s+(de|da|do)\s+$/i
@@ -96,7 +101,8 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       // Olha os 60 caracteres logo antes do match atrás de uma negação.
       const antes = texto.slice(Math.max(0, m.index - 60), m.index)
       const antesLongo = texto.slice(Math.max(0, m.index - 160), m.index)
-      if (NEGACAO.test(antes)) continue
+      if (NEGACAO.test(antesLongo)) continue
+      if (regra.id === 'AUTOMACAO' && NEGACAO_AUTOMACAO.test(antesLongo)) continue
       if (/^due diligence$/i.test(m[0]) && DOCUMENTO_DE.test(antes)) continue
       if (TRAJETORIA_DO_LEAD.test(antesLongo)) continue
 

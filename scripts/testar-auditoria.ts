@@ -15,6 +15,15 @@ const casos: [string, boolean, string][] = [
   ['Ela indexa relatórios de due diligence e cita a fonte.', false, 'due diligence como documento'],
 ]
 
+// Casos de negacao vindos das cadencias geradas em 24/08 -- os dois textos
+// estavam certos e a auditoria os acusava.
+const NEGACAO: [string, RegExp | null, string][] = [
+  ['Busca em linguagem natural, com resposta que aponta o documento de origem. Sem automação de workflow, sem promessas genéricas.', /AUTOMACAO/, 'nega com "Sem"'],
+  ['Não tenho experiência acumulada no setor de seguros para te dizer "o que costuma funcionar" — e prefiro ser honesto sobre isso.', /REPERTORIO/, 'nega a 64 chars de distancia'],
+  ['A DAISEE reduz sem esforço em 40% o tempo de busca.', null, '"sem" NAO pode liberar numero'],
+  ['Nossa plataforma faz o monitoramento de risco sem esforço algum.', null, 'promessa seguida de "sem": a negacao vem depois, nao desmente'],
+]
+
 let falhas = 0
 for (const [texto, deveAcusar, rotulo] of casos) {
   const v = violacoesEmTexto(texto)
@@ -23,4 +32,12 @@ for (const [texto, deveAcusar, rotulo] of casos) {
   if (!ok) falhas++
   console.log(`${ok ? '  ok  ' : ' FALHA'} | esperado ${deveAcusar ? 'ACUSAR' : 'passar'} · ${rotulo}`)
 }
+for (const [texto, regraProibida, rotulo] of NEGACAO) {
+  const v = violacoesEmTexto(texto)
+  // regraProibida = null significa "tem de continuar acusando alguma coisa"
+  const ok = regraProibida ? !v.some(x => regraProibida.test(x.regra)) : v.length > 0
+  if (!ok) falhas++
+  console.log(`${ok ? '  ok  ' : ' FALHA'} | ${regraProibida ? 'esperado passar' : 'esperado ACUSAR'} · ${rotulo}`)
+}
+
 console.log(falhas === 0 ? '\nTodos os casos passaram.' : `\n${falhas} falha(s).`)
