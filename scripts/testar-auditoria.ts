@@ -24,6 +24,19 @@ const NEGACAO: [string, RegExp | null, string][] = [
   ['Nossa plataforma faz o monitoramento de risco sem esforço algum.', null, 'promessa seguida de "sem": a negacao vem depois, nao desmente'],
 ]
 
+// Autoria: a MasterVendas e parceira da DAISEE, nao a desenvolvedora.
+// As formulacoes abaixo sairam da propria base em 25/08.
+const AUTORIA: [string, boolean, string][] = [
+  ['Sou fundador da MasterVendas e desenvolvemos a DAISEE, uma IA privada de gestão documental.', true, 'desenvolvemos a DAISEE'], 
+  ['Criamos a DAISEE para resolver esse problema.', true, 'criamos a DAISEE'], 
+  ['Trabalho com a DAISEE — uma IA privada de gestão documental que desenvolvemos.', true, 'que desenvolvemos (posposto)'], 
+  ['Desenvolvi uma IA privada de gestão documental, a DAISEE.', true, 'desenvolvi ... a DAISEE'], 
+  ['Somos parceiros da DAISEE, uma IA privada de gestão documental.', false, 'FORMULACAO CORRETA: somos parceiros'], 
+  ['Trabalho com a DAISEE, uma IA privada de gestão documental.', false, 'FORMULACAO CORRETA: trabalho com'], 
+  ['Vi que você desenvolveu o fluxo de invoices na Clara.', false, 'desenvolveu = trabalho do lead'], 
+  ['Vi que você desenvolveu um repositório interno antes de conhecer a DAISEE.', false, 'trabalho do lead com DAISEE na frase'], 
+]
+
 let falhas = 0
 for (const [texto, deveAcusar, rotulo] of casos) {
   const v = violacoesEmTexto(texto)
@@ -38,6 +51,13 @@ for (const [texto, regraProibida, rotulo] of NEGACAO) {
   const ok = regraProibida ? !v.some(x => regraProibida.test(x.regra)) : v.length > 0
   if (!ok) falhas++
   console.log(`${ok ? '  ok  ' : ' FALHA'} | ${regraProibida ? 'esperado passar' : 'esperado ACUSAR'} · ${rotulo}`)
+}
+
+for (const [texto, deveAcusar, rotulo] of AUTORIA) {
+  const acusou = violacoesEmTexto(texto).some(x => x.regra === 'AUTORIA')
+  const ok = acusou === deveAcusar
+  if (!ok) falhas++
+  console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
 }
 
 console.log(falhas === 0 ? '\nTodos os casos passaram.' : `\n${falhas} falha(s).`)

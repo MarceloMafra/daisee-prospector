@@ -4,7 +4,7 @@
 //
 // É detecção por texto: aponta o que precisa de leitura humana, não julga sozinha.
 
-export type RegraId = 'CASE' | 'NUMERO' | 'AUTOMACAO' | 'REPERTORIO'
+export type RegraId = 'CASE' | 'NUMERO' | 'AUTOMACAO' | 'REPERTORIO' | 'AUTORIA'
 
 export interface Violacao {
   regra: RegraId
@@ -34,6 +34,14 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
     id: 'AUTOMACAO',
     rotulo: 'DAISEE como automação',
     re: /\b(automa(ção|cao|tiza\w*|tizar|tizando)|robô|robo\b|chatbot|workflow|due diligence|monitora\w* de risco)\b/gi,
+  },
+  {
+    id: 'AUTORIA',
+    rotulo: 'MasterVendas como autora da DAISEE',
+    // A MasterVendas e PARCEIRA da DAISEE, nao a desenvolvedora. Dizer o
+    // contrario e verificavel em um clique -- e o publico da campanha
+    // (compliance, auditoria, CFO) checa fornecedor por oficio.
+    re: /(desenvolví|desenvolvi|desenvolvemos|desenvolveu|criamos|criei|construimos|construímos)[^.!?]{0,60}daisee|daisee[^.!?]{0,40}que (desenvolv|cri|constru)\w*|nossa (ia|solução|ferramenta|plataforma) de gestão documental/gi,
   },
 ]
 
@@ -77,7 +85,7 @@ const SUJEITO_NOSSO =
 // coordena", "você construiu", "você trabalha" e "você descreveu" passavam
 // batido e a auditoria acusava justamente os textos corretos.
 const CONTEXTO_DO_LEAD =
-  /\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time)|voc[êe]\b|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b/i
+  /\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time)|voc[êe]|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b/i
 
 export function violacoesEmTexto(texto: string): Violacao[] {
   const achados: Violacao[] = []
@@ -105,6 +113,12 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       if (regra.id === 'AUTOMACAO' && NEGACAO_AUTOMACAO.test(antesLongo)) continue
       if (/^due diligence$/i.test(m[0]) && DOCUMENTO_DE.test(antes)) continue
       if (TRAJETORIA_DO_LEAD.test(antesLongo)) continue
+
+      // Sem \b depois de "voc[êe]": em JS o acento nao e caractere de palavra,
+      // entao a fronteira nunca casa depois do ê e o ramo ficaria morto.
+      // "você desenvolveu o fluxo de invoices" é a trajetória do lead, mesmo que
+      // a DAISEE apareça na sequência da frase. Só é claim quando o sujeito somos nós.
+      if (regra.id === 'AUTORIA' && /\bvoc[êe][^.!?]{0,25}$/i.test(texto.slice(Math.max(0, m.index - 40), m.index))) continue
 
       if (regra.id === 'AUTOMACAO') {
         const frase = fraseAoRedor(texto, m.index)
