@@ -12,3 +12,6 @@ docs/**/apresentacoes/**/*-cambio.html
 
 # Prints de ambiente real: contem dados de clientes (nomes, telefones, conversas)
 docs/Reuni*/apresentacoes/telas-reais/
+
+# Dumps de touches para restauro: contêm o texto personalizado de cada lead
+.backups/
