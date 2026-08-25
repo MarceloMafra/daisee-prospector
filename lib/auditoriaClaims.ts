@@ -41,7 +41,7 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
     // A MasterVendas e PARCEIRA da DAISEE, nao a desenvolvedora. Dizer o
     // contrario e verificavel em um clique -- e o publico da campanha
     // (compliance, auditoria, CFO) checa fornecedor por oficio.
-    re: /(desenvolví|desenvolvi|desenvolvemos|desenvolveu|criamos|criei|construimos|construímos)[^.!?]{0,60}daisee|daisee[^.!?]{0,40}que (desenvolv|cri|constru)\w*|nossa (ia|solução|ferramenta|plataforma) de gestão documental/gi,
+    re: /(desenvolví|desenvolvi|desenvolvemos|desenvolveu|criamos|criei|construimos|construímos)[^.!?]{0,60}daisee|daisee[^.!?]{0,40}que (desenvolvemos|desenvolvi|criamos|criei|constru[íi]mos)\b|(desenvolvemos|desenvolvi|criamos|criei) uma ia[^.!?]{0,50}(documental|daisee)|nossa (ia|solução|ferramenta|plataforma) de gestão documental/gi,
   },
 ]
 

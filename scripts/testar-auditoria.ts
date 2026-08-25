@@ -35,6 +35,9 @@ const AUTORIA: [string, boolean, string][] = [
   ['Trabalho com a DAISEE, uma IA privada de gestão documental.', false, 'FORMULACAO CORRETA: trabalho com'], 
   ['Vi que você desenvolveu o fluxo de invoices na Clara.', false, 'desenvolveu = trabalho do lead'], 
   ['Vi que você desenvolveu um repositório interno antes de conhecer a DAISEE.', false, 'trabalho do lead com DAISEE na frase'], 
+  ['A DAISEE é uma IA privada que cria exatamente isso — uma base documental pesquisável.', false, 'a DAISEE que cria, nao nos'], 
+  ['Pergunto porque desenvolvemos uma IA de gestão documental (DAISEE).', true, 'desenvolvemos uma IA ... (DAISEE)'], 
+  ['Desenvolvi a DAISEE, uma IA privada de gestão documental.', true, 'Desenvolvi a DAISEE'], 
 ]
 
 let falhas = 0
