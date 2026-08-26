@@ -107,6 +107,32 @@ export class SchedulerError extends Error {
   }
 }
 
+// O Sales Navigator devolve o perfil com um URN próprio (ACwAAA…), diferente do
+// provider_id clássico (ACoAAA…) que a API de convite e de mensagem espera. Lead
+// importado de lá e ainda não enriquecido faz a Unipile responder
+// "400 Missing parameters" — foi o que derrubou o convite do Bruno Leitão (BNB).
+// O enriquecimento é justamente quem grava o id clássico, então tentamos uma vez
+// antes de desistir do envio. So roda depois da guarda que exige o id, por isso
+// o retorno e sempre string.
+async function garantirProviderIdClassico(touch: TouchWithLead): Promise<string> {
+  const atual = touch.lead.linkedinProviderId as string
+  if (!atual.startsWith('ACw')) return atual
+
+  try {
+    const { enrichLeadFromLinkedIn } = await import('@/lib/enrichment')
+    await enrichLeadFromLinkedIn(touch.lead)
+    const atualizado = await prisma.lead.findUnique({
+      where: { id: touch.leadId },
+      select: { linkedinProviderId: true },
+    })
+    return atualizado?.linkedinProviderId ?? atual
+  } catch {
+    // Enriquecimento é melhor esforço: se falhar, seguimos com o id que existe e
+    // deixamos o envio reportar o erro real.
+    return atual
+  }
+}
+
 async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<ActionResult> {
   const base = { touchId: touch.id, leadId: touch.leadId, sequence: touch.sequence, type: touch.type }
 
@@ -152,9 +178,10 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
       return { ...base, outcome: dryRun ? 'simulado' : 'falhou', reason }
     }
     if (dryRun) return { ...base, outcome: 'simulado', reason: 'Enviaria convite de conexão no LinkedIn.' }
+    const providerId = await garantirProviderIdClassico(touch)
     try {
       const result = await sendConnectionRequest({
-        providerId: touch.lead.linkedinProviderId,
+        providerId,
         message: touch.content,
         email: touch.lead.email ?? undefined,
       })
@@ -172,6 +199,11 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
       const reason = 'Lead sem linkedinProviderId — não é possível enviar DM.'
       if (!dryRun) await markFailed(touch, reason)
       return { ...base, outcome: dryRun ? 'simulado' : 'falhou', reason }
+    }
+
+    // Vale para a checagem de aceite e para o envio abaixo, que usam o mesmo id.
+    if (!dryRun) {
+      touch.lead.linkedinProviderId = await garantirProviderIdClassico(touch)
     }
 
     let connected = Boolean(touch.lead.linkedinConnectedAt)
