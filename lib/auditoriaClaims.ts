@@ -65,7 +65,7 @@ const DOCUMENTO_DE = /(relat[óo]rios?|documentos?|evid[êe]ncias?|arquivos?|dos
 // Oi e Tupy", "liderou due diligence na DXA" descrevem a trajetória dele. Só vira
 // violação quando o sujeito da frase somos nós.
 const TRAJETORIA_DO_LEAD =
-  /(sua (experi[êe]ncia|trajet[óo]ria|passagem|carreira|atua[çc][ãa]o|viv[êe]ncia|bagagem)|voc[êe] (\w+ou|liderou|esteve|j[áa]|manteve|fez|teve)|conselheir[oa]|quando (voc[êe]|ele|ela)|na sua (rotina|[áa]rea|opera[çc][ãa]o)|no seu (time|trabalho)|no [A-Z]\w+, voc[êe])[^.!?]{0,120}$/i
+  /(sua (experi[êe]ncia|trajet[óo]ria|passagem|carreira|atua[çc][ãa]o|viv[êe]ncia|bagagem)|voc[êe] (\w+ou|liderou|esteve|j[áa]|manteve|fez|teve)|conselheir[oa]|quando (voc[êe]|ele|ela)|sua (rotina|[áa]rea|opera[çc][ãa]o|atua[çc][ãa]o|fun[çc][ãa]o|equipe|agenda)|no seu (time|trabalho)|no [A-Z]\w+, voc[êe])[^.!?]{0,120}$/i
 
 // A frase toda em volta do match — a violação de AUTOMACAO depende de quem é o
 // sujeito, e isso só dá pra ver no período inteiro, não nos 60 caracteres antes.
@@ -85,7 +85,7 @@ const SUJEITO_NOSSO =
 // coordena", "você construiu", "você trabalha" e "você descreveu" passavam
 // batido e a auditoria acusava justamente os textos corretos.
 const CONTEXTO_DO_LEAD =
-  /\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time)|voc[êe]|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b/i
+  /\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time|escopo|cargo|dia a dia)|voc[êe]|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b/i
 
 export function violacoesEmTexto(texto: string): Violacao[] {
   const achados: Violacao[] = []

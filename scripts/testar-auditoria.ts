@@ -22,6 +22,9 @@ const NEGACAO: [string, RegExp | null, string][] = [
   ['Não tenho experiência acumulada no setor de seguros para te dizer "o que costuma funcionar" — e prefiro ser honesto sobre isso.', /REPERTORIO/, 'nega a 64 chars de distancia'],
   ['A DAISEE reduz sem esforço em 40% o tempo de busca.', null, '"sem" NAO pode liberar numero'],
   ['Nossa plataforma faz o monitoramento de risco sem esforço algum.', null, 'promessa seguida de "sem": a negacao vem depois, nao desmente'],
+  ['Me chamou atenção um ponto do seu escopo: a condução de due diligence de parceiros comerciais.', /AUTOMACAO/, 'AUTOMACAO: "seu escopo" e marcador do lead'], 
+  ['O seu escopo na FGV — minutas, editais e due diligence — envolve volume documental.', /AUTOMACAO/, 'AUTOMACAO: escopo, forma longa'], 
+  ['Na sua atuação com due diligence de fornecedores, como funciona a busca?', /AUTOMACAO/, 'AUTOMACAO: "sua atuacao"'], 
 ]
 
 // Autoria: a MasterVendas e parceira da DAISEE, nao a desenvolvedora.

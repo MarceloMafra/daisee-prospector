@@ -36,8 +36,6 @@ export async function generateTouchesForCadencia(
     throw new CadenciaGenerationError('Lead not found for this cadencia', 404)
   }
 
-  await prisma.touch.deleteMany({ where: { cadenciaId } })
-
   const generatedTouches = await generateCadencia(
     {
       name: cadencia.lead.name,
@@ -51,27 +49,36 @@ export async function generateTouchesForCadencia(
     tone
   )
 
-  const createdTouches = await Promise.all(
-    generatedTouches.map((touch) => {
-      const offsetDays = TOUCH_OFFSET_DAYS[touch.sequence] ?? 0
-      const scheduledFor = new Date()
-      scheduledFor.setDate(scheduledFor.getDate() + offsetDays)
+  // A limpeza dos touches antigos ficava ANTES da chamada à IA, que leva
+  // dezenas de segundos. Dois cliques no botão de gerar entravam assim:
+  // ambos apagavam (nada, porque nenhum tinha gravado ainda), ambos chamavam a
+  // IA e ambos gravavam — 10 touches, cada mensagem em duplicata. Apagar e
+  // gravar na mesma transação faz a última geração vencer, sem sobreposição.
+  const createdTouches = await prisma.$transaction(async (tx) => {
+    await tx.touch.deleteMany({ where: { cadenciaId } })
 
-      return prisma.touch.create({
-        data: {
-          cadenciaId,
-          leadId: cadencia.leadId,
-          sequence: touch.sequence,
-          type: touch.type,
-          channel: touch.channel,
-          content: touch.content,
-          subject: touch.subject,
-          status: 'AGENDADO',
-          scheduledFor,
-        },
+    return Promise.all(
+      generatedTouches.map((touch) => {
+        const offsetDays = TOUCH_OFFSET_DAYS[touch.sequence] ?? 0
+        const scheduledFor = new Date()
+        scheduledFor.setDate(scheduledFor.getDate() + offsetDays)
+
+        return tx.touch.create({
+          data: {
+            cadenciaId,
+            leadId: cadencia.leadId,
+            sequence: touch.sequence,
+            type: touch.type,
+            channel: touch.channel,
+            content: touch.content,
+            subject: touch.subject,
+            status: 'AGENDADO',
+            scheduledFor,
+          },
+        })
       })
-    })
-  )
+    )
+  })
 
   await prisma.cadencia.update({
     where: { id: cadenciaId },
