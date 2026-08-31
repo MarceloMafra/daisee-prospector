@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAISEE · Parâmetros Sales Navigator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --navy: #0D1B3E;
+    --blue: #1B4FD8;
+    --ink: #1e2a3a;
+    --mist: #F7F8FA;
+    --border: #E2E8F0;
+    --text: #3D4A60;
+    --soft: #8A97AB;
+    --white: #ffffff;
+
+    --farma:     #0E7C5A;
+    --industria: #7A3B00;
+    --seguros:   #5A2D82;
+    --varejo:    #8B1A4A;
+    --financeiro:#1B4FD8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--mist);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--blue);
+  }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 28px; color: #fff; letter-spacing: -0.5px; }
+  .logo span { color: var(--blue); }
+  .header-sub { font-size: 12px; color: #7A8FA8; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; }
+
+  /* ── INTRO ── */
+  .intro {
+    max-width: 900px;
+    margin: 40px auto 0;
+    padding: 0 32px;
+  }
+  .intro h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--navy);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .intro p {
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+    max-width: 680px;
+  }
+
+  /* ── TABS ── */
+  .tabs-wrap {
+    max-width: 900px;
+    margin: 32px auto 0;
+    padding: 0 32px;
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 2;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    border: 1.5px solid var(--border);
+    border-bottom: none;
+    background: #edf0f5;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--soft);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab-btn .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .tab-btn:hover { background: #fff; color: var(--ink); }
+  .tab-btn.active {
+    background: #fff;
+    color: var(--navy);
+    border-color: var(--border);
+    border-bottom-color: #fff;
+  }
+
+  /* ── PANEL ── */
+  .panel-wrap {
+    max-width: 900px;
+    margin: 0 auto 60px;
+    padding: 0 32px;
+  }
+  .panel {
+    display: none;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 0 8px 8px 8px;
+    padding: 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .panel.active { display: block; }
+
+  /* acento lateral colorido */
+  .panel::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 0 0 0 8px;
+    background: var(--ace);
+  }
+
+  /* ── SETOR HEADER ── */
+  .setor-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-left: 12px;
+  }
+  .setor-icon {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--ace) 10%, white);
+  }
+  .setor-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .setor-header .volume {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--ace) 12%, white);
+    color: var(--ace);
+  }
+
+  /* ── GRID DE PARÂMETROS ── */
+  .params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding-left: 12px;
+  }
+  .param-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .param-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--ace);
+    opacity: 0.4;
+  }
+  .param-card.full { grid-column: 1 / -1; }
+  .param-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ace);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .param-label svg { flex-shrink: 0; }
+
+  /* tags de valor */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--mist);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    transition: all 0.15s;
+    cursor: default;
+  }
+  .tag:hover {
+    background: color-mix(in srgb, var(--ace) 8%, white);
+    border-color: var(--ace);
+    color: var(--ace);
+  }
+  .tag.primary {
+    background: color-mix(in srgb, var(--ace) 10%, white);
+    border-color: color-mix(in srgb, var(--ace) 30%, white);
+    color: var(--ace);
+    font-weight: 500;
+  }
+
+  /* ── ESTRATÉGIA ── */
+  .strategy-section {
+    margin-top: 24px;
+    padding: 20px;
+    padding-left: 28px;
+    background: var(--mist);
+    border-radius: 8px;
+    border-left: 3px solid var(--ace);
+  }
+  .strategy-section h4 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ace);
+    margin-bottom: 10px;
+  }
+  .strategy-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .strategy-list li {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+  }
+  .strategy-list li::before {
+    content: '→';
+    color: var(--ace);
+    font-weight: 600;
+    flex-shrink: 0;
+    font-size: 11px;
+    margin-top: 1px;
+  }
+
+  /* ── MÉTRICAS ESPERADAS ── */
+  .metrics-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-left: 12px;
+  }
+  .metric-box {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+    background: #fff;
+  }
+  .metric-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    color: var(--ace);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-lbl {
+    font-size: 10px;
+    color: var(--soft);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 500;
+  }
+
+  /* ── DICA ── */
+  .tip {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: #FFF9E6;
+    border-radius: 6px;
+    border: 1px solid #E8D88A;
+    font-size: 12.5px;
+    color: #6B5700;
+    line-height: 1.6;
+    padding-left: 12px;
+  }
+  .tip strong { color: #8B6F00; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 11px;
+    color: var(--soft);
+    letter-spacing: 0.5px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .params-grid { grid-template-columns: 1fr; }
+    .metrics-row { flex-wrap: wrap; }
+    header { padding: 20px 24px; }
+    .intro, .tabs-wrap, .panel-wrap { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">DAI<span>S</span>EE</div>
+    <div style="font-size:11px;color:#7A8FA8;margin-top:3px;letter-spacing:1px;">IA PRIVADA CORPORATIVA</div>
+  </div>
+  <div style="text-align:right">
+    <div class="header-sub">Guia de Prospecção</div>
+    <div style="font-size:13px;color:#C8D4E8;margin-top:4px;font-weight:500;">Sales Navigator · Parâmetros por Segmento</div>
+  </div>
+</header>
+
+<div class="intro">
+  <h1>Parâmetros de busca para cada segmento</h1>
+  <p>Use os filtros abaixo como configuração exata no LinkedIn Sales Navigator. Cada segmento tem cargos, setores e filtros booleanos otimizados para encontrar os decisores certos com o menor desperdício de esforço.</p>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="show('financeiro', this)">
+      <span class="dot" style="background:var(--financeiro)"></span> Financeiro
+    </button>
+    <button class="tab-btn" onclick="show('farma', this)">
+      <span class="dot" style="background:var(--farma)"></span> Farma & Saúde
+    </button>
+    <button class="tab-btn" onclick="show('industria', this)">
+      <span class="dot" style="background:var(--industria)"></span> Indústria
+    </button>
+    <button class="tab-btn" onclick="show('seguros', this)">
+      <span class="dot" style="background:var(--seguros)"></span> Seguros
+    </button>
+    <button class="tab-btn" onclick="show('varejo', this)">
+      <span class="dot" style="background:var(--varejo)"></span> Varejo
+    </button>
+  </div>
+</div>
+
+<div class="panel-wrap">
+
+  <!-- ══ FINANCEIRO ══ -->
+  <div class="panel active" id="p-financeiro" style="--ace: var(--financeiro)">
+    <div class="setor-header">
+      <div class="setor-icon">🏦</div>
+      <div>
+        <h2>Financeiro · Bancos · Asset Management</h2>
+        <span class="volume">~40 leads estimados · maior volume da base</span>
+      </div>
+    </div>
+
+    <div class="params-grid">
+      <div class="param-card full">
+        <div class="param-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M4 6l1.5 1.5L8 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Cargos · Títulos (Job Title)
+        </div>
+        <div class="tags">
+          <span class="tag primary">Chief Compliance Officer</span>
+          <span class="tag primary">Head of Compliance</span>
+          <span class="tag primary">VP Compliance</span>
+          <span class="tag primary">Diretor de Compliance</span>
+          <span class="tag">Compliance Officer</span>
+          <span class="tag">Superintendente de Compliance</span>
+          <span class="tag">Gerente de Compliance</span>
+          <span class="tag">Head of Risk & Compliance</span>
+          <span class="tag">Diretor Jurídico</span>
+          <span class="tag">General Counsel</span>
+          <span class="tag">Chief Risk Officer</span>
+          <span class="tag">Analista Sênior de Compliance</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🏢 Setor (Industry)</div>
+        <div class="tags">
+          <span class="tag primary">Banking</span>
+          <span class="tag primary">Financial Services</span>
+          <span class="tag primary">Capital Markets</span>
+          <span class="tag">Investment Management</span>
+          <span class="tag">Insurance</span>
+          <span class="tag">Venture Capital</span>
+          <span class="tag">Fintech</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📏 Porte da Empresa (Company Size)</div>
+        <div class="tags">
+          <span class="tag primary">501–1.000</span>
+          <span class="tag primary">1.001–5.000</span>
+          <span class="tag primary">5.001–10.000</span>
+          <span class="tag primary">10.000+</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📍 Localização (Geography)</div>
+        <div class="tags">
+          <span class="tag primary">São Paulo, Brasil</span>
+          <span class="tag">Rio de Janeiro, Brasil</span>
+          <span class="tag">Brasília, Brasil</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">⚡ Nível de Senioridade (Seniority Level)</div>
+        <div class="tags">
+          <span class="tag primary">Director</span>
+          <span class="tag primary">VP</span>
+          <span class="tag primary">C-Level</span>
+          <span class="tag">Senior</span>
+          <span class="tag">Manager</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🔍 Busca Booleana (Keywords)</div>
+        <div class="tags">
+          <span class="tag primary">"compliance" AND "BACEN"</span>
+          <span class="tag">"compliance" AND "CVM"</span>
+          <span class="tag">"compliance" AND "SUSEP"</span>
+          <span class="tag">"regulatorio" AND "banco"</span>
+          <span class="tag">"gestao de riscos"</span>
+        </div>
+      </div>
+
+      <div class="param-card full">
+        <div class="param-label">🏷️ Empresas-Alvo (Account List — copie direto)</div>
+        <div class="tags">
+          <span class="tag">BNP Paribas</span><span class="tag">Crédit Agricole</span>
+          <span class="tag">J.P. Morgan</span><span class="tag">PIMCO</span>
+          <span class="tag">Bank of China</span><span class="tag">XP Inc.</span>
+          <span class="tag">StoneX</span><span class="tag">Citi</span>
+          <span class="tag">Fitch Ratings</span><span class="tag">American Express</span>
+          <span class="tag">Itaú</span><span class="tag">Bradesco</span>
+          <span class="tag">BTG Pactual</span><span class="tag">Santander Brasil</span>
+          <span class="tag">Nubank</span><span class="tag">Serasa Experian</span>
+          <span class="tag">B3</span><span class="tag">Modalmais</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-box"><div class="metric-val">~200</div><div class="metric-lbl">Resultados esperados</div></div>
+      <div class="metric-box"><div class="metric-val">Top 40</div><div class="metric-lbl">Priorizar com DAISEE Score</div></div>
+      <div class="metric-box"><div class="metric-val">C-Level</div><div class="metric-lbl">Foco de decisão</div></div>
+      <div class="metric-box"><div class="metric-val">Sr. Analyst</div><div class="metric-lbl">Champion interno</div></div>
+    </div>
+
+    <div class="strategy-section">
+      <h4>Estratégia de abordagem para este segmento</h4>
+      <ul class="strategy-list">
+        <li>Priorize quem mencionou "BACEN", "CVM" ou "regulatório" no perfil — já têm consciência da dor.</li>
+        <li>Use o filtro <strong>Changed Jobs (últimos 90 dias)</strong> — novos Compliance Officers querem mostrar resultado rápido.</li>
+        <li>Ative <strong>Posted on LinkedIn</strong> — quem publica sobre compliance está receptivo a conversa.</li>
+        <li>Ative <strong>Connections of your connections (2nd degree)</strong> para warm intro via rede comum.</li>
+        <li>Mensagem-âncora: citar BACEN Resolução 4.557 ou circular CVM — demonstra conhecimento do universo deles.</li>
+      </ul>
+    </div>
+    <div class="tip"><strong>💡 Dica Sales Navigator:</strong> Crie uma <em>Account List</em> separada com os bancos-alvo e ative o alerta de <em>Job Changes</em> — você será notificado quando um novo Compliance Officer assumir uma dessas empresas. Momento de ouro para contato.</div>
+  </div>
+
+  <!-- ══ FARMA & SAÚDE ══ -->
+  <div class="panel" id="p-farma" style="--ace: var(--farma)">
+    <div class="setor-header">
+      <div class="setor-icon">💊</div>
+      <div>
+        <h2>Farmacêutica · MedTech · Saúde</h2>
+        <span class="volume">~12 leads na base atual · alto potencial de expansão</span>
+      </div>
+    </div>
+
+    <div class="params-grid">
+      <div class="param-card full">
+        <div class="param-label">✅ Cargos · Títulos (Job Title)</div>
+        <div class="tags">
+          <span class="tag primary">Gerente de Qualidade</span>
+          <span class="tag primary">Diretor Regulatório</span>
+          <span class="tag primary">Head of Regulatory Affairs</span>
+          <span class="tag primary">Compliance Officer</span>
+          <span class="tag">Gerente de Assuntos Regulatórios</span>
+          <span class="tag">Quality Assurance Manager</span>
+          <span class="tag">Diretor de Operações Farmacêuticas</span>
+          <span class="tag">Head of Quality</span>
+          <span class="tag">Gerente de Compliance Farmacêutico</span>
+          <span class="tag">Medical Affairs Director</span>
+          <span class="tag">VP Regulatory Affairs</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🏢 Setor (Industry)</div>
+        <div class="tags">
+          <span class="tag primary">Pharmaceuticals</span>
+          <span class="tag primary">Biotechnology</span>
+          <span class="tag primary">Medical Devices</span>
+          <span class="tag">Hospital & Health Care</span>
+          <span class="tag">Health, Wellness & Fitness</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📏 Porte da Empresa</div>
+        <div class="tags">
+          <span class="tag primary">201–500</span>
+          <span class="tag primary">501–1.000</span>
+          <span class="tag primary">1.001–5.000</span>
+          <span class="tag">5.001–10.000</span>
+          <span class="tag">10.000+</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📍 Localização</div>
+        <div class="tags">
+          <span class="tag primary">São Paulo, Brasil</span>
+          <span class="tag">Rio de Janeiro, Brasil</span>
+          <span class="tag">Goiânia, Brasil</span>
+          <span class="tag">Campinas, Brasil</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">⚡ Senioridade</div>
+        <div class="tags">
+          <span class="tag primary">Director</span>
+          <span class="tag primary">Manager</span>
+          <span class="tag primary">VP</span>
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🔍 Busca Booleana</div>
+        <div class="tags">
+          <span class="tag primary">"ANVISA" AND "qualidade"</span>
+          <span class="tag">"GMP" OR "BPF"</span>
+          <span class="tag">"regulatory affairs"</span>
+          <span class="tag">"assuntos regulatórios"</span>
+          <span class="tag">"ISO 9001" AND "farma"</span>
+        </div>
+      </div>
+
+      <div class="param-card full">
+        <div class="param-label">🏷️ Empresas-Alvo</div>
+        <div class="tags">
+          <span class="tag">Dr. Reddy's</span><span class="tag">Galderma</span>
+          <span class="tag">Kenvue</span><span class="tag">Olympus</span>
+          <span class="tag">EMS</span><span class="tag">Eurofarma</span>
+          <span class="tag">Hypera Pharma</span><span class="tag">Aché</span>
+          <span class="tag">Novartis Brasil</span><span class="tag">Pfizer Brasil</span>
+          <span class="tag">Roche Brasil</span><span class="tag">AstraZeneca Brasil</span>
+          <span class="tag">Unimed</span><span class="tag">Einstein</span>
+          <span class="tag">Fleury</span><span class="tag">Dasa</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-box"><div class="metric-val">~120</div><div class="metric-lbl">Resultados esperados</div></div>
+      <div class="metric-box"><div class="metric-val">QA/RA</div><div class="metric-lbl">Influenciador técnico</div></div>
+      <div class="metric-box"><div class="metric-val">Dir. Industrial</div><div class="metric-lbl">Decisor final</div></div>
+      <div class="metric-box"><div class="metric-val">ANVISA</div><div class="metric-lbl">Gatilho de urgência</div></div>
+    </div>
+
+    <div class="strategy-section">
+      <h4>Estratégia de abordagem para este segmento</h4>
+      <ul class="strategy-list">
+        <li>Priorize empresas com <strong>certificação ISO ou ANVISA ativa</strong> — filtro <em>Company Highlights → Recently in the news</em>.</li>
+        <li>Busque perfis que mencionam "auditoria", "inspeção" ou "não conformidade" no resumo — dor explícita.</li>
+        <li>Use o filtro <strong>Function → Quality Assurance</strong> combinado com <strong>Research</strong> para abranger Regulatory Affairs.</li>
+        <li>Empresas que abriram vagas de QA/RA recentemente estão expandindo — sinal de dor crescente.</li>
+        <li>Mensagem-âncora: mencione o ciclo de inspeção ANVISA e a rastreabilidade de POPs como problema concreto.</li>
+      </ul>
+    </div>
+    <div class="tip"><strong>💡 Dica Sales Navigator:</strong> Ative o filtro <em>Company News → Leadership Changes</em> para ser alertado quando um novo Diretor de Qualidade assume — esse profissional quer implementar melhorias nos primeiros 90 dias.</div>
+  </div>
+
+  <!-- ══ INDÚSTRIA ══ -->
+  <div class="panel" id="p-industria" style="--ace: var(--industria)">
+    <div class="setor-header">
+      <div class="setor-icon">🏭</div>
+      <div>
+        <h2>Indústria · Manufatura · Aeroespacial</h2>
+        <span class="volume">~12 leads na base · Embraer, Mercedes-Benz, JBS, Alcoa, Evonik, Danone</span>
+      </div>
+    </div>
+
+    <div class="params-grid">
+      <div class="param-card full">
+        <div class="param-label">✅ Cargos · Títulos (Job Title)</div>
+        <div class="tags">
+          <span class="tag primary">Diretor de Operações</span>
+          <span class="tag primary">COO</span>
+          <span class="tag primary">Gerente de Qualidade</span>
+          <span class="tag primary">Diretor de Compliance</span>
+          <span class="tag">Head of HSE</span>
+          <span class="tag">Gerente de Segurança do Trabalho</span>
+          <span class="tag">Diretor Industrial</span>
+          <span class="tag">Quality Manager</span>
+          <span class="tag">Gerente de Engenharia</span>
+          <span class="tag">Chief Operating Officer</span>
+          <span class="tag">Compliance Officer</span>
+          <span class="tag">Gerente de Documentação Técnica</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🏢 Setor (Industry)</div>
+        <div class="tags">
+          <span class="tag primary">Aviation & Aerospace</span>
+          <span class="tag primary">Automotive</span>
+          <span class="tag primary">Food & Beverages</span>
+          <span class="tag primary">Mining & Metals</span>
+          <span class="tag">Chemicals</span>
+          <span class="tag">Industrial Automation</span>
+          <span class="tag">Machinery</span>
+          <span class="tag">Oil & Energy</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📏 Porte da Empresa</div>
+        <div class="tags">
+          <span class="tag primary">501–1.000</span>
+          <span class="tag primary">1.001–5.000</span>
+          <span class="tag primary">5.001–10.000</span>
+          <span class="tag primary">10.000+</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📍 Localização</div>
+        <div class="tags">
+          <span class="tag primary">São Paulo, Brasil</span>
+          <span class="tag">São José dos Campos, Brasil</span>
+          <span class="tag">Campinas, Brasil</span>
+          <span class="tag">Porto Alegre, Brasil</span>
+          <span class="tag">Curitiba, Brasil</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">⚡ Senioridade</div>
+        <div class="tags">
+          <span class="tag primary">Director</span>
+          <span class="tag primary">Manager</span>
+          <span class="tag primary">C-Level</span>
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🔍 Busca Booleana</div>
+        <div class="tags">
+          <span class="tag primary">"ISO 9001" AND "gestão"</span>
+          <span class="tag">"norma técnica" AND "compliance"</span>
+          <span class="tag">"INMETRO" OR "certificação"</span>
+          <span class="tag">"documentação técnica"</span>
+          <span class="tag">"gestão do conhecimento"</span>
+        </div>
+      </div>
+
+      <div class="param-card full">
+        <div class="param-label">🏷️ Empresas-Alvo</div>
+        <div class="tags">
+          <span class="tag">Embraer</span><span class="tag">Mercedes-Benz</span>
+          <span class="tag">JBS</span><span class="tag">Alcoa</span>
+          <span class="tag">Evonik</span><span class="tag">Danone Brasil</span>
+          <span class="tag">Ambev</span><span class="tag">Gerdau</span>
+          <span class="tag">Vale</span><span class="tag">Petrobras</span>
+          <span class="tag">Bosch Brasil</span><span class="tag">3M Brasil</span>
+          <span class="tag">Nestlé Brasil</span><span class="tag">Whirlpool</span>
+          <span class="tag">Dow Brasil</span><span class="tag">BASF Brasil</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-box"><div class="metric-val">~150</div><div class="metric-lbl">Resultados esperados</div></div>
+      <div class="metric-box"><div class="metric-val">COO / Dir.</div><div class="metric-lbl">Decisor principal</div></div>
+      <div class="metric-box"><div class="metric-val">QA Manager</div><div class="metric-lbl">Influenciador técnico</div></div>
+      <div class="metric-box"><div class="metric-val">ISO / NR</div><div class="metric-lbl">Gatilho de urgência</div></div>
+    </div>
+
+    <div class="strategy-section">
+      <h4>Estratégia de abordagem para este segmento</h4>
+      <ul class="strategy-list">
+        <li>Use o filtro <strong>Function → Operations</strong> + <strong>Quality Assurance</strong> para cobrir ambos os decisores.</li>
+        <li>Empresas com múltiplas plantas (Embraer, Gerdau, Vale) têm dor de dispersão documental muito clara — mencione isso.</li>
+        <li>Filtro <strong>Recently Funded</strong> ou <strong>Hiring</strong> — expansão de planta = mais documentos = mais dor.</li>
+        <li>Engenheiros seniores são champions naturais — identificar por palavras-chave "ISO", "qualidade", "documentação".</li>
+        <li>Mensagem-âncora: citar custo de retrabalho por acesso a versão errada de norma técnica em campo.</li>
+      </ul>
+    </div>
+    <div class="tip"><strong>💡 Dica Sales Navigator:</strong> No filtro de <em>Company Type</em>, inclua <strong>Public Company</strong> — empresas de capital aberto têm obrigações de compliance mais rígidas e orçamento definido para isso.</div>
+  </div>
+
+  <!-- ══ SEGUROS ══ -->
+  <div class="panel" id="p-seguros" style="--ace: var(--seguros)">
+    <div class="setor-header">
+      <div class="setor-icon">🛡️</div>
+      <div>
+        <h2>Seguros · Resseguros</h2>
+        <span class="volume">~4 leads na base · Assurant, Starr · expandir muito aqui</span>
+      </div>
+    </div>
+
+    <div class="params-grid">
+      <div class="param-card full">
+        <div class="param-label">✅ Cargos · Títulos (Job Title)</div>
+        <div class="tags">
+          <span class="tag primary">Chief Compliance Officer</span>
+          <span class="tag primary">Diretor de Compliance</span>
+          <span class="tag primary">Head of Compliance</span>
+          <span class="tag primary">Gerente de Compliance</span>
+          <span class="tag">Compliance Officer</span>
+          <span class="tag">Diretor Jurídico</span>
+          <span class="tag">Gerente Jurídico</span>
+          <span class="tag">Gerente de Risco</span>
+          <span class="tag">Chief Risk Officer</span>
+          <span class="tag">Analista de Sinistros Sênior</span>
+          <span class="tag">Diretor de Operações</span>
+          <span class="tag">VP Compliance</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🏢 Setor (Industry)</div>
+        <div class="tags">
+          <span class="tag primary">Insurance</span>
+          <span class="tag primary">Financial Services</span>
+          <span class="tag">Banking</span>
+          <span class="tag">Investment Management</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📏 Porte da Empresa</div>
+        <div class="tags">
+          <span class="tag primary">201–500</span>
+          <span class="tag primary">501–1.000</span>
+          <span class="tag primary">1.001–5.000</span>
+          <span class="tag">5.001–10.000</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📍 Localização</div>
+        <div class="tags">
+          <span class="tag primary">São Paulo, Brasil</span>
+          <span class="tag">Rio de Janeiro, Brasil</span>
+          <span class="tag">Curitiba, Brasil</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">⚡ Senioridade</div>
+        <div class="tags">
+          <span class="tag primary">Director</span>
+          <span class="tag primary">Manager</span>
+          <span class="tag primary">VP</span>
+          <span class="tag">C-Level</span>
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🔍 Busca Booleana</div>
+        <div class="tags">
+          <span class="tag primary">"SUSEP" AND "compliance"</span>
+          <span class="tag">"circular SUSEP"</span>
+          <span class="tag">"sinistro" AND "regulatório"</span>
+          <span class="tag">"apólice" AND "compliance"</span>
+          <span class="tag">"resseguro" AND "norma"</span>
+        </div>
+      </div>
+
+      <div class="param-card full">
+        <div class="param-label">🏷️ Empresas-Alvo</div>
+        <div class="tags">
+          <span class="tag">Assurant</span><span class="tag">Starr Insurance</span>
+          <span class="tag">Porto Seguro</span><span class="tag">Bradesco Seguros</span>
+          <span class="tag">Itaú Seguros</span><span class="tag">SulAmérica</span>
+          <span class="tag">Allianz Brasil</span><span class="tag">AXA Brasil</span>
+          <span class="tag">Mapfre Brasil</span><span class="tag">Zurich Brasil</span>
+          <span class="tag">Tokio Marine Brasil</span><span class="tag">HDI Seguros</span>
+          <span class="tag">IRB Brasil Re</span><span class="tag">Chubb Brasil</span>
+          <span class="tag">Prudential Brasil</span><span class="tag">Generali Brasil</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-box"><div class="metric-val">~80</div><div class="metric-lbl">Resultados esperados</div></div>
+      <div class="metric-box"><div class="metric-val">CCO</div><div class="metric-lbl">Decisor principal</div></div>
+      <div class="metric-box"><div class="metric-val">Dir. Jurídico</div><div class="metric-lbl">Co-decisor frequente</div></div>
+      <div class="metric-box"><div class="metric-val">SUSEP</div><div class="metric-lbl">Gatilho de urgência</div></div>
+    </div>
+
+    <div class="strategy-section">
+      <h4>Estratégia de abordagem para este segmento</h4>
+      <ul class="strategy-list">
+        <li>Combine os setores <strong>Insurance + Financial Services</strong> — muitos profissionais de seguros têm perfil categorizado como Financial Services.</li>
+        <li>Use a busca booleana <strong>"SUSEP"</strong> no campo Keywords — filtra com precisão quem atua no mercado segurador regulado.</li>
+        <li>Perfis que mencionam "sinistro", "apólice" ou "resseguro" são champions naturais para a dor de rastreabilidade.</li>
+        <li>Ative <strong>Posted on LinkedIn (últimos 30 dias)</strong> — profissionais ativos de seguros publicam sobre mudanças regulatórias da SUSEP.</li>
+        <li>Mensagem-âncora: custo de decisão errada em sinistro por uso de versão desatualizada de circular SUSEP.</li>
+      </ul>
+    </div>
+    <div class="tip"><strong>💡 Dica Sales Navigator:</strong> O mercado de seguros tem poucos profissionais de compliance mas muito bem conectados entre si. Um contato satisfeito pode indicar 3 outros. Trate este segmento com foco em relacionamento, não volume.</div>
+  </div>
+
+  <!-- ══ VAREJO ══ -->
+  <div class="panel" id="p-varejo" style="--ace: var(--varejo)">
+    <div class="setor-header">
+      <div class="setor-icon">🛍️</div>
+      <div>
+        <h2>Varejo · Cosméticos · Bens de Consumo</h2>
+        <span class="volume">~2 leads na base · Sephora · segmento com maior espaço para crescer</span>
+      </div>
+    </div>
+
+    <div class="params-grid">
+      <div class="param-card full">
+        <div class="param-label">✅ Cargos · Títulos (Job Title)</div>
+        <div class="tags">
+          <span class="tag primary">Diretor de Compliance</span>
+          <span class="tag primary">Compliance Officer</span>
+          <span class="tag primary">Diretor Jurídico</span>
+          <span class="tag primary">Gerente de Regulatório</span>
+          <span class="tag">Diretor de Operações</span>
+          <span class="tag">Gerente de Qualidade de Produto</span>
+          <span class="tag">Head of Regulatory Affairs</span>
+          <span class="tag">Gerente de Assuntos Regulatórios</span>
+          <span class="tag">Diretor de Trade Compliance</span>
+          <span class="tag">Gerente de Compliance Comercial</span>
+          <span class="tag">VP Legal</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🏢 Setor (Industry)</div>
+        <div class="tags">
+          <span class="tag primary">Retail</span>
+          <span class="tag primary">Consumer Goods</span>
+          <span class="tag primary">Cosmetics</span>
+          <span class="tag">Apparel & Fashion</span>
+          <span class="tag">Luxury Goods & Jewelry</span>
+          <span class="tag">Food & Beverages</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📏 Porte da Empresa</div>
+        <div class="tags">
+          <span class="tag primary">501–1.000</span>
+          <span class="tag primary">1.001–5.000</span>
+          <span class="tag primary">5.001–10.000</span>
+          <span class="tag">10.000+</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">📍 Localização</div>
+        <div class="tags">
+          <span class="tag primary">São Paulo, Brasil</span>
+          <span class="tag">Rio de Janeiro, Brasil</span>
+          <span class="tag">Curitiba, Brasil</span>
+          <span class="tag">Porto Alegre, Brasil</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">⚡ Senioridade</div>
+        <div class="tags">
+          <span class="tag primary">Director</span>
+          <span class="tag primary">Manager</span>
+          <span class="tag primary">VP</span>
+          <span class="tag">Senior</span>
+          <span class="tag">C-Level</span>
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-label">🔍 Busca Booleana</div>
+        <div class="tags">
+          <span class="tag primary">"ANVISA" AND "cosméticos"</span>
+          <span class="tag">"CONAR" AND "compliance"</span>
+          <span class="tag">"regulatório" AND "varejo"</span>
+          <span class="tag">"gestão de políticas" AND "rede"</span>
+          <span class="tag">"franquia" AND "compliance"</span>
+        </div>
+      </div>
+
+      <div class="param-card full">
+        <div class="param-label">🏷️ Empresas-Alvo</div>
+        <div class="tags">
+          <span class="tag">SEPHORA Brasil</span><span class="tag">O Boticário</span>
+          <span class="tag">Natura</span><span class="tag">Avon Brasil</span>
+          <span class="tag">L'Oréal Brasil</span><span class="tag">Unilever Brasil</span>
+          <span class="tag">LVMH Brasil</span><span class="tag">Renner</span>
+          <span class="tag">C&A Brasil</span><span class="tag">Riachuelo</span>
+          <span class="tag">Carrefour Brasil</span><span class="tag">Magazine Luiza</span>
+          <span class="tag">Via Varejo</span><span class="tag">Hering</span>
+          <span class="tag">Arezzo</span><span class="tag">Pandora Brasil</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-box"><div class="metric-val">~100</div><div class="metric-lbl">Resultados esperados</div></div>
+      <div class="metric-box"><div class="metric-val">Dir. Jurídico</div><div class="metric-lbl">Decisor principal</div></div>
+      <div class="metric-box"><div class="metric-val">Ger. Regulatório</div><div class="metric-lbl">Influenciador técnico</div></div>
+      <div class="metric-box"><div class="metric-val">ANVISA/CONAR</div><div class="metric-lbl">Gatilho de urgência</div></div>
+    </div>
+
+    <div class="strategy-section">
+      <h4>Estratégia de abordagem para este segmento</h4>
+      <ul class="strategy-list">
+        <li>Foque em redes com <strong>mais de 50 lojas</strong> — a dor de desalinhamento de políticas é proporcional ao tamanho da rede.</li>
+        <li>Empresas de cosméticos com linha própria (Natura, Boticário) têm dupla dor: ANVISA + políticas internas de rede.</li>
+        <li>Use o filtro <strong>Department → Legal</strong> + <strong>Operations</strong> para cobrir Jurídico e Operações simultaneamente.</li>
+        <li>Perfis que mencionam "franquia", "multicanalidade" ou "expansão de lojas" têm dor de dispersão de conhecimento.</li>
+        <li>Mensagem-âncora: custo de descumprimento do CONAR em publicidade e da ANVISA em produtos cosméticos — concreto e mensurável.</li>
+      </ul>
+    </div>
+    <div class="tip"><strong>💡 Dica Sales Navigator:</strong> Varejo e cosméticos têm alta rotatividade em cargos de compliance. Use o filtro <em>Changed Jobs (últimos 6 meses)</em> — novos gestores querem implementar sistemas e têm orçamento no primeiro ano de gestão.</div>
+  </div>
+
+</div><!-- /panel-wrap -->
+
+<footer>DAISEE · daisee.io · Guia de Prospecção Sales Navigator · Março 2026 · Marcelo Mafra +55 43 99120-0652</footer>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

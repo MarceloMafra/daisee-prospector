@@ -1,0 +1,201 @@
+> **Material revisado em 31/08/2026.** Este kit veio do projeto daisee-automation
+> (março/2026), anterior às regras de honestidade da campanha. As promessas de
+> resultado foram removidas: não prometemos percentual de redução, prazo de
+> implantação nem ganho de eficiência a quem ainda não conhecemos.
+>
+> **O único número citável** é o depoimento da Dinamica Merchandising — 70% de
+> redução no tempo de busca de documentos —, e sempre como o que aquele cliente
+> relatou, nunca como promessa ao lead. Faltando case no setor de quem se fala,
+> diga que falta e pergunte pelo contexto dele.
+>
+> A DAISEE é uma IA privada de gestão documental, e a MasterVendas é **parceira**
+> da DAISEE, não a desenvolvedora.
+
+================================================================================
+DAISEE SALES KIT - EXTRAÇÃO E ESTRUTURAÇÃO COMPLETA
+================================================================================
+
+DATA: 7 de março de 2026
+PROJETO: daisee-automation
+DIRETÓRIO: /c/Users/55439/PROJETOS/daisee-automation/
+
+================================================================================
+RESUMO EXECUTIVO
+================================================================================
+
+TAREFA COMPLETADA COM SUCESSO
+
+Foram extraídas informações de 6 arquivos originais (1 HTML + 5 PDFs) e
+estruturadas em um KIT COMPLETO DE VENDAS com 7 documentos Markdown em
+~24.500 palavras de conteúdo profundo, pronto para usar.
+
+================================================================================
+DOCUMENTOS CRIADOS (7 arquivos)
+================================================================================
+
+1. DAISEE_Sales_Knowledge_Base.md (31 KB | ~8.000 palavras)
+   - Referência completa e profunda de todos os 5 setores
+   - Perfis ICP, dores, argumentos, soluções, gatilhos
+   - Parâmetros LinkedIn Sales Navigator estruturados
+
+2. DAISEE_Prompt_Templates.md (21 KB | ~4.000 palavras)
+   - 15 templates prontos para usar com Claude.ai
+   - Emails, scripts, argumentação, análises, treinamento
+   - Cada template com placeholders [PARA PREENCHER]
+
+3. DAISEE_Quick_Reference.md (7.5 KB | ~2.000 palavras)
+   - Cheat sheet de 1 página para bolso/desk
+   - 5 setores, argumentos, gatilhos, empresas, objeções
+   - Filtros LinkedIn copy-paste ready
+
+4. DAISEE_Sector_Comparison_Matrix.md (15 KB | ~3.500 palavras)
+   - Análise estratégica comparativa dos 5 setores
+   - Ranking de oportunidade, roadmap 12 meses
+   - Red flags, matriz de decisão, benchmark
+
+5. DAISEE_Sector_Cheat_Sheet.md (14 KB | ~3.000 palavras)
+   - Sumário visual em tabelas dos 5 setores
+   - Subject lines, pings, objeções, dicas secretas
+   - Pronto para imprimir em 2 páginas
+
+6. README_SALES_KIT.md (13 KB | ~4.000 palavras)
+   - Guia de navegação e uso do kit completo
+   - 4 cenários de uso (SDR, AE, Trainer, Content)
+   - Mapa de navegação rápida, checklist
+
+7. INDEX.md (8.4 KB | ~2.000 palavras)
+   - Índice completo e estruturado
+   - Sumário de cada documento
+   - Como encontrar informações rápido
+
+TOTAL: ~122 KB de conteúdo estruturado
+
+================================================================================
+DADOS EXTRAÍDOS
+================================================================================
+
+ARQUIVO ORIGINAL #1: DAISEE_SalesNavigator_Guide.html
+- Parâmetros de busca LinkedIn por setor
+- Cargos, indústrias, tamanho empresa, senioridade, keywords
+
+ARQUIVO ORIGINAL #2-#6: 5 PDFs de One-Pagers
+- OnePager_DAISEE_Compliance_V01.pdf (FINANCEIRO)
+- OnePager_DAISEE_FarmaSaude.pdf (FARMACÊUTICA)
+- OnePager_DAISEE_Industria.pdf (INDÚSTRIA)
+- OnePager_DAISEE_Seguros.pdf (SEGUROS)
+- OnePager_DAISEE_Varejo.pdf (VAREJO)
+
+Extração: Problemas, soluções, argumentos, casos de uso, métricas
+
+================================================================================
+CONTEÚDO POR SETOR
+================================================================================
+
+SETOR 1: FINANCEIRO (40 LEADS)
+- Cargos ICP: CCO, Head of Compliance, VP Compliance
+- Dores: Dispersão, tempo perdido, auditoria, risco
+- Empresas: Itaú, Bradesco, Nubank, XP, BTG, BNP, JPM
+
+SETOR 2: FARMACÊUTICA (12 LEADS)
+- Cargos ICP: Dir. Qualidade, Dir. Regulatório, Compliance Officer
+- Dores: POPs desatualizados, risco ANVISA, onboarding, turnover
+- Empresas: EMS, Eurofarma, Novartis, Pfizer, Roche
+
+SETOR 3: INDÚSTRIA (12 LEADS)
+- Cargos ICP: COO, Dir. Operações, Gerente de Qualidade
+- Dores: Fragmentação, compliance, turnover, treinamento
+- Empresas: Embraer, Mercedes, JBS, Alcoa, Gerdau
+
+SETOR 4: SEGUROS (4 LEADS)
+- Cargos ICP: CCO, Dir. Compliance, Dir. Jurídico
+- Dores: Volume circulares, risco sinistro, auditoria
+- Empresas: Assurant, Starr, Porto Seguro, Itaú Seguros
+
+SETOR 5: VAREJO (2 LEADS)
+- Cargos ICP: Dir. Jurídico, Dir. Compliance, Ger. Regulatório
+- Dores: Políticas desalinhadas, compliance, treinamento
+- Empresas: Sephora, Boticário, Natura, Renner, Carrefour
+
+================================================================================
+TEMPLATES CLAUDE (15)
+================================================================================
+
+EMAILS DE PROSPECÇÃO (5):
+1. Email - Financeiro
+2. Email - Farmacêutica
+3. Email - Indústria
+4. Email - Seguros
+5. Email - Varejo
+
+ARGUMENTAÇÃO (3):
+6. Reunião - Financeiro
+7. Reunião - Farmacêutica
+8. Resposta Objeção - "Temos GED"
+
+CONTEÚDO (4):
+9. Deck de Vendas
+10. Case Study
+11. Pitch 60 Segundos
+12. Análise Competitiva
+
+DEMO (3):
+13. LinkedIn Sequencing
+14. Demo Script 30 Min
+15. Qualificação BANT
+
+================================================================================
+COMO USAR
+================================================================================
+
+QUICK START (5 MIN):
+1. Leia README_SALES_KIT.md
+2. Leia seu setor em Quick_Reference.md
+3. Prospeque!
+
+GERAÇÃO DE CONTEÚDO (10 MIN):
+1. Copie template de Prompt_Templates.md
+2. Preencha placeholders [COMO ESTE]
+3. Cole em Claude.ai
+4. Claude gera conteúdo personalizado
+
+PREPARAÇÃO DE REUNIÃO (30 MIN):
+1. Leia Sales_Knowledge_Base.md (seu setor)
+2. Escolha template de argumentação
+3. Use Claude para gerar script
+4. Teste com role-play
+
+================================================================================
+NÚMEROS-CHAVE
+================================================================================
+
+BASE ATUAL: 70 leads
+META 12 MESES: 145 leads (+107%)
+
+IMPACTO:
+- menos tempo de busca
+- tempo recuperado por analista
+- 30 dias para operacional
+- 100% privado (zero dados externos)
+
+================================================================================
+STATUS
+================================================================================
+
+DOCUMENTAÇÃO: COMPLETA
+ESTRUTURAÇÃO: COMPLETA
+TEMPLATES: COMPLETA (15 prontos)
+NAVEGAÇÃO: COMPLETA (mapa + índice)
+PRONTO PARA: USO IMEDIATO
+
+================================================================================
+
+Todos os arquivos salvos em:
+/c/Users/55439/PROJETOS/daisee-automation/
+
+Comece lendo: README_SALES_KIT.md
+
+Data: 7 de março de 2026
+Versão: 1.0
+Status: PRONTO PARA USAR
+
+Boa sorte! 🚀

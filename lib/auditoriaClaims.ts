@@ -28,7 +28,11 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
   {
     id: 'NUMERO',
     rotulo: 'número de resultado',
-    re: /(\b\d{1,3}(?:[.,]\d+)?\s?%|redu(z|zir|ção)\s+(em\s+)?(até\s+)?\d|economia de \d|ganho de \d|aumento de \d)/gi,
+    // Promessa nao mora so em percentual: "recupera 20h/mes", "economiza 3
+    // horas por semana" e "em 30 dias operacional" dizem a mesma coisa em outra
+    // unidade. O kit de vendas de marco tinha nove dessas, todas invisiveis para
+    // a versao anterior da regra.
+    re: /(\b\d{1,3}(?:[.,]\d+)?\s?%|redu(z|zir|ção)\s+(em\s+)?(até\s+)?\d|economia de \d|ganho de \d|aumento de \d|\b\d{1,3}\s?h(oras)?\s?\/\s?(mês|semana|dia)|(recupera|economiza|poupa|ganha)\w*\s+(até\s+)?\d{1,3}\s?(h|horas|dias|semanas|minutos)|em\s+\d{1,3}\s+dias?\s+(operacional|no ar|rodando|implantad)|(operacional|no ar|rodando|implantad\w*)\s+em\s+\d{1,3}\s+dias?)/gi,
   },
   {
     id: 'AUTOMACAO',
