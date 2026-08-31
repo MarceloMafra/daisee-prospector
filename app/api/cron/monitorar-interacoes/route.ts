@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { monitorarInteracoes } from '@/lib/monitorInteracoes'
 import { checarAceites } from '@/lib/checarAceites'
+import { checarConexaoUnipile } from '@/lib/checarConexao'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -20,6 +21,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 0) a conta esta viva? Com a sessao caida, varrer conversas so devolve
+    // 401 e o silencio parece dia fraco -- foi o que custou tres dias em 27/08.
+    const conexao = await checarConexaoUnipile()
+    console.log('[checarConexao] ' + conexao.estado + ': ' + conexao.detalhe)
+    if (conexao.estado !== 'OK') {
+      return NextResponse.json(
+        { conexao, aviso: 'Monitoramento nao rodou: a conta precisa ser reconectada.' },
+        { status: 200 }
+      )
+    }
+
     // 1) aceites de convite — libera o T2 e avisa o SDR
     const aceites = await checarAceites()
     console.log('[checarAceites] resultado:', JSON.stringify(aceites))
@@ -34,7 +46,7 @@ export async function GET(request: NextRequest) {
     }))
     // detalhes carregam texto de conversa — ficam fora da resposta HTTP.
     const { detalhes: _detalhes, ...resumo } = resultado
-    return NextResponse.json({ aceites, interacoes: resumo }, { status: 200 })
+    return NextResponse.json({ conexao: conexao.estado, aceites, interacoes: resumo }, { status: 200 })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('Falha no monitor de interações:', msg)

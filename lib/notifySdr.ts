@@ -52,6 +52,39 @@ function buildMessage(params: NotifySdrParams): string {
   return lines.join('\n')
 }
 
+// Envio cru para os mesmos destinatarios do SDR. Existe separado porque nem todo
+// aviso e sobre um lead: a queda da conta do LinkedIn, por exemplo, nao tem
+// leadId para registrar e ainda assim precisa chegar no WhatsApp.
+export async function enviarWhatsApp(texto: string): Promise<{ ok: boolean; live: boolean; enviados: number }> {
+  const uuid = process.env.MASTERBOT_NOTIFICA_UUID || ''
+  const token = process.env.MASTERBOT_NOTIFICA_TOKEN || ''
+  const destinatarios = (process.env.SDR_WHATSAPP_NUMBER || '')
+    .split(',')
+    .map((n) => n.replace(/\D/g, ''))
+    .filter(Boolean)
+
+  if (!uuid || !token || destinatarios.length === 0) {
+    console.log('[enviarWhatsApp] envs ausentes — mensagem suprimida')
+    return { ok: true, live: false, enviados: 0 }
+  }
+
+  let enviados = 0
+  for (const numero of destinatarios) {
+    try {
+      const res = await fetch(`https://api.masterbot.io/v2/api/external/${uuid}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: numero, body: texto }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 120)}`)
+      enviados++
+    } catch (error) {
+      console.error(`[enviarWhatsApp] falha ao avisar ${numero}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+  return { ok: enviados > 0, live: true, enviados }
+}
+
 export async function notifySdr(params: NotifySdrParams): Promise<{ ok: boolean; live: boolean }> {
   const uuid = process.env.MASTERBOT_NOTIFICA_UUID || ''
   const token = process.env.MASTERBOT_NOTIFICA_TOKEN || ''
@@ -99,14 +132,20 @@ export async function notifySdr(params: NotifySdrParams): Promise<{ ok: boolean;
 
   await safeAudit(
     params.leadId,
-    `Notificação WhatsApp (${params.event}): ${enviados} enviada(s), ${falhas.length} falha(s) — ${falhas.join(' | ')}`
+    `Notificação WhatsApp (${params.event}): ${enviados} enviada(s), ${falhas.length} falha(s) — ${falhas.join(' | ')}`,
+    enviados > 0
   )
   return { ok: enviados > 0, live: true }
 }
 
-async function safeAudit(leadId: string, details: string) {
+// A acao precisa distinguir entrega de falha. Gravar SDR_NOTIFICADO nos dois
+// casos fez o painel (e eu, lendo o log) contar como avisado o que nunca saiu:
+// as 12 ultimas notificacoes apareciam como enviadas com o canal fora do ar.
+async function safeAudit(leadId: string, details: string, entregue = true) {
   try {
-    await prisma.auditLog.create({ data: { leadId, action: 'SDR_NOTIFICADO', details } })
+    await prisma.auditLog.create({
+      data: { leadId, action: entregue ? 'SDR_NOTIFICADO' : 'SDR_NOTIFICACAO_FALHOU', details },
+    })
   } catch {
     // auditoria é melhor-esforço — nunca propaga erro pro fluxo principal
   }
