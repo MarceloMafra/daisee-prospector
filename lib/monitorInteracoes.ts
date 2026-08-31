@@ -127,17 +127,32 @@ export async function monitorarInteracoes(opts: MonitorOptions = {}): Promise<Mo
 
     if (dryRun) continue
 
-    await prisma.interacao.create({
-      data: {
-        leadId: lead.id,
-        canal: 'LINKEDIN',
-        mensagem: texto,
-        recebidaEm: ultima.timestamp ? new Date(ultima.timestamp) : new Date(),
-        providerRef: ultima.id,
-        sugestao: `[${sugestao.temperatura}] ${sugestao.leitura}\n\n${sugestao.sugestao}`,
-        status: 'NOVA',
-      },
-    })
+    // Entre o findUnique la em cima e este create roda a chamada de IA, que leva
+    // segundos. Duas execucoes ao mesmo tempo (o cron agendado e uma rodada
+    // manual, por exemplo) passam as duas pela checagem e colidem aqui. Sem este
+    // catch, a colisao derruba a rodada inteira e os leads seguintes nem sao
+    // olhados -- foi o que aconteceu em producao em 31/08.
+    try {
+      await prisma.interacao.create({
+        data: {
+          leadId: lead.id,
+          canal: 'LINKEDIN',
+          mensagem: texto,
+          recebidaEm: ultima.timestamp ? new Date(ultima.timestamp) : new Date(),
+          providerRef: ultima.id,
+          sugestao: `[${sugestao.temperatura}] ${sugestao.leitura}\n\n${sugestao.sugestao}`,
+          status: 'NOVA',
+        },
+      })
+    } catch (e) {
+      const codigo = (e as { code?: string }).code
+      if (codigo === 'P2002') {
+        // Outra execucao gravou esta mesma mensagem primeiro: nada a fazer.
+        result.novasInteracoes--
+        continue
+      }
+      throw e
+    }
 
     await notifySdr({
       leadId: lead.id,
