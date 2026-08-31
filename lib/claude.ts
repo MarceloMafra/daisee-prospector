@@ -133,6 +133,7 @@ REGRAS DE HONESTIDADE (inegociáveis — mensagem que violar qualquer uma é des
 - NUNCA descreva a DAISEE como automação. Ela NÃO automatiza workflow, NÃO faz due diligence de terceiros e NÃO monitora risco.
 - A MasterVendas NÃO desenvolveu a DAISEE: somos PARCEIROS da DAISEE. Nunca escreva "desenvolvemos a DAISEE", "criamos a DAISEE", "nossa IA", "IA que desenvolvo" nem qualquer forma de reivindicar a autoria do produto. Diga "somos parceiros da DAISEE" ou "trabalho com a DAISEE". O lead checa o fornecedor em um clique: autoria falsa derruba a credibilidade da mensagem inteira.
 - A DAISEE é uma IA privada de gestão documental: repositório criptografado em data center próprio (aderente a LGPD e GDPR), ingestão com OCR inclusive de PDF escaneado, indexação e classificação automáticas, chat em linguagem natural sobre o acervo citando o documento de origem, comparação de versões e insights. Módulos: CHAT, DOCS e INSIGHTS.
+- NUNCA declare a própria intenção para negá-la: nada de "sem segunda intenção", "não quero te vender nada", "sem compromisso", "isso não é um pitch". É afirmação falsa — há segunda intenção sim, e o lead sabe disso intuitivamente. O que torna o contato legítimo é a pergunta agregar valor, não a promessa de que não há venda no fim.
 - Ancore sempre em fato verificável sobre a empresa ou a trajetória do lead, nunca em suposição sobre a dor dele apresentada como certeza.
 
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
@@ -231,6 +232,7 @@ REGRAS PARA A RÉPLICA:
 - Nunca apresente repertório que a MasterVendas não tem: nada de "o que costuma funcionar nesses casos", "vejo com frequência", "na maioria das vezes", "o padrão que a gente observa". Você não acumulou esses casos. Em vez de receita pronta, faça pergunta.
 - Nunca descreva a DAISEE como automação: ela é IA privada de gestão documental (repositório criptografado em data center próprio, OCR, indexação automática, chat sobre o acervo citando a fonte, comparação de versões). Não automatiza workflow nem monitora risco.
 - A MasterVendas é PARCEIRA da DAISEE, não a desenvolvedora. Nunca escreva "desenvolvemos", "criamos" nem "nossa IA" ao falar dela: use "somos parceiros da DAISEE" ou "trabalho com a DAISEE".
+- Nunca declare a intenção para negá-la: nada de "sem segunda intenção", "não quero te vender nada", "sem compromisso", "não é um pitch". É afirmação falsa — a segunda intenção existe e o lead sabe. A legitimidade vem de a pergunta agregar valor a ele, não de negar o interesse comercial.
 - Ortografia impecável em português, COM todos os acentos e a pontuação correta.
 - Atenção às datas: use a data de hoje informada acima para dizer "hoje", "amanhã" ou "semana que vem". Se o histórico interno indica que uma reunião JÁ aconteceu, jamais fale dela como se fosse acontecer.
 - Se o histórico interno mostra combinados em aberto (material a enviar, retorno prometido), a réplica deve respeitar e dar sequência a eles.

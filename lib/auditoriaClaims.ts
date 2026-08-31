@@ -4,7 +4,7 @@
 //
 // É detecção por texto: aponta o que precisa de leitura humana, não julga sozinha.
 
-export type RegraId = 'CASE' | 'NUMERO' | 'AUTOMACAO' | 'REPERTORIO' | 'AUTORIA'
+export type RegraId = 'CASE' | 'NUMERO' | 'AUTOMACAO' | 'REPERTORIO' | 'AUTORIA' | 'INTENCAO'
 
 export interface Violacao {
   regra: RegraId
@@ -38,6 +38,15 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
     id: 'AUTOMACAO',
     rotulo: 'DAISEE como automação',
     re: /\b(automa(ção|cao|tiza\w*|tizar|tizando)|robô|robo\b|chatbot|workflow|due diligence|monitora\w* de risco)\b/gi,
+  },
+  {
+    id: 'INTENCAO',
+    rotulo: 'declaracao de intencao (nega o interesse comercial)',
+    // Regra do Marcelo, 31/08: "Eu tenho segunda intencao sim, e a pessoa do lado
+    // de la sabe intuitivamente que sim." Negar o interesse comercial e uma
+    // afirmacao falsa, e o lead percebe -- a legitimidade vem da pergunta agregar
+    // valor, nao de jurar que nao ha venda no fim da conversa.
+    re: /(sem segundas? inten[çc][ãa]?[oõ][ee]?s?\b|sem (nenhum |qualquer )?interesse comercial|sem (nenhuma |qualquer )?agenda (escondida|oculta)|sem compromisso (algum|nenhum)?|n[ãa]o (quero|vou|pretendo|estou|venho|vim)[^.!?]{0,30}\bvend|n[ãa]o estou (te )?vendendo|n[ãa]o (é|e) (um |uma )?(pitch|venda|tentativa de venda|abordagem comercial|abordagem de venda)|n[ãa]o (é|e) nada comercial|nada de (pitch|venda)|sem (querer )?(te )?vender nada|n[ãa]o vou (te )?(empurrar|insistir)|prometo que n[ãa]o (vou|é))/gi,
   },
   {
     id: 'AUTORIA',
@@ -113,10 +122,15 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       // Olha os 60 caracteres logo antes do match atrás de uma negação.
       const antes = texto.slice(Math.max(0, m.index - 60), m.index)
       const antesLongo = texto.slice(Math.max(0, m.index - 160), m.index)
+      // INTENCAO é a única regra em que a negação É o claim ("não quero te vender
+      // nada"). Passar pelos guardas de negação abaixo mataria a regra inteira:
+      // toda ocorrência dela casa por definição com o padrão de negação.
+      if (regra.id !== 'INTENCAO') {
       if (NEGACAO.test(antesLongo)) continue
       if (regra.id === 'AUTOMACAO' && NEGACAO_AUTOMACAO.test(antesLongo)) continue
       if (/^due diligence$/i.test(m[0]) && DOCUMENTO_DE.test(antes)) continue
       if (TRAJETORIA_DO_LEAD.test(antesLongo)) continue
+      }
 
       // Sem \b depois de "voc[êe]": em JS o acento nao e caractere de palavra,
       // entao a fronteira nunca casa depois do ê e o ramo ficaria morto.

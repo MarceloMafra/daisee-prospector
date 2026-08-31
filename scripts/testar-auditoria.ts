@@ -47,6 +47,26 @@ const AUTORIA: [string, boolean, string][] = [
   ['Desenvolvi a DAISEE, uma IA privada de gestão documental.', true, 'Desenvolvi a DAISEE'], 
 ]
 
+// Declaracao de intencao: regra do Marcelo em 31/08. Negar o interesse comercial
+// e afirmacao falsa -- ele TEM segunda intencao, e o lead sabe. A legitimidade
+// vem da pergunta agregar valor.
+const INTENCAO: [string, boolean, string][] = [
+  ['Te chamo sem segunda intenção, só para trocar ideia.', true, 'sem segunda intencao'],
+  ['Escrevo sem segundas intenções.', true, 'plural'],
+  ['Não quero te vender nada, juro.', true, 'nao quero te vender nada'],
+  ['Não vou te vender nada agora.', true, 'nao vou te vender nada'],
+  ['Isso não é um pitch.', true, 'nao e um pitch'],
+  ['Não é uma abordagem comercial.', true, 'nao e abordagem comercial'],
+  ['Podemos conversar sem compromisso algum.', true, 'sem compromisso algum'],
+  ['Não estou vendendo nada aqui.', true, 'nao estou vendendo'],
+  ['Falo sem nenhum interesse comercial.', true, 'sem interesse comercial'],
+  ['Prometo que não vou insistir.', true, 'nao vou insistir'],
+  ['Faço prospecção e vendo software — por isso te procurei.', false, 'assumir a intencao NAO e violacao'],
+  ['Se a conversa fizer sentido, proponho uma call de 20 minutos.', false, 'CTA direto passa'],
+  ['Vi que você não vende para o varejo desde 2024.', false, 'trajetoria do lead com "vend"'],
+  ['Como funciona hoje a busca de documentos no seu time?', false, 'pergunta limpa'],
+]
+
 let falhas = 0
 for (const [texto, deveAcusar, rotulo] of casos) {
   const v = violacoesEmTexto(texto)
@@ -65,6 +85,13 @@ for (const [texto, regraProibida, rotulo] of NEGACAO) {
 
 for (const [texto, deveAcusar, rotulo] of AUTORIA) {
   const acusou = violacoesEmTexto(texto).some(x => x.regra === 'AUTORIA')
+  const ok = acusou === deveAcusar
+  if (!ok) falhas++
+  console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
+}
+
+for (const [texto, deveAcusar, rotulo] of INTENCAO) {
+  const acusou = violacoesEmTexto(texto).some(x => x.regra === 'INTENCAO')
   const ok = acusou === deveAcusar
   if (!ok) falhas++
   console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
