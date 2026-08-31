@@ -12,6 +12,7 @@ import {
   LogOut,
   Activity,
   Inbox,
+  LineChart,
 } from 'lucide-react'
 
 const menuItems = [
@@ -19,6 +20,11 @@ const menuItems = [
     label: 'Dashboard',
     href: '/dashboard',
     icon: BarChart3,
+  },
+  {
+    label: 'Relatório',
+    href: '/dashboard/relatorio',
+    icon: LineChart,
   },
   {
     label: 'Leads',
