@@ -25,6 +25,13 @@ async function main() {
   console.log(`Respostas novas de leads: ${r.novasInteracoes}`)
   console.log(`Sugestões geradas: ${r.sugestoesGeradas}`)
 
+  if (r.respondidasPorFora.length) {
+    const total = r.respondidasPorFora.reduce((s, x) => s + x.quantas, 0)
+    console.log(`
+Pendências fechadas por resposta enviada fora do painel: ${total}`)
+    for (const x of r.respondidasPorFora) console.log(`   • ${x.lead} (${x.quantas})`)
+  }
+
   for (const d of r.detalhes) {
     console.log('\n' + '═'.repeat(70))
     console.log(`${TEMP_ICON[d.temperatura] || ''} ${d.lead} (${d.company}) — ${d.temperatura}`)

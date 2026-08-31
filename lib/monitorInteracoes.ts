@@ -13,6 +13,7 @@ export interface MonitorResult {
   chatsVarridos: number
   novasInteracoes: number
   sugestoesGeradas: number
+  respondidasPorFora: Array<{ lead: string; quantas: number }> // pendências fechadas por resposta manual
   falhas: Array<{ lead: string; motivo: string }>
   detalhes: Array<{
     lead: string
@@ -36,6 +37,7 @@ export async function monitorarInteracoes(opts: MonitorOptions = {}): Promise<Mo
     chatsVarridos: 0,
     novasInteracoes: 0,
     sugestoesGeradas: 0,
+    respondidasPorFora: [],
     falhas: [],
     detalhes: [],
   }
@@ -72,8 +74,28 @@ export async function monitorarInteracoes(opts: MonitorOptions = {}): Promise<Mo
     // A API devolve da mais recente para a mais antiga.
     const ordenadas = [...mensagens].reverse()
     const ultima = ordenadas[ordenadas.length - 1]
-    // Só age quando a última palavra é do lead — se já respondemos, não há pendência.
-    if (!ultima || ultima.is_sender === 1) continue
+    if (!ultima) continue
+
+    // Última palavra é nossa: não há pendência aberta. Mas o Marcelo responde
+    // direto pelo LinkedIn, fora do painel — e nesse caminho ninguém baixava a
+    // Interacao de NOVA. Rafaela e Agostinho seguiam como "precisa de ação" no
+    // relatório em 31/08 mesmo já respondidos. Fechar aqui é o único ponto do
+    // sistema que enxerga a resposta enviada por fora.
+    if (ultima.is_sender === 1) {
+      const respondidoEm = ultima.timestamp ? new Date(ultima.timestamp) : new Date()
+      const pendentes = await prisma.interacao.count({
+        where: { leadId: lead.id, status: 'NOVA', recebidaEm: { lt: respondidoEm } },
+      })
+      if (pendentes === 0) continue
+      if (!dryRun) {
+        await prisma.interacao.updateMany({
+          where: { leadId: lead.id, status: 'NOVA', recebidaEm: { lt: respondidoEm } },
+          data: { status: 'RESPONDIDA' },
+        })
+      }
+      result.respondidasPorFora.push({ lead: lead.name, quantas: pendentes })
+      continue
+    }
 
     const texto = (ultima.text || '').trim()
     if (!texto) continue

@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     console.log('[monitorInteracoes] resultado:', JSON.stringify({
       chatsVarridos: resultado.chatsVarridos,
       novasInteracoes: resultado.novasInteracoes,
+      respondidasPorFora: resultado.respondidasPorFora.reduce((s, x) => s + x.quantas, 0),
       sugestoesGeradas: resultado.sugestoesGeradas,
       falhas: resultado.falhas,
     }))
