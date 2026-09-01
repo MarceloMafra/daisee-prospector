@@ -8,8 +8,9 @@ import { prisma } from '../lib/prisma'
 import { notifySdr } from '../lib/notifySdr'
 
 async function main() {
-  const uuid = process.env.MASTERBOT_NOTIFICA_UUID || ''
-  const token = process.env.MASTERBOT_NOTIFICA_TOKEN || ''
+  // mesmo saneamento do notifySdr: BOM colado do painel da Vercel ja invalidou o UUID
+  const uuid = (process.env.MASTERBOT_NOTIFICA_UUID || '').replace(/^\uFEFF/, '').trim()
+  const token = (process.env.MASTERBOT_NOTIFICA_TOKEN || '').replace(/^\uFEFF/, '').trim()
   const numero = process.env.SDR_WHATSAPP_NUMBER || ''
 
   console.log('Conferindo configuração:')

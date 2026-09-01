@@ -52,12 +52,18 @@ function buildMessage(params: NotifySdrParams): string {
   return lines.join('\n')
 }
 
+// Variavel colada no painel da Vercel pode vir com um BOM (U+FEFF) invisivel na
+// frente. Foi o que derrubou as notificacoes em 31/08: o Masterbot respondia
+// "invalid input syntax for type uuid" e 16 avisos se perderam em silencio --
+// entre eles quatro respostas de lead. O olho nao ve o caractere; o Postgres ve.
+const limparEnv = (v: string | undefined) => (v || '').replace(/^\uFEFF/, '').trim()
+
 // Envio cru para os mesmos destinatarios do SDR. Existe separado porque nem todo
 // aviso e sobre um lead: a queda da conta do LinkedIn, por exemplo, nao tem
 // leadId para registrar e ainda assim precisa chegar no WhatsApp.
 export async function enviarWhatsApp(texto: string): Promise<{ ok: boolean; live: boolean; enviados: number }> {
-  const uuid = process.env.MASTERBOT_NOTIFICA_UUID || ''
-  const token = process.env.MASTERBOT_NOTIFICA_TOKEN || ''
+  const uuid = limparEnv(process.env.MASTERBOT_NOTIFICA_UUID)
+  const token = limparEnv(process.env.MASTERBOT_NOTIFICA_TOKEN)
   const destinatarios = (process.env.SDR_WHATSAPP_NUMBER || '')
     .split(',')
     .map((n) => n.replace(/\D/g, ''))
@@ -86,8 +92,8 @@ export async function enviarWhatsApp(texto: string): Promise<{ ok: boolean; live
 }
 
 export async function notifySdr(params: NotifySdrParams): Promise<{ ok: boolean; live: boolean }> {
-  const uuid = process.env.MASTERBOT_NOTIFICA_UUID || ''
-  const token = process.env.MASTERBOT_NOTIFICA_TOKEN || ''
+  const uuid = limparEnv(process.env.MASTERBOT_NOTIFICA_UUID)
+  const token = limparEnv(process.env.MASTERBOT_NOTIFICA_TOKEN)
   const destinatarios = (process.env.SDR_WHATSAPP_NUMBER || '')
     .split(',')
     .map((n) => n.replace(/\D/g, '')) // aceita "+55 43 99999-9999" e afins
