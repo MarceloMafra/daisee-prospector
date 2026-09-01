@@ -12,7 +12,7 @@
 import { prisma } from '../lib/prisma'
 import { sendTouchNow } from '../lib/scheduler'
 
-const FLAGS_CONHECIDAS = new Set(['--dry-run', '--apply'])
+const FLAGS_CONHECIDAS = new Set(['--dry-run', '--apply', '--pular'])
 const extras = process.argv.slice(2).filter((a) => a.startsWith('-'))
 const desconhecidas = extras.filter((a) => !FLAGS_CONHECIDAS.has(a))
 
@@ -21,6 +21,14 @@ if (desconhecidas.length) {
   console.error('Use --dry-run para simular ou --apply para enviar de verdade.')
   process.exit(1)
 }
+
+// Nomes fora desta rodada, sem mexer no banco. Nasceu de um lead cuja cadencia
+// foi regenerada no painel: a regeneracao devolve o T1 para AGENDADO e ele
+// reentra na fila como se nunca tivesse sido contactado -- prestes a receber a
+// mesma mensagem duas vezes. Use --pular "Nome" ate o estado ser corrigido.
+const PULAR = process.argv
+  .map((a, i) => (a === '--pular' ? process.argv[i + 1] : null))
+  .filter((v): v is string => !!v && !v.startsWith('-'))
 
 const APPLY = process.argv.includes('--apply')
 const TARGET = parseInt(process.argv.find((a) => /^\d+$/.test(a)) || '10', 10)
@@ -47,6 +55,10 @@ async function main() {
   // Só leads "frescos": cadência completa (5 touches) e próximo touch é o T1
   // ainda AGENDADO — ou seja, ninguém foi contactado. Cadência parcial fica de fora.
   const candidates = leads.filter((l) => {
+    if (PULAR.some((p) => l.name.toLowerCase().includes(p.toLowerCase()))) {
+      console.log(`  (pulando ${l.name}: pedido por --pular)`)
+      return false
+    }
     if (l.cadencia!.touches.length < 5) {
       console.log(`  (pulando ${l.name}: cadência parcial com ${l.cadencia!.touches.length} touches)`)
       return false
