@@ -13,6 +13,10 @@ const casos: [string, boolean, string][] = [
   ['A DAISEE executa a due diligence dos parceiros pra você.', true, 'promete executar due diligence'],
   ['Você vai poder montar um workflow inteiro com a DAISEE.', true, 'workflow prometido com DAISEE na frase'],
   ['Ela indexa relatórios de due diligence e cita a fonte.', false, 'due diligence como documento'],
+  ['Fluxos de onboarding, regras de motor antifraude, documentação de due diligence de credenciamento.', false, 'due diligence como documentacao (coletivo)'],
+  ['Canal de denúncias, due diligence, auditorias — e os docs?', false, 'due diligence em enumeracao de temas (assunto de email)'],
+  ['Políticas, due diligence e treinamentos geram acervo.', false, 'due diligence em enumeracao com "e"'],
+  ['A DAISEE cuida da due diligence dos seus fornecedores.', true, 'promessa continua sendo pega apos as excecoes'],
 ]
 
 // Casos de negacao vindos das cadencias geradas em 24/08 -- os dois textos
@@ -29,6 +33,18 @@ const NEGACAO: [string, RegExp | null, string][] = [
   ['Me chamou atenção um ponto do seu escopo: a condução de due diligence de parceiros comerciais.', /AUTOMACAO/, 'AUTOMACAO: "seu escopo" e marcador do lead'], 
   ['O seu escopo na FGV — minutas, editais e due diligence — envolve volume documental.', /AUTOMACAO/, 'AUTOMACAO: escopo, forma longa'], 
   ['Na sua atuação com due diligence de fornecedores, como funciona a busca?', /AUTOMACAO/, 'AUTOMACAO: "sua atuacao"'], 
+]
+
+// CASE: afirmar semelhanca com outro cliente pressupoe o outro cliente. O T3 da
+// Niara Ferro dizia "uma empresa de tecnologia com desafios parecidos" -- case
+// que nao existe, e a regra so enxergava "casos parecidos".
+const CASE_SEMELHANCA: [string, boolean, string][] = [
+  ['Conversei com uma empresa de tecnologia com desafios parecidos.', true, 'desafios parecidos'],
+  ['Vi uma operação com dores similares à de vocês.', true, 'dores similares'],
+  ['Outra área com problemas semelhantes resolveu assim.', true, 'problemas semelhantes'],
+  ['Encontrei cenários parecidos em outras instituições.', true, 'cenarios parecidos'],
+  ['Não conheço empresas com desafios parecidos para te citar.', false, 'negacao explicita'],
+  ['Vi que você enfrenta desafios de integração entre sistemas.', false, 'desafio do lead, sem semelhanca'],
 ]
 
 // Autoria: a MasterVendas e parceira da DAISEE, nao a desenvolvedora.
@@ -85,6 +101,13 @@ for (const [texto, regraProibida, rotulo] of NEGACAO) {
 
 for (const [texto, deveAcusar, rotulo] of AUTORIA) {
   const acusou = violacoesEmTexto(texto).some(x => x.regra === 'AUTORIA')
+  const ok = acusou === deveAcusar
+  if (!ok) falhas++
+  console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
+}
+
+for (const [texto, deveAcusar, rotulo] of CASE_SEMELHANCA) {
+  const acusou = violacoesEmTexto(texto).some(x => x.regra === 'CASE')
   const ok = acusou === deveAcusar
   if (!ok) falhas++
   console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)

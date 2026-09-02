@@ -18,7 +18,12 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
     rotulo: 'case/experiência em setor',
     // A oração subordinada ("os bancos estrangeiros QUE ATENDEMOS aqui") diz a mesma
     // coisa que "temos ajudado bancos" e passava batido na versão anterior.
-    re: /\b(temos ajudad\w*|temos apoiad\w*|venho ajudand\w*|ajudamos \w+ (empresas|líderes|lideres|áreas|areas|times|gestores|bancos)|outros clientes|nossos clientes|clientes nossos|clientes d\w+ (mesmo )?(setor|segmento|área|area)|empresas d\w+ (setor|segmento)|casos? (parecid\w+|similar\w*)|já (ajudamos|apoiamos|atendemos)|que (atendemos|atendo|apoiamos|apoio|ajudamos|ajudo)\b|atendemos (aqui|hoje|no brasil)|(d|n)a nossa (carteira|base de clientes|experiência|experiencia)|em (empresas|bancos|instituições) como)\b/gi,
+    //
+    // "desafios parecidos" e irmãos: o T3 da Niara Ferro dizia "uma empresa de
+    // tecnologia com desafios parecidos" — case que não existe, invisível para
+    // "casos? parecidos", que era a única forma que a regra enxergava. Afirmar
+    // semelhança com outro cliente pressupõe o outro cliente.
+    re: /\b(temos ajudad\w*|temos apoiad\w*|venho ajudand\w*|ajudamos \w+ (empresas|líderes|lideres|áreas|areas|times|gestores|bancos)|outros clientes|nossos clientes|clientes nossos|clientes d\w+ (mesmo )?(setor|segmento|área|area)|empresas d\w+ (setor|segmento)|(casos?|desafios?|dores?|problemas?|cen[áa]rios?|contextos?|situa[çc][õo]es?|realidades?) (parecid\w+|similar\w*|semelhant\w*)|já (ajudamos|apoiamos|atendemos)|que (atendemos|atendo|apoiamos|apoio|ajudamos|ajudo)\b|atendemos (aqui|hoje|no brasil)|(d|n)a nossa (carteira|base de clientes|experiência|experiencia)|em (empresas|bancos|instituições) como)\b/gi,
   },
   {
     id: 'REPERTORIO',
@@ -71,8 +76,19 @@ const NEGACAO = /\b(n[ãa]o|nada de|nem|sem ser|longe de|diferente de|ao contr[�
 const NEGACAO_AUTOMACAO = /\bsem\b[^.!?]{0,70}$/i
 
 // "relatórios de due diligence" é um TIPO DE DOCUMENTO que a DAISEE indexa —
-// diferente de prometer que ela executa a due diligence.
-const DOCUMENTO_DE = /(relat[óo]rios?|documentos?|evid[êe]ncias?|arquivos?|dossi[êe]s?|pareceres?|pol[íi]ticas?|contratos?)\s+(de|da|do)\s+$/i
+// diferente de prometer que ela executa a due diligence. "documentação" faltava
+// na lista, e o T4 do Marcelo da Veiga (Cielo) caía por dizer "documentação de
+// due diligence de credenciamento" — a mesma coisa que "documentos de", em
+// substantivo coletivo.
+const DOCUMENTO_DE = /(relat[óo]rios?|documenta[çc][ãa]o|documentos?|evid[êe]ncias?|arquivos?|dossi[êe]s?|pareceres?|pol[íi]ticas?|contratos?)\s+(de|da|do)\s+$/i
+
+// "Canal de denúncias, due diligence, auditorias — e os docs?": numa enumeração
+// de disciplinas de compliance, "due diligence" nomeia o domínio do lead, não
+// algo que a DAISEE faz. No corpo do texto o sujeito costuma aparecer ("frentes
+// que você toca") e CONTEXTO_DO_LEAD já resolve; em assunto de e-mail não há
+// sujeito nenhum, e era ali que o T4 da Mayra Benaion Lachter caía.
+const ENUMERACAO_COMPLIANCE =
+  /\b(canal de den[úu]ncias|den[úu]ncias|auditorias?|treinamentos?|pol[íi]ticas|c[óo]digos? de conduta|conflitos? de interesse|integridade|controles internos|riscos?|compliance|PLD\/?FT|AML|KYC|LGPD|ESG|governan[çc]a)\b[\s,;/e]+$/i
 
 // Falar da carreira do LEAD não é claim nosso: "sua experiência em empresas como
 // Oi e Tupy", "liderou due diligence na DXA" descrevem a trajetória dele. Só vira
@@ -129,6 +145,7 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       if (NEGACAO.test(antesLongo)) continue
       if (regra.id === 'AUTOMACAO' && NEGACAO_AUTOMACAO.test(antesLongo)) continue
       if (/^due diligence$/i.test(m[0]) && DOCUMENTO_DE.test(antes)) continue
+      if (/^due diligence$/i.test(m[0]) && ENUMERACAO_COMPLIANCE.test(antes)) continue
       if (TRAJETORIA_DO_LEAD.test(antesLongo)) continue
       }
 
