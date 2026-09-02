@@ -1,10 +1,15 @@
 // Triagem de uma lista do Sales Navigator usando SÓ os dados que a própria lista
-// devolve — headline, cargo, empresa, setor e localização. Nada de enriquecer
-// perfil, que custa uma chamada por lead, nem de ler o summary, que multiplica
-// por cinco o texto sem melhorar a decisão de "esse é do público ou não".
+// devolve — headline, cargo, empresa, setor, localização e o estado de contato.
+// Nada de enriquecer perfil, que custa uma chamada por lead, nem de ler o
+// summary, que multiplica por cinco o texto sem melhorar a decisão de "essa
+// pessoa é do público ou não".
 //
 // A saída não é um sim/não: é uma pontuação com o MOTIVO de cada ponto, para a
 // revisão ser por grupo em vez de um a um.
+//
+// Os três eixos são os que o Marcelo definiu em 02/09: quanto mais sênior
+// melhor, quanto mais elevado o cargo melhor, e quanto mais técnico em
+// compliance e gestão documental melhor.
 
 export interface FichaTriagem {
   nome: string
@@ -18,92 +23,199 @@ export interface FichaTriagem {
   grau: string
 }
 
+export type Faixa = 'ALVO' | 'TALVEZ' | 'FORA'
+export type Contato = 'CONECTADO' | 'CONVITE_PENDENTE' | 'NOVO'
+
 export interface Veredito {
   ficha: FichaTriagem
   pontos: number
-  faixa: 'ALVO' | 'TALVEZ' | 'FORA'
+  faixa: Faixa
+  contato: Contato
+  nivel: string
+  termos: string[]
   motivos: string[]
 }
 
-// Função de compliance/riscos: o público que a campanha atual atende.
-const CARGO_NUCLEO =
-  /\b(compliance|pld\s*\/?\s*ft|pldft|\bpld\b|\baml\b|\bkyc\b|\bkyb\b|lavagem de dinheiro|auditoria|auditor|controles internos|\briscos?\b|\brisk\b|\blgpd\b|\bdpo\b|privacidade|prote[çc][ãa]o de dados|governan[çc]a|\bgrc\b|integridade|regulat[óo]ri|\bregulatory\b|\bsox\b|\bcoso\b|ouvidoria|jur[íi]dic|\blegal\b|conformidade|anticorrup[çc][ãa]o|\bcvm\b|\bbacen\b|\bsusep\b|\bcoaf\b)\b/i
+// ── Eixo 1: altura do cargo ────────────────────────────────────────────────
+// Graduado, não binário: um Head de Compliance e um Analista de Compliance
+// casam com a mesma regra de função, mas não são o mesmo lead.
+const NIVEIS: { nome: string; pontos: number; re: RegExp }[] = [
+  {
+    nome: 'C-level/VP',
+    pontos: 30,
+    re: /\b(ceo|cfo|coo|cto|cio|ciso|cco|cro|clo|chief|vice[- ]?presidente|vice[- ]?president|vp|presidente|board member|conselheir\w*)\b/i,
+  },
+  {
+    nome: 'Diretoria',
+    pontos: 26,
+    re: /\b(diretor\w*|director|superintendente|head|s[óo]ci[oa]|partner|managing)\b/i,
+  },
+  { nome: 'Gerência', pontos: 20, re: /\b(gerente|manager|gestor\w*)\b/i },
+  {
+    nome: 'Coordenação',
+    pontos: 14,
+    re: /\b(coordenador\w*|coordinator|supervisor\w*|l[íi]der|lead|chefe)\b/i,
+  },
+  {
+    nome: 'Especialista',
+    pontos: 9,
+    re: /\b(especialista|specialist|consultor\w*|s[êe]nior|senior|sr|encarregad\w*)\b/i,
+  },
+  { nome: 'Analista', pontos: 4, re: /\b(analista|analyst|assessor\w*|t[ée]cnic[oa])\b/i },
+]
+
+// Modificadores de senioridade. "Analista Júnior de Ouvidoria" casa com Analista
+// e com Júnior ao mesmo tempo, e o find() devolvia Analista — pessoa em início
+// de carreira entrava como ALVO com 83 pontos. O modificador tem precedência
+// sobre o nível base, porque é ele que diz onde a pessoa está na escada.
+const INICIO_DE_CARREIRA =
+  /\b(estagi[áa]ri\w*|intern|trainee|junior|j[úu]nior|jr|assistente|auxiliar|aprendiz)\b/i
+
+const SENIORIDADE_ALTA = /\b(s[êe]nior|senior|sr|pleno\s*\/\s*s[êe]nior|especialista)\b/i
+
+// ── Eixo 2: densidade técnica em compliance ────────────────────────────────
+// Cada termo DISTINTO conta. "Compliance | PLD/FT | LGPD (DPO) | BACEN | CVM"
+// descreve alguém muito mais dentro do assunto que um "Compliance" solto.
+const TERMOS_NUCLEO: [string, RegExp][] = [
+  ['compliance', /\bcompliance\b/i],
+  ['PLD/FT', /\b(pld\s*\/?\s*ft|pldft|pld|lavagem de dinheiro|aml|cft)\b/i],
+  ['KYC', /\b(kyc|kyb|kye|kyp|kys|know your)\b/i],
+  ['auditoria', /\b(auditoria|auditor\w*|audit)\b/i],
+  ['controles internos', /\b(controles internos|internal controls|sox|coso)\b/i],
+  ['riscos', /\b(riscos?|risk|rcsa)\b/i],
+  ['LGPD/DPO', /\b(lgpd|dpo|privacidade|prote[çc][ãa]o de dados|gdpr|encarregad[oa] de dados)\b/i],
+  ['governança', /\b(governan[çc]a|grc|integridade|corporate governance)\b/i],
+  ['regulatório', /\b(regulat[óo]ri\w*|regulatory|conformidade|normativ\w*)\b/i],
+  ['reguladores', /\b(bacen|banco central|cvm|susep|coaf|previc|febraban|bcb)\b/i],
+  ['antifraude', /\b(antifraude|anti[- ]?fraude|fraude|fraud|preven[çc][ãa]o a perdas)\b/i],
+  ['jurídico', /\b(jur[íi]dic[oa]|legal|advogad[oa]|counsel|societ[áa]ri[oa])\b/i],
+  ['ouvidoria', /\b(ouvidoria|ombudsman|canal de den[úu]ncias)\b/i],
+  ['anticorrupção', /\b(anticorrup[çc][ãa]o|fcpa|ukba|iso 3700?1|due diligence)\b/i],
+]
+
+// ── Eixo 3: gestão documental — a dor que a DAISEE resolve ─────────────────
+// Quem já nomeia o acervo no próprio título está a um passo da conversa.
+const TERMOS_DOCUMENTAL: [string, RegExp][] = [
+  [
+    'gestão documental',
+    /\b(gest[ãa]o documental|documental|ged|records? management|document management|arquiv[íi]stic[oa]|arquivo)\b/i,
+  ],
+  ['normativos', /\b(normativ\w*|pol[íi]ticas?|manuais?|procedimentos?)\b/i],
+  ['evidências', /\b(evid[êe]ncias?|dossi[êe]s?|comprova[çc][ãa]o|rastreabilidade|trilha de auditoria)\b/i],
+  ['contratos', /\b(contratos?|minutas?|clm|contract lifecycle)\b/i],
+]
 
 // Adjacentes: dor documental plausível sem ser da área-fim. O Thiago Amorim
 // (TI/Regulatory no Daycoval, score 95) entrou por aqui.
 const CARGO_ADJACENTE =
-  /\b(gest[ãa]o documental|documenta[çc][ãa]o|arquivo|processos|qualidade|\bpmo\b|\besg\b|\bti\b|sistemas|tecnologia da informa[çc][ãa]o|dados|contratos?|\bfiscal\b|tribut[áa]ri|cont[áa]bil|controladoria)\b/i
+  /\b(tecnologia da informa[çc][ãa]o|ti|sistemas|pmo|processos|qualidade|esg|dados|controladoria|cont[áa]bil|fiscal|tribut[áa]ri[oa])\b/i
 
-const SENIORIDADE =
-  /\b(head|diretor|director|superintendente|gerente|manager|coordenador|coordinator|supervisor|especialista|chefe|l[íi]der|lead|\bcco\b|\bcro\b|\bcfo\b|\bclo\b|s[óo]cio|partner)\b/i
-
-// Setor do EMPREGADOR, não do lead: é o que separa "compliance num banco" de
-// "compliance numa agência de marketing".
 const SETOR_ALVO =
   /(banco|bancos|banking|servi[çc]os financeiros|financial services|seguro|seguros|insurance|previd[êe]ncia|mercado de capitais|capital markets|cr[ée]dito|investimento|fintech|cooperativa|corretora|c[âa]mbio|pagamentos|meios de pagamento)/i
 
-const SETOR_TECH = /(tecnologia da informa[çc][ãa]o|desenvolvimento de software|software|internet|servi[çc]os de informa[çc][ãa]o|\bti\b)/i
+const SETOR_TECH =
+  /(tecnologia da informa[çc][ãa]o|desenvolvimento de software|software|internet|servi[çc]os de informa[çc][ãa]o)/i
 
-// Cargo de dono de empresa: sem função de compliance, é outro ICP inteiro — a
-// copy da campanha fala de acervo regulatório, que não é a dor de um CEO.
+// Dono de empresa sem função de compliance é outro ICP: a copy da campanha fala
+// de acervo regulatório, que não é a dor de um CEO de tech.
 const CARGO_DONO =
-  /\b(ceo|chief executive|founder|fundador|cofounder|co-founder|cofundador|presidente|owner|propriet[áa]ri|empres[áa]ri|mentor|conselheir|board member|advisor)\b/i
+  /\b(ceo|chief executive|founder|fundador\w*|cofounder|co-founder|cofundador\w*|owner|propriet[áa]ri[oa]|empres[áa]ri[oa]|mentor|advisor)\b/i
+
+// Vende o que a gente vende: aparece como ALVO por casar com os termos, mas é
+// concorrente ou parceiro, não cliente.
+const FORNECEDOR =
+  /\b(consultoria em compliance|compliance solutions?|govtech|legaltech|regtech|plataforma de (governan[çc]a|compliance)|solu[çc][õo]es? de (compliance|governan[çc]a)|software de (compliance|governan[çc]a)|saas)\b/i
 
 const SEM_EMPREGADOR =
-  /(transi[çc][ãa]o de carreira|career transition|open to work|dispon[íi]vel para|aposentad|autonom|freelan|n[ãa]o informad|^consultant$|^consultoria$)/i
+  /(transi[çc][ãa]o de carreira|career transition|open to work|dispon[íi]vel para|aposentad[oa]|autonom[oa]|freelan|n[ãa]o informad[oa])/i
 
 export function triar(f: FichaTriagem): Veredito {
   const motivos: string[] = []
+  const cargoTexto = `${f.cargo} ${f.headline}`
+  const setorTexto = `${f.setor} ${f.empresa}`
   let pontos = 0
 
-  const cargoTexto = `${f.cargo} ${f.headline}`
-  const nucleo = CARGO_NUCLEO.exec(cargoTexto)
-  const adjacente = CARGO_ADJACENTE.exec(cargoTexto)
+  // Eixo 1 — altura do cargo. O primeiro nível que casar vence, e a lista está
+  // em ordem decrescente: "Diretor de Compliance Sênior" pontua como Diretoria,
+  // não como Especialista.
+  //
+  // Olha cargo E headline juntos de propósito: o role que o Sales Navigator
+  // devolve vem genérico ou desatualizado com frequência, e é a headline que
+  // guarda a verdade — "Consultor financeiro" cuja headline diz "Conselheiro de
+  // Administração | Comitês de Auditoria", "Gerente de relacionamento" que na
+  // headline é "Head de Ouvidoria".
+  const nivelBase = NIVEIS.find((n) => n.re.test(cargoTexto))
+  let nivelNome = nivelBase?.nome ?? '—'
 
-  if (nucleo) {
-    pontos += 50
-    motivos.push(`função-núcleo: "${nucleo[0]}"`)
-  } else if (adjacente) {
-    pontos += 20
-    motivos.push(`função adjacente: "${adjacente[0]}"`)
+  if (INICIO_DE_CARREIRA.test(cargoTexto)) {
+    // Precedência sobre o nível base: quem é júnior é júnior, mesmo sendo analista.
+    pontos -= 12
+    nivelNome = 'Início'
+    motivos.push('início de carreira (-12)')
+  } else if (nivelBase) {
+    pontos += nivelBase.pontos
+    motivos.push(`${nivelBase.nome} (${nivelBase.pontos >= 0 ? '+' : ''}${nivelBase.pontos})`)
+    // Um Analista Sênior de PLD/FT não é um Analista recém-promovido.
+    if (SENIORIDADE_ALTA.test(cargoTexto) && nivelBase.pontos < 14) {
+      pontos += 6
+      nivelNome = `${nivelBase.nome} sênior`
+      motivos.push('senioridade declarada (+6)')
+    }
   }
 
-  const setor = `${f.setor} ${f.empresa}`
-  if (SETOR_ALVO.test(setor)) {
-    pontos += 30
-    motivos.push('setor financeiro/regulado')
-  } else if (SETOR_TECH.test(setor)) {
+  // Eixo 2 — densidade técnica: cada termo distinto soma, com teto em 5 termos
+  // para um headline recheado de buzzword não vencer sozinho.
+  const termos = TERMOS_NUCLEO.filter(([, re]) => re.test(cargoTexto)).map(([t]) => t)
+  if (termos.length > 0) {
+    const p = Math.min(termos.length, 5) * 9
+    pontos += p
+    motivos.push(`${termos.length} termo(s) de compliance (+${p})`)
+  }
+
+  // Eixo 3 — gestão documental, a dor específica da DAISEE.
+  const doc = TERMOS_DOCUMENTAL.filter(([, re]) => re.test(cargoTexto)).map(([t]) => t)
+  if (doc.length > 0) {
+    const p = Math.min(doc.length, 3) * 12
+    pontos += p
+    motivos.push(`gestão documental: ${doc.join(', ')} (+${p})`)
+  }
+
+  if (termos.length === 0 && doc.length === 0 && CARGO_ADJACENTE.test(cargoTexto)) {
+    pontos += 12
+    motivos.push('função adjacente (+12)')
+  }
+
+  if (SETOR_ALVO.test(setorTexto)) {
+    pontos += 22
+    motivos.push('setor financeiro/regulado (+22)')
+  } else if (SETOR_TECH.test(setorTexto) && termos.length === 0) {
     pontos -= 10
-    motivos.push('setor de tecnologia')
+    motivos.push('setor de tecnologia sem função de compliance (-10)')
   }
 
-  if (SENIORIDADE.test(cargoTexto)) {
-    pontos += 10
-    motivos.push('cargo com senioridade')
-  }
-
-  // Dono de empresa SEM função de compliance é o ICP errado. Com função de
-  // compliance (um sócio de consultoria de GRC, por exemplo), continua valendo.
-  if (CARGO_DONO.test(cargoTexto) && !nucleo) {
+  if (CARGO_DONO.test(cargoTexto) && termos.length === 0) {
     pontos -= 45
-    motivos.push('dono/C-level sem função de compliance')
+    motivos.push('dono/C-level sem função de compliance (-45)')
+  }
+
+  if (FORNECEDOR.test(`${cargoTexto} ${setorTexto}`)) {
+    pontos -= 35
+    motivos.push('parece fornecedor do mesmo mercado (-35)')
   }
 
   if (SEM_EMPREGADOR.test(`${f.empresa} ${f.headline}`)) {
     pontos -= 60
-    motivos.push('sem empregador identificável')
+    motivos.push('sem empregador identificável (-60)')
   }
 
-  if (f.convitePendente) {
-    pontos -= 100
-    motivos.push('convite já pendente')
-  }
+  const contato: Contato =
+    f.grau === 'DISTANCE_1' ? 'CONECTADO' : f.convitePendente ? 'CONVITE_PENDENTE' : 'NOVO'
 
-  const faixa = pontos >= 60 ? 'ALVO' : pontos >= 30 ? 'TALVEZ' : 'FORA'
-  return { ficha: f, pontos, faixa, motivos }
+  const faixa: Faixa = pontos >= 70 ? 'ALVO' : pontos >= 40 ? 'TALVEZ' : 'FORA'
+  return { ficha: f, pontos, faixa, contato, nivel: nivelNome, termos: [...termos, ...doc], motivos }
 }
 
-// Ficha enxuta para o lote de IA: 225 chars/lead, ~28k tokens nos 500.
+// Ficha enxuta para um eventual lote de IA: 225 chars/lead, ~28k tokens nos 500.
 export function fichaCurta(f: FichaTriagem) {
   return { n: f.nome, h: f.headline, r: f.cargo, c: f.empresa, s: f.setor, uf: f.uf }
 }

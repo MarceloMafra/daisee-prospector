@@ -1,9 +1,12 @@
 // Tria uma lista do Sales Navigator sem enriquecer perfil e sem ler o summary —
 // só com o que a própria lista devolve. Custo: 1 chamada à Unipile, zero de IA.
 //
-//   npx tsx scripts/triar-lista.ts [--lista <id|url|ALL>] [--max 500] [--faixa ALVO] [--csv saida.csv]
+//   npx tsx scripts/triar-lista.ts --lista <id|url|ALL> [--max 2000]
+//                                  [--faixa ALVO] [--contato NOVO] [--top 40]
+//                                  [--csv saida.csv]
 //
-// A revisão é por GRUPO, não lead a lead: cada um sai com a pontuação e o motivo.
+// A revisão é por GRUPO, não lead a lead: cada um sai com a pontuação, o nível
+// do cargo, os termos que casaram e o estado de contato.
 import { fetchAllSalesNavLeadListMembers, getSalesNavFullName } from '../lib/unipile'
 import { triar, type FichaTriagem, type Veredito } from '../lib/triagemLista'
 import { prisma } from '../lib/prisma'
@@ -15,14 +18,15 @@ const extrairId = (e: string) => (e.match(/\/lists\/people\/(\d+)/) || e.match(/
 async function main() {
   const bruto = arg('--lista') ?? 'ALL'
   const listId = bruto === 'ALL' ? 'ALL' : extrairId(bruto)
-  const max = Number(arg('--max') ?? 500)
+  const max = Number(arg('--max') ?? 2000)
   const faixaFiltro = arg('--faixa')
+  const contatoFiltro = arg('--contato')
+  const top = arg('--top') ? Number(arg('--top')) : null
   const csv = arg('--csv')
 
   console.log(`Lista: ${listId} (teto ${max})\n`)
   const itens: any[] = await fetchAllSalesNavLeadListMembers(listId, max)
 
-  // Quem já está na base não precisa de triagem.
   const base = await prisma.lead.findMany({ select: { linkedinProviderId: true, name: true } })
   const idsNaBase = new Set(base.map((b) => b.linkedinProviderId).filter(Boolean))
   const nomesNaBase = new Set(base.map((b) => b.name.toLowerCase()))
@@ -38,60 +42,83 @@ async function main() {
       continue
     }
     const p = i.current_positions?.[0] ?? {}
-    const ficha: FichaTriagem = {
-      nome,
-      headline: i.headline ?? '',
-      cargo: p.role ?? '',
-      empresa: p.company ?? '',
-      setor: p.industry?.[0] ?? '',
-      uf: i.location?.split(',').slice(-2)[0]?.trim() ?? '',
-      providerId: i.id,
-      convitePendente: Boolean(i.pending_invitation),
-      grau: i.network_distance ?? '',
-    }
-    vereditos.push(triar(ficha))
+    vereditos.push(
+      triar({
+        nome,
+        headline: i.headline ?? '',
+        cargo: p.role ?? '',
+        empresa: p.company ?? '',
+        setor: p.industry?.[0] ?? '',
+        uf: i.location?.split(',').slice(-2)[0]?.trim() ?? '',
+        providerId: i.id,
+        convitePendente: Boolean(i.pending_invitation),
+        grau: i.network_distance ?? '',
+      } satisfies FichaTriagem)
+    )
   }
 
   vereditos.sort((a, b) => b.pontos - a.pontos)
 
-  const porFaixa = (f: string) => vereditos.filter((v) => v.faixa === f)
-  console.log('='.repeat(78))
+  const conta = (f: (v: Veredito) => boolean) => vereditos.filter(f).length
+  console.log('='.repeat(80))
   console.log(`Na lista ............ ${itens.length}`)
-  console.log(`Já na base .......... ${jaNaBase}`)
+  console.log(`Já na base .......... ${jaNaBase}  (não entram na triagem)`)
   console.log(`Triados ............. ${vereditos.length}`)
-  console.log(`  ALVO  (>= 60) ..... ${porFaixa('ALVO').length}`)
-  console.log(`  TALVEZ (30-59) .... ${porFaixa('TALVEZ').length}`)
-  console.log(`  FORA  (< 30) ...... ${porFaixa('FORA').length}`)
-  console.log('='.repeat(78))
+  console.log('')
+  console.log(`  ALVO   (>= 70) .... ${conta((v) => v.faixa === 'ALVO')}`)
+  console.log(`  TALVEZ (40-69) .... ${conta((v) => v.faixa === 'TALVEZ')}`)
+  console.log(`  FORA   (< 40) ..... ${conta((v) => v.faixa === 'FORA')}`)
+  console.log('')
+  console.log(`  já CONECTADO ...... ${conta((v) => v.contato === 'CONECTADO')}  (aceitaram — não precisa de convite)`)
+  console.log(`  convite PENDENTE .. ${conta((v) => v.contato === 'CONVITE_PENDENTE')}`)
+  console.log(`  NOVO .............. ${conta((v) => v.contato === 'NOVO')}`)
+  console.log('='.repeat(80))
 
-  for (const faixa of ['ALVO', 'TALVEZ', 'FORA'] as const) {
-    if (faixaFiltro && faixa !== faixaFiltro) continue
-    const grupo = porFaixa(faixa)
-    if (grupo.length === 0) continue
-    console.log(`\n${'─'.repeat(78)}\n${faixa} — ${grupo.length} lead(s)\n${'─'.repeat(78)}`)
-    // FORA é longo e serve só para conferir que nada bom caiu fora: mostra uma amostra.
-    const mostrar = faixa === 'FORA' && !faixaFiltro ? grupo.slice(0, 15) : grupo
-    for (const v of mostrar) {
-      console.log(
-        `${String(v.pontos).padStart(4)}  ${v.ficha.nome.slice(0, 28).padEnd(29)} ${v.ficha.empresa.slice(0, 24).padEnd(25)} ${v.ficha.cargo.slice(0, 34)}`
-      )
-      console.log(`      ${v.motivos.join(' · ')}`)
-    }
-    if (mostrar.length < grupo.length) {
-      console.log(`      … e mais ${grupo.length - mostrar.length}. Use --faixa FORA para ver todos.`)
-    }
+  let grupo = vereditos
+  if (faixaFiltro) grupo = grupo.filter((v) => v.faixa === faixaFiltro)
+  if (contatoFiltro) grupo = grupo.filter((v) => v.contato === contatoFiltro)
+
+  const mostrar = top ? grupo.slice(0, top) : grupo
+  const rotuloContato: Record<string, string> = {
+    CONECTADO: '🤝',
+    CONVITE_PENDENTE: '⏳',
+    NOVO: '  ',
+  }
+
+  console.log('')
+  for (const v of mostrar) {
+    console.log(
+      `${String(v.pontos).padStart(4)} ${rotuloContato[v.contato]} ${v.ficha.nome.slice(0, 26).padEnd(27)} ${v.ficha.empresa.slice(0, 26).padEnd(27)} ${v.ficha.cargo.slice(0, 40)}`
+    )
+    console.log(`        ${v.nivel} · ${v.termos.join(', ') || 'sem termo'}`)
+  }
+  if (mostrar.length < grupo.length) {
+    console.log(`\n… e mais ${grupo.length - mostrar.length}. Use --csv para a lista inteira.`)
   }
 
   if (csv) {
     const linhas = [
-      'pontos,faixa,nome,empresa,cargo,setor,uf,headline,motivos',
+      'pontos,faixa,contato,nivel,nome,empresa,cargo,setor,uf,termos,headline,perfil',
       ...vereditos.map((v) =>
-        [v.pontos, v.faixa, v.ficha.nome, v.ficha.empresa, v.ficha.cargo, v.ficha.setor, v.ficha.uf, v.ficha.headline, v.motivos.join(' | ')]
+        [
+          v.pontos,
+          v.faixa,
+          v.contato,
+          v.nivel,
+          v.ficha.nome,
+          v.ficha.empresa,
+          v.ficha.cargo,
+          v.ficha.setor,
+          v.ficha.uf,
+          v.termos.join(' | '),
+          v.ficha.headline,
+          `https://www.linkedin.com/sales/lead/${v.ficha.providerId}`,
+        ]
           .map((c) => `"${String(c).replace(/"/g, '""')}"`)
           .join(',')
       ),
     ]
-    writeFileSync(csv, linhas.join('\n'), 'utf8')
+    writeFileSync(csv, '﻿' + linhas.join('\n'), 'utf8')
     console.log(`\nCSV: ${csv}`)
   }
 }
