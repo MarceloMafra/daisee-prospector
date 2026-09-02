@@ -15,3 +15,7 @@ docs/Reuni*/apresentacoes/telas-reais/
 
 # Dumps de touches para restauro: contêm o texto personalizado de cada lead
 .backups/
+
+# Saidas de triagem e relatorios: carregam nome, cargo e empresa de centenas
+# de pessoas reais. Ficam fora do git por LGPD.
+saidas/
