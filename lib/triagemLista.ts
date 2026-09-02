@@ -219,3 +219,27 @@ export function triar(f: FichaTriagem): Veredito {
 export function fichaCurta(f: FichaTriagem) {
   return { n: f.nome, h: f.headline, r: f.cargo, c: f.empresa, s: f.setor, uf: f.uf }
 }
+
+// Monta a ficha a partir do registro cru da Unipile. Fica aqui para o relatório
+// de triagem e a importação lerem o item do mesmo jeito — se divergirem, o que
+// o relatório aprova não é o que a importação grava.
+export function fichaDeItemSalesNav(item: {
+  headline?: string
+  location?: string
+  current_positions?: Array<{ company?: string; role?: string; industry?: string[] }>
+  pending_invitation?: boolean
+  network_distance?: string
+  id?: string
+}): Omit<FichaTriagem, 'nome'> {
+  const p = item.current_positions?.[0] ?? {}
+  return {
+    headline: item.headline ?? '',
+    cargo: p.role ?? '',
+    empresa: p.company ?? '',
+    setor: p.industry?.[0] ?? '',
+    uf: item.location?.split(',').slice(-2)[0]?.trim() ?? '',
+    providerId: item.id ?? '',
+    convitePendente: Boolean(item.pending_invitation),
+    grau: item.network_distance ?? '',
+  }
+}

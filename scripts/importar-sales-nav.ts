@@ -2,9 +2,12 @@
 //   --lista ALL          varre todas as listas salvas (padrão)
 //   --lista <id|url>     uma lista específica; aceita a URL do Sales Navigator
 //   --nome "..."         nome da lista, só para registrar na ficha do lead
+//   --faixas ALVO,TALVEZ passa cada lead pela triagem e só importa essas faixas
+//   --max <n>            teto de leads lidos da lista (default 500)
 //   --apply              grava (sem isso, é relatório e nada é criado)
 import { prisma } from '../lib/prisma'
 import { importarListaSalesNav } from '../lib/importSalesNav'
+import type { Faixa } from '../lib/triagemLista'
 
 const arg = (n: string) => (process.argv.includes(n) ? process.argv[process.argv.indexOf(n) + 1] : null)
 
@@ -19,15 +22,24 @@ async function main() {
   const listId = bruto === 'ALL' ? 'ALL' : extrairId(bruto)
   const listName = arg('--nome') ?? undefined
   const apply = process.argv.includes('--apply')
+  const max = arg('--max') ? Number(arg('--max')) : undefined
+  const faixas = arg('--faixas')
+    ?.split(',')
+    .map((f) => f.trim().toUpperCase())
+    .filter((f): f is Faixa => f === 'ALVO' || f === 'TALVEZ' || f === 'FORA')
 
   console.log(`Lista: ${listId}${listName ? ` ("${listName}")` : ''} — ${apply ? 'IMPORTANDO' : 'DRY-RUN'}\n`)
 
-  const r = await importarListaSalesNav(listId, { listName, dryRun: !apply })
+  if (faixas?.length) console.log(`Triagem: importando apenas ${faixas.join(' e ')}
+`)
+
+  const r = await importarListaSalesNav(listId, { listName, dryRun: !apply, faixas, max })
 
   console.log('='.repeat(72))
   console.log(`Encontrados na lista ..... ${r.total}`)
   console.log(`Já existem na base ....... ${r.duplicados}`)
   console.log(`Sem id ou nome (pulados) . ${r.pulados}`)
+  if (faixas?.length) console.log(`Reprovados na triagem .... ${r.reprovadosNaTriagem}`)
   console.log(`NOVOS .................... ${r.novos.length}`)
   if (apply) console.log(`Criados .................. ${r.importados}`)
 

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { calculateDAISEEScore } from '@/lib/daisee-score'
 import { fetchAllSalesNavLeadListMembers, getSalesNavFullName } from '@/lib/unipile'
 import type { SalesNavLeadListItem } from '@/lib/unipile'
+import { fichaDeItemSalesNav, triar, type Faixa } from '@/lib/triagemLista'
 
 export interface LeadImportavel {
   linkedinProviderId: string
@@ -16,6 +17,9 @@ export interface LeadImportavel {
   location: string | null
   recemContratado: boolean
   score: number
+  faixa?: Faixa
+  pontosTriagem?: number
+  termosTriagem?: string[]
 }
 
 export interface ResultadoImportacao {
@@ -24,6 +28,7 @@ export interface ResultadoImportacao {
   duplicados: number
   pulados: number
   importados: number
+  reprovadosNaTriagem: number
   erros: Array<{ name: string; error: string }>
 }
 
@@ -58,6 +63,9 @@ function notas(lead: LeadImportavel, listName?: string) {
     lead.headline ? `Headline: ${lead.headline}` : null,
     lead.location ? `Localização: ${lead.location}` : null,
     lead.recemContratado ? 'Sinalizado como recém-contratado(a) pelo filtro do Sales Navigator.' : null,
+    lead.faixa
+      ? `Triagem: ${lead.faixa} (${lead.pontosTriagem} pts)${lead.termosTriagem?.length ? ` — ${lead.termosTriagem.join(', ')}` : ''}`
+      : null,
   ]
     .filter(Boolean)
     .join('\n')
@@ -88,9 +96,9 @@ function urnChave(id?: string | null): string | null {
 // Com dryRun, nada é gravado: serve para conferir quem entraria antes de decidir.
 export async function importarListaSalesNav(
   listId: string,
-  opts: { listName?: string; dryRun?: boolean } = {}
+  opts: { listName?: string; dryRun?: boolean; faixas?: Faixa[]; max?: number } = {}
 ): Promise<ResultadoImportacao> {
-  const membros = await fetchAllSalesNavLeadListMembers(listId)
+  const membros = await fetchAllSalesNavLeadListMembers(listId, opts.max ?? 500)
 
   // Índices da base, para reconhecer quem já está em campanha.
   const base = await prisma.lead.findMany({
@@ -108,12 +116,30 @@ export async function importarListaSalesNav(
     return Boolean(n && porUrn.has(n))
   }
 
+  // A própria lista do Sales Navigator repete gente — Raíssa Modesto (banco BV)
+  // aparecia duas vezes no lote de 02/09. Com a deduplicação olhando só a base,
+  // as duas cópias passavam juntas e viravam dois leads, cada um com sua
+  // cadência. Registrar quem já entrou neste lote fecha esse caminho.
+  const noLote = { id: new Set<string>(), url: new Set<string>(), urn: new Set<string>() }
+  const jaNoLote = (lead: LeadImportavel) => {
+    const u = urlChave(lead.linkedinUrl)
+    const n = urnChave(lead.linkedinProviderId)
+    if (noLote.id.has(lead.linkedinProviderId)) return true
+    if (u && noLote.url.has(u)) return true
+    if (n && noLote.urn.has(n)) return true
+    noLote.id.add(lead.linkedinProviderId)
+    if (u) noLote.url.add(u)
+    if (n) noLote.urn.add(n)
+    return false
+  }
+
   const res: ResultadoImportacao = {
     total: membros.length,
     novos: [],
     duplicados: 0,
     pulados: 0,
     importados: 0,
+    reprovadosNaTriagem: 0,
     erros: [],
   }
 
@@ -128,9 +154,23 @@ export async function importarListaSalesNav(
       continue
     }
 
-    if (jaNaBase(lead)) {
+    if (jaNaBase(lead) || jaNoLote(lead)) {
       res.duplicados++
       continue
+    }
+
+    // Com faixas informadas, só entra quem a triagem aprova — o mesmo julgamento
+    // do relatório de scripts/triar-lista.ts, para o que foi revisado ser
+    // exatamente o que é gravado.
+    if (opts.faixas?.length) {
+      const v = triar({ nome: lead.name, ...fichaDeItemSalesNav(item) })
+      if (!opts.faixas.includes(v.faixa)) {
+        res.reprovadosNaTriagem++
+        continue
+      }
+      lead.faixa = v.faixa
+      lead.pontosTriagem = v.pontos
+      lead.termosTriagem = v.termos
     }
 
     res.novos.push(lead)
