@@ -19,7 +19,19 @@ export class CadenciaGenerationError extends Error {
 // Espaçamento (dias corridos a partir de hoje) de cada touch da cadência.
 const TOUCH_OFFSET_DAYS: Record<number, number> = { 1: 0, 2: 4, 3: 7, 4: 11, 5: 15 }
 
-// Gera os 5 touches para uma cadência já existente (apaga touches anteriores).
+// Um touch nesses estados é histórico: alguém do outro lado já recebeu aquele
+// texto. AGENDADO e FALHOU não saíram, então podem ser reescritos.
+const STATUS_JA_SAIU = ['ENVIADO', 'ENTREGUE', 'RESPONDIDO'] as const
+
+// Gera os 5 touches de uma cadência, reescrevendo apenas o que ainda não saiu.
+//
+// Antes, a regeneração fazia deleteMany de TODOS os touches e recriava os cinco
+// como AGENDADO. Em 31/08 isso apagou o T1 já enviado ao maior score da base
+// (Thiago Amorim Dantas, 95) — para o banco ele virou um lead nunca contactado,
+// e o send-batch o colocou em 1º lugar da fila: uma segunda primeira-mensagem,
+// com texto diferente, para quem já tinha recebido a primeira. O mesmo valia
+// para quem já respondeu: regenerar apagava o RESPONDIDO e devolvia o lead à
+// automação no meio de uma conversa humana.
 export async function generateTouchesForCadencia(
   cadenciaId: string,
   tone: CadenciaTone = 'CONSULTIVO'
@@ -36,6 +48,13 @@ export async function generateTouchesForCadencia(
     throw new CadenciaGenerationError('Lead not found for this cadencia', 404)
   }
 
+  // Os que já saíram entram no prompt como contexto, para o texto novo não
+  // repetir nem reapresentar a empresa a quem já leu o T1.
+  const jaSairam = await prisma.touch.findMany({
+    where: { cadenciaId, status: { in: [...STATUS_JA_SAIU] } },
+    orderBy: { sequence: 'asc' },
+  })
+
   const generatedTouches = await generateCadencia(
     {
       name: cadencia.lead.name,
@@ -46,8 +65,21 @@ export async function generateTouchesForCadencia(
       profileText: cadencia.lead.profileText,
       companyContext: cadencia.lead.companyContext,
     },
-    tone
+    tone,
+    jaSairam.map((t) => ({
+      sequence: t.sequence,
+      type: t.type,
+      subject: t.subject,
+      content: t.content,
+    }))
   )
+
+  // Com um touch já enviado, o relógio da cadência começou no dia em que ele
+  // saiu — reancorar em hoje atrasaria todo o resto. Sem nenhum envio, hoje é
+  // a âncora, que é o comportamento da geração inicial.
+  const ancora = jaSairam[0]?.sentAt ?? new Date()
+  const agora = new Date()
+  const preservados = new Set(jaSairam.map((t) => t.sequence))
 
   // A limpeza dos touches antigos ficava ANTES da chamada à IA, que leva
   // dezenas de segundos. Dois cliques no botão de gerar entravam assim:
@@ -55,28 +87,34 @@ export async function generateTouchesForCadencia(
   // IA e ambos gravavam — 10 touches, cada mensagem em duplicata. Apagar e
   // gravar na mesma transação faz a última geração vencer, sem sobreposição.
   const createdTouches = await prisma.$transaction(async (tx) => {
-    await tx.touch.deleteMany({ where: { cadenciaId } })
+    await tx.touch.deleteMany({
+      where: { cadenciaId, status: { notIn: [...STATUS_JA_SAIU] } },
+    })
 
     return Promise.all(
-      generatedTouches.map((touch) => {
-        const offsetDays = TOUCH_OFFSET_DAYS[touch.sequence] ?? 0
-        const scheduledFor = new Date()
-        scheduledFor.setDate(scheduledFor.getDate() + offsetDays)
+      generatedTouches
+        .filter((touch) => !preservados.has(touch.sequence))
+        .map((touch) => {
+          const offsetDays = TOUCH_OFFSET_DAYS[touch.sequence] ?? 0
+          const scheduledFor = new Date(ancora)
+          scheduledFor.setDate(scheduledFor.getDate() + offsetDays)
 
-        return tx.touch.create({
-          data: {
-            cadenciaId,
-            leadId: cadencia.leadId,
-            sequence: touch.sequence,
-            type: touch.type,
-            channel: touch.channel,
-            content: touch.content,
-            subject: touch.subject,
-            status: 'AGENDADO',
-            scheduledFor,
-          },
+          return tx.touch.create({
+            data: {
+              cadenciaId,
+              leadId: cadencia.leadId,
+              sequence: touch.sequence,
+              type: touch.type,
+              channel: touch.channel,
+              content: touch.content,
+              subject: touch.subject,
+              status: 'AGENDADO',
+              // Uma cadência antiga regenerada teria touches vencidos, que o
+              // processador dispararia todos de uma vez.
+              scheduledFor: scheduledFor < agora ? agora : scheduledFor,
+            },
+          })
         })
-      })
     )
   })
 
@@ -85,7 +123,10 @@ export async function generateTouchesForCadencia(
     data: { status: 'PRONTO', tone },
   })
 
-  return createdTouches
+  // Devolve a cadência inteira, não só o que foi reescrito: o painel lista o
+  // que vem daqui, e mostrar 4 touches depois de regenerar uma cadência de 5
+  // pareceria que o T1 sumiu — exatamente o susto que este bug causou.
+  return [...jaSairam, ...createdTouches].sort((a, b) => a.sequence - b.sequence)
 }
 
 // Usado pelo pipeline automático: cria a Cadencia (DRAFT) se o lead ainda não
