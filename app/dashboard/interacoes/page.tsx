@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { InteracaoItem, InteracaoView } from '@/components/interacoes/interacao-item'
-import { Inbox, Loader2 } from 'lucide-react'
+import { Inbox, Loader2, RefreshCw } from 'lucide-react'
 
 type Filtro = 'NOVA' | 'RESPONDIDA' | 'ARQUIVADA' | 'TODAS'
 
@@ -33,6 +33,8 @@ export default function InteracoesPage() {
   const [filtro, setFiltro] = useState<Filtro>('NOVA')
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [varrendo, setVarrendo] = useState(false)
+  const [resultadoVarredura, setResultadoVarredura] = useState('')
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -55,6 +57,29 @@ export default function InteracoesPage() {
     carregar()
   }, [carregar])
 
+  // Atualizar a página só relê o banco. Quem estava esperando uma resposta
+  // chegar dependia do cron (08:00 e 17:00 de Brasília) e não tinha como pedir
+  // a varredura agora — o F5 parecia não funcionar.
+  const varrerAgora = async () => {
+    setVarrendo(true)
+    setResultadoVarredura('')
+    setErro('')
+    try {
+      const res = await fetch('/api/interacoes/varrer', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok || data.ok === false) {
+        setErro(data.mensagem ?? data.error ?? 'A varredura falhou.')
+        return
+      }
+      setResultadoVarredura(data.mensagem ?? 'Varredura concluída.')
+      await carregar()
+    } catch {
+      setErro('Não foi possível concluir a varredura. Ela pode levar alguns minutos — tente de novo.')
+    } finally {
+      setVarrendo(false)
+    }
+  }
+
   const handleStatusChange = async (interacaoId: string, status: string) => {
     try {
       await fetch(`/api/interacoes/${interacaoId}`, {
@@ -70,16 +95,40 @@ export default function InteracoesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Inbox className="w-6 h-6 text-green-600" />
-          Respostas dos leads
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Tudo o que os leads responderam, com a sugestão de réplica gerada pela IA. Nada é enviado automaticamente — e
-          nada some: o que você marcar como respondido ou arquivado continua acessível pelas abas.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Inbox className="w-6 h-6 text-green-600" />
+            Respostas dos leads
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Tudo o que os leads responderam, com a sugestão de réplica gerada pela IA. Nada é enviado automaticamente — e
+            nada some: o que você marcar como respondido ou arquivado continua acessível pelas abas.
+          </p>
+          <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">
+            A varredura automática roda às 08:00 e às 17:00. Atualizar a página não busca nada novo no LinkedIn — para
+            isso, use o botão ao lado.
+          </p>
+        </div>
+        <button
+          onClick={varrerAgora}
+          disabled={varrendo}
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${varrendo ? 'animate-spin' : ''}`} />
+          {varrendo ? 'Varrendo o LinkedIn…' : 'Varrer agora'}
+        </button>
       </div>
+
+      {varrendo && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Lendo as conversas e gerando as sugestões. Costuma levar de um a três minutos — pode deixar a aba aberta.
+        </p>
+      )}
+
+      {resultadoVarredura && !varrendo && (
+        <p className="text-sm text-green-700 dark:text-green-400">{resultadoVarredura}</p>
+      )}
 
       <div className="flex gap-2 flex-wrap border-b border-border pb-3">
         {ABAS.map((aba) => {
