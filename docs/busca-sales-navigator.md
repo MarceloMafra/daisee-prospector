@@ -1,72 +1,108 @@
 # Buscas booleanas para o Sales Navigator — DAISEE
 
-Critério definido pelo Marcelo em 02/09: **quanto mais sênior melhor, quanto mais
-elevado o cargo melhor, e quanto mais técnico em compliance e gestão documental
-melhor.**
+Critério do Marcelo (02/09): **quanto mais sênior melhor, quanto mais elevado o
+cargo melhor, quanto mais técnico em compliance e gestão documental melhor.**
 
-O Sales Navigator aceita `AND`, `OR`, `NOT`, parênteses e aspas — mas **só nos
-campos de texto** (Cargo e Palavras-chave). Senioridade, setor, geografia e porte
-são filtros nativos, e o filtro nativo é sempre mais confiável que a palavra
-solta no título. Por isso as buscas abaixo cuidam da *função*, e os filtros
-laterais cuidam do resto.
+Todas as buscas abaixo foram **testadas contra os 422 leads reais** da lista
+"compliance AND BACEN" antes de entrar aqui — a coluna "casa em" é medida, não
+estimada.
 
 ---
 
-## Busca 1 — Núcleo de compliance (a principal)
+## As duas regras que fazem a busca funcionar
 
-Cole no campo **Cargo (Job Title)**:
+**1. O campo Cargo busca o título formal, que é curto e pobre. A headline é rica.**
+
+Na lista real, 115 leads (27%) têm "compliance" na *headline* mas **não** no
+cargo. Buscar só por Cargo perde um quarto das pessoas certas:
+
+| Onde busca | Casa em | Gerência ou acima |
+|---|---|---|
+| Campo Cargo | 151 / 422 | 24 |
+| Palavras-chave (varre a headline) | **286 / 422** | **54** |
+
+**2. `AND` entre dois grupos só funciona se os dois termos couberem no MESMO
+texto.** "Head de Compliance" contém *Head* **e** *Compliance* — funciona. Já
+exigir `"Regulatório" AND "BACEN"` **no título** casa em 4 leads de 422, porque
+"BACEN" quase nunca está no título: está na headline. Foi esse o erro que zerou
+as buscas 2 e 3 da primeira versão.
+
+---
+
+## Busca A — Volume (a principal)
+
+Campo **Palavras-chave**. `OR` simples, sem `AND`, sem `NOT`:
 
 ```
-("Compliance" OR "PLD" OR "PLDFT" OR "PLD/FT" OR "Lavagem de Dinheiro" OR "AML" OR "KYC" OR "Controles Internos" OR "Auditoria Interna" OR "Auditoria" OR "Risco Operacional" OR "Riscos" OR "Governança" OR "GRC" OR "Integridade" OR "LGPD" OR "DPO" OR "Privacidade" OR "Proteção de Dados" OR "Regulatório" OR "Regulatory" OR "Ouvidoria") NOT ("Júnior" OR "Junior" OR "Jr" OR "Estagiário" OR "Estágio" OR "Trainee" OR "Assistente" OR "Auxiliar" OR "Aprendiz" OR "Comercial" OR "Vendas" OR "Recrutamento")
+Compliance OR PLD OR "Lavagem de Dinheiro" OR AML OR KYC OR "Controles Internos" OR "Auditoria Interna" OR Riscos OR Governança OR GRC OR LGPD OR DPO OR Privacidade OR "Proteção de Dados" OR Regulatório OR Ouvidoria
 ```
 
-O `NOT` no fim é o que mais economiza tempo: tira início de carreira e tira quem
-tem "compliance" no título por ser **vendedor de solução de compliance** — o
-falso positivo mais comum, porque casa com todos os termos e não compra nada.
+**Casa em 286 de 422 (68%).** É a de maior alcance. Traz muito analista — o que
+não é defeito da busca, é o formato do mercado (ver mais abaixo). O corte de
+nível se faz depois, na triagem local, que é melhor nisso que o Sales Navigator.
 
-**Filtros laterais que acompanham:**
+**Filtros laterais:**
 
 | Filtro | Valor |
 |---|---|
 | Geografia | Brasil |
-| Setor | Bancos · Serviços financeiros · Seguros · Mercado de capitais · Serviços de investimento |
-| Nível hierárquico | Diretor · VP · CXO · Proprietário/Sócio · Gerente |
+| Setor | Bancos · Serviços financeiros · Seguros · Mercado de capitais |
 | Tamanho da empresa | 201+ funcionários |
 
-O corte de porte importa: acervo documental que dói só existe com volume. Abaixo
-de 200 pessoas a dor costuma não justificar a compra.
+**Não use o filtro "Nível hierárquico" aqui.** Ele infere do título e erra muito
+— foi ele que estrangulou a primeira tentativa para 46 resultados.
 
 ---
 
-## Busca 2 — Gestão documental (a menos concorrida)
+## Busca B — Cargos altos (poucos e certeiros)
 
-É o eixo específico da DAISEE, e quase ninguém prospecta por ele. Cole no campo
-**Palavras-chave**, que varre a headline e o "Sobre" — não só o título formal:
+Quando quiser só decisor, sem passar pela triagem. Campo **Palavras-chave**:
 
 ```
-("gestão documental" OR "gestão de documentos" OR "GED" OR "acervo documental" OR "normativos internos" OR "documentação regulatória" OR "guarda de documentos" OR "arquivo digital" OR "records management" OR "document management") AND ("banco" OR "financeira" OR "seguradora" OR "fintech" OR "BACEN" OR "SUSEP" OR "CVM" OR "compliance" OR "auditoria")
+(Compliance OR PLD OR Riscos OR "Controles Internos" OR Governança OR Auditoria OR LGPD OR Privacidade OR Regulatório OR Ouvidoria) AND (Head OR Diretor OR Diretora OR Superintendente OR Gerente OR Chief OR "Vice President" OR Sócio)
 ```
 
-Quem se descreve assim já nomeou o problema sozinho. É uma lista menor, mas com
-a conversa meio caminho andada.
+**Casa em 49 de 422, dos quais 34 são gerência ou acima** — 69% de precisão para
+cargo alto. Aqui o `AND` funciona porque ambos os termos convivem na mesma
+headline: *"Head de Compliance e Controles Internos"*, *"Gerente de Governança,
+Riscos e Compliance"*, *"Superintendente de Compliance e PLD"*.
 
 ---
 
-## Busca 3 — Relacionamento com regulador
+## Busca C — Gestão documental (a menos concorrida)
 
-Perfis que existem por causa do BACEN. Volume documental garantido por ofício.
-Campo **Cargo**:
+O eixo específico da DAISEE. Campo **Palavras-chave**, termos curtos e `OR`
+simples — a versão anterior falhou por exigir frases raras combinadas com `AND`:
 
 ```
-("Relacionamento com o Regulador" OR "Relações Institucionais" OR "Reporte Regulatório" OR "Regulatory Reporting" OR "Regulatório" OR "Conformidade Regulatória" OR "Normativo" OR "Normativos") AND ("BACEN" OR "Banco Central" OR "CVM" OR "SUSEP" OR "COAF" OR "PREVIC" OR "B3" OR "Compliance" OR "Riscos")
+"gestão documental" OR "gestão de documentos" OR GED OR "acervo documental" OR "documentação regulatória" OR "normativos internos" OR "arquivo digital" OR "records management"
 ```
+
+Lista pequena por natureza, mas quem se descreve assim **já nomeou o problema
+sozinho**. Rode sem os filtros de setor na primeira vez, para ver o tamanho real
+do universo antes de estreitar.
 
 ---
 
-## Sobre o trade-off de senioridade
+## Por que "só analistas" não é defeito da busca
 
-Cruzando o cargo com quem de fato respondeu na base atual (34 respostas em 184
-leads), o resultado contraria a intuição:
+Distribuição de cargo nos 422 leads da lista:
+
+| Nível | Leads | % |
+|---|---|---|
+| Analista | 102 | 24% |
+| Especialista sênior | 99 | 23% |
+| Gerência | 52 | 12% |
+| Coordenação | 35 | 8% |
+| Diretoria | 27 | 6% |
+| C-level/VP | 21 | 5% |
+
+**Gerência ou acima é 23% do total.** A população de compliance no LinkedIn
+brasileiro é majoritariamente analista e especialista — não há busca que invente
+diretores que não existem. Qualquer filtro que traga "só cargos altos" vai
+devolver pouca gente por natureza.
+
+E há o contrapeso, medido na base (34 respostas em 184 leads):
 
 | Termo no cargo | Taxa de resposta |
 |---|---|
@@ -75,31 +111,31 @@ leads), o resultado contraria a intuição:
 | Riscos | 25% (6/24) |
 | Director | 25% (1/4) |
 
-**Quanto mais alto o cargo, menos a pessoa responde no LinkedIn.** Poder de
-decisão e taxa de resposta puxam para lados opostos: um Analista Sênior de PLD/FT
-responde três vezes mais que um diretor, mas não assina contrato.
-
-A amostra é pequena e o dado não desmente o critério — ele diz que os dois perfis
-servem a propósitos diferentes. O caminho que respeita os dois é buscar **os
-dois**, com mensagens diferentes: ao decisor, a conversa de risco e custo; ao
-especialista sênior, a conversa de rotina e ferramenta — e ele indica o decisor
-por dentro.
-
-Se for para escolher um só, o critério do Marcelo (mais alto) continua valendo:
-menos respostas, mas cada uma vale mais.
+**Quanto mais alto o cargo, menos a pessoa responde.** Decisão e resposta puxam
+para lados opostos: o Analista Sênior de PLD/FT responde três vezes mais que o
+diretor, mas não assina contrato. O caminho que respeita os dois é buscar os
+dois, com mensagens diferentes — ao decisor, risco e custo; ao especialista, a
+rotina e a ferramenta, e ele indica o decisor por dentro.
 
 ---
 
-## Depois da busca
+## O fluxo que funciona
 
-Salve o resultado como lista no Sales Navigator e passe a triagem antes de
-importar — ela lê a lista sem enriquecer perfil nenhum:
+Buscar **amplo** e cortar **local** — o Sales Navigator não sabe medir nível, a
+triagem sabe:
 
 ```
+# 1. Salve o resultado como lista no Sales Navigator, depois:
 ./node_modules/.bin/dotenv -e .env.local -- npx tsx scripts/triar-lista.ts \
-  --lista "<URL da lista>" --faixa ALVO --contato NOVO --csv triagem.csv
+  --lista "<URL da lista>" --max 2000 --csv saidas/triagem.csv
+
+# 2. Revise o CSV por grupo (não lead a lead) e importe as faixas que aprovar:
+./node_modules/.bin/dotenv -e .env.local -- npx tsx scripts/importar-sales-nav.ts \
+  --lista "<URL da lista>" --nome "nome da lista" \
+  --faixas ALVO,TALVEZ --max 2000 --apply
 ```
 
-A triagem devolve pontuação, nível do cargo, os termos que casaram e o estado de
-contato (quem já é conexão, quem já tem convite pendente) — sem gastar chamada de
-enriquecimento em quem vai ser descartado.
+A triagem lê a lista **sem enriquecer perfil nenhum** — 1 chamada à Unipile, zero
+de IA. Devolve pontuação, nível do cargo, os termos que casaram e o estado de
+contato (quem já é conexão, quem já tem convite pendente), e a importação grava
+exatamente o que foi aprovado, com a faixa registrada nas notas do lead.
