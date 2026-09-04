@@ -1,0 +1,650 @@
+<title>Fila de T2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #eef1f4;
+    --surface: #ffffff;
+    --surface-sunk: #e7ecf0;
+    --ink: #14202a;
+    --muted: #5a6b79;
+    --faint: #8496a4;
+    --accent: #0d5c68;
+    --accent-soft: #d8ebee;
+    --urgent: #9a5410;
+    --urgent-soft: #f6e8d6;
+    --done: #2c6a4f;
+    --done-soft: #dcece3;
+    --line: #d5dde4;
+    --line-strong: #bcc9d3;
+
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #10171e;
+      --surface: #18222c;
+      --surface-sunk: #131c24;
+      --ink: #e4ebf1;
+      --muted: #94a7b6;
+      --faint: #6f8494;
+      --accent: #58b9c9;
+      --accent-soft: #16333a;
+      --urgent: #e0a763;
+      --urgent-soft: #332614;
+      --done: #74c39a;
+      --done-soft: #16301f;
+      --line: #263542;
+      --line-strong: #35485a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #10171e;
+    --surface: #18222c;
+    --surface-sunk: #131c24;
+    --ink: #e4ebf1;
+    --muted: #94a7b6;
+    --faint: #6f8494;
+    --accent: #58b9c9;
+    --accent-soft: #16333a;
+    --urgent: #e0a763;
+    --urgent-soft: #332614;
+    --done: #74c39a;
+    --done-soft: #16301f;
+    --line: #263542;
+    --line-strong: #35485a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: var(--s6) var(--s4) var(--s7);
+  }
+
+  /* ── Cabeçalho ─────────────────────────────────────────── */
+  header { margin-bottom: var(--s5); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 var(--s2);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(26px, 4vw, 34px);
+    line-height: 1.15;
+    margin: 0 0 var(--s3);
+    text-wrap: balance;
+  }
+
+  .lede {
+    color: var(--muted);
+    max-width: 62ch;
+    margin: 0 0 var(--s5);
+  }
+
+  /* Barra de progresso */
+  .progresso {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+  }
+  .barra {
+    flex: 1;
+    height: 6px;
+    background: var(--surface-sunk);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .barra > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--done);
+    transition: width .3s ease;
+  }
+  .contagem {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .contagem b { color: var(--ink); font-weight: 500; }
+
+  /* Filtros */
+  .filtros {
+    display: flex;
+    gap: var(--s1);
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: var(--s3);
+  }
+  .filtros button {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 11px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .filtros button:hover { background: var(--surface-sunk); color: var(--ink); }
+  .filtros button[aria-pressed="true"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .filtros button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* ── Fichas ────────────────────────────────────────────── */
+  .lista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    margin-top: var(--s4);
+    list-style: none;
+    padding: 0;
+  }
+
+  .ficha {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-strong);
+    border-radius: 3px;
+    padding: var(--s4);
+    display: grid;
+    gap: var(--s3);
+  }
+  .ficha[data-espera="3"] { border-left-color: var(--urgent); }
+  .ficha[data-espera="2"] { border-left-color: var(--urgent); }
+  .ficha[data-feito="1"] { border-left-color: var(--done); opacity: .62; }
+  .ficha[hidden] { display: none; }
+
+  /* Identidade */
+  .topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s3);
+    flex-wrap: wrap;
+  }
+  .quem { min-width: 0; }
+  .nome {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.25;
+  }
+  .empresa {
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .cargo {
+    font-size: 13px;
+    color: var(--faint);
+    margin: var(--s1) 0 0;
+    overflow-wrap: anywhere;
+  }
+
+  .medidas {
+    display: flex;
+    gap: var(--s3);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .medida { color: var(--faint); }
+  .medida b { color: var(--muted); font-weight: 500; }
+  .medida.espera b { color: var(--urgent); }
+
+  /* T1 já enviado — contexto colapsado */
+  details.anterior {
+    background: var(--surface-sunk);
+    border-radius: 3px;
+    padding: var(--s2) var(--s3);
+    font-size: 13px;
+  }
+  details.anterior summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: .02em;
+    list-style: none;
+  }
+  details.anterior summary::-webkit-details-marker { display: none; }
+  details.anterior summary::before { content: "▸ "; color: var(--faint); }
+  details.anterior[open] summary::before { content: "▾ "; }
+  details.anterior summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  details.anterior p {
+    margin: var(--s2) 0 0;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Mensagem a enviar */
+  .mensagem {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: var(--s3);
+    background: var(--surface);
+  }
+  .mensagem .rotulo {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--faint);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s2);
+    margin-bottom: var(--s2);
+  }
+  .mensagem p {
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* Ações */
+  .acoes {
+    display: flex;
+    gap: var(--s2);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 7px 13px;
+    cursor: pointer;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--surface-sunk); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn.principal {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  :root[data-theme="dark"] .btn.principal,
+  :root:not([data-theme="light"]) .btn.principal { color: #08191d; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .btn.principal { color: #fff; }
+  }
+  .btn.principal:hover { filter: brightness(1.08); }
+  .btn.feito {
+    background: var(--done-soft);
+    border-color: var(--done);
+    color: var(--done);
+  }
+  .marca-tempo {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    margin-left: auto;
+  }
+
+  .rodape-filtro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    flex-wrap: wrap;
+    margin-top: var(--s2);
+  }
+  .btn.menor { font-size: 12px; padding: 5px 10px; }
+
+  .vazio {
+    text-align: center;
+    color: var(--ink);
+    padding: var(--s7) var(--s4);
+    background: var(--surface);
+    border: 1px dashed var(--line-strong);
+    border-radius: 3px;
+  }
+  .vazio p { margin: 0; }
+  .vazio #vazio-titulo {
+    font-family: var(--serif);
+    font-size: 19px;
+    font-weight: 600;
+  }
+  .vazio-detalhe {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 46ch;
+    margin: var(--s2) auto 0 !important;
+    line-height: 1.55;
+  }
+
+  footer {
+    margin-top: var(--s6);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--faint);
+    line-height: 1.7;
+  }
+  footer code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface-sunk);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .sinc {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    margin-top: var(--s2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Campanha DAISEE · LinkedIn · apurado em __APURADO__</p>
+    <h1>Aceitaram a conexão e ainda não receberam a segunda mensagem</h1>
+    <p class="lede">
+      Cada um destes já recebeu o convite (T1) e aceitou. O texto do T2 está pronto e revisado —
+      copie, envie pelo LinkedIn e marque aqui. Quem já respondeu não aparece nesta lista: essa
+      conversa é humana e a cadência fica pausada.
+    </p>
+
+    <div class="progresso">
+      <div class="barra"><i id="preenchimento"></i></div>
+      <span class="contagem"><b id="feitos">0</b> de <b id="total">0</b> enviados</span>
+    </div>
+
+    <div class="filtros" role="group" aria-label="Filtrar a lista">
+      <button type="button" data-filtro="pendentes" aria-pressed="true">A enviar</button>
+      <button type="button" data-filtro="feitos" aria-pressed="false">Já enviados</button>
+      <button type="button" data-filtro="todos" aria-pressed="false">Todos</button>
+    </div>
+    <div class="rodape-filtro">
+      <p class="sinc" id="sinc"></p>
+      <button type="button" class="btn menor" id="exportar">Copiar o que já enviei</button>
+    </div>
+  </header>
+
+  <ul class="lista" id="lista"></ul>
+  <div class="vazio" id="vazio" hidden>
+    <p id="vazio-titulo">Nada neste filtro.</p>
+    <p id="vazio-detalhe" class="vazio-detalhe"></p>
+  </div>
+
+  <footer>
+    Ordenado por tempo de espera e depois por score DAISEE. O score combina cargo, porte da empresa
+    e aderência ao segmento.<br>
+    O limite do LinkedIn para esta mensagem é de 600 caracteres; a convenção do projeto é 500 — quem
+    passa disso está marcado, e envia normalmente.<br>
+    Para regerar esta lista: <code>npx tsx scripts/status-campanha.ts</code>
+  </footer>
+</div>
+
+<script>
+const LEADS = /*__DADOS__*/[];
+
+const lista = document.getElementById('lista');
+const vazio = document.getElementById('vazio');
+const elFeitos = document.getElementById('feitos');
+const elTotal = document.getElementById('total');
+const elBarra = document.getElementById('preenchimento');
+const elSinc = document.getElementById('sinc');
+
+const CHAVE_LOCAL = 't2-enviados';
+
+function lerLocal() {
+  try { return JSON.parse(localStorage.getItem(CHAVE_LOCAL) || '{}'); }
+  catch { return {}; }
+}
+function gravarLocal(e) {
+  try { localStorage.setItem(CHAVE_LOCAL, JSON.stringify(e)); } catch {}
+}
+
+let estado = lerLocal();  // id -> {enviado:bool, quando:iso}
+let filtro = 'pendentes';
+let db = null;
+
+// ̀-ͯ são os acentos que o NFD separa da letra — escritos como escape
+// para não depender da codificação com que este arquivo for lido.
+const idDe = (l) => l.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const horaCurta = (iso) => {
+  try {
+    return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch { return ''; }
+};
+
+function esperaTexto(d) {
+  if (d === null || d === undefined) return 'sem data';
+  if (d === 0) return 'aceitou hoje';
+  if (d === 1) return 'espera 1 dia';
+  return 'espera ' + d + ' dias';
+}
+
+function montar() {
+  lista.innerHTML = '';
+  let visiveis = 0;
+
+  for (const l of LEADS) {
+    const id = idDe(l);
+    const st = estado[id] || {};
+    const feito = !!st.enviado;
+
+    if (filtro === 'pendentes' && feito) continue;
+    if (filtro === 'feitos' && !feito) continue;
+    visiveis++;
+
+    const li = document.createElement('li');
+    li.className = 'ficha';
+    li.dataset.espera = String(Math.min(l.dias ?? 0, 3));
+    li.dataset.feito = feito ? '1' : '0';
+
+    // Identidade
+    const topo = document.createElement('div');
+    topo.className = 'topo';
+    const quem = document.createElement('div');
+    quem.className = 'quem';
+    const nome = document.createElement('p');
+    nome.className = 'nome';
+    nome.textContent = l.nome;
+    const emp = document.createElement('span');
+    emp.className = 'empresa';
+    emp.textContent = l.empresa;
+    nome.appendChild(document.createTextNode(' · '));
+    nome.appendChild(emp);
+    const cargo = document.createElement('p');
+    cargo.className = 'cargo';
+    cargo.textContent = l.cargo;
+    quem.append(nome, cargo);
+
+    const medidas = document.createElement('div');
+    medidas.className = 'medidas';
+    const mEspera = document.createElement('span');
+    mEspera.className = 'medida espera';
+    mEspera.innerHTML = '<b>' + esperaTexto(l.dias) + '</b>';
+    const mScore = document.createElement('span');
+    mScore.className = 'medida';
+    mScore.innerHTML = 'score <b>' + l.score + '</b>';
+    medidas.append(mEspera, mScore);
+    topo.append(quem, medidas);
+
+    // T1 já enviado
+    const det = document.createElement('details');
+    det.className = 'anterior';
+    const sum = document.createElement('summary');
+    sum.textContent = 'o que já dissemos no convite' + (l.t1Em ? ' · ' + l.t1Em : '');
+    const p1 = document.createElement('p');
+    p1.textContent = l.t1;
+    det.append(sum, p1);
+
+    // Mensagem a enviar
+    const msg = document.createElement('div');
+    msg.className = 'mensagem';
+    const rot = document.createElement('div');
+    rot.className = 'rotulo';
+    const rotA = document.createElement('span');
+    rotA.textContent = 'mensagem a enviar';
+    const rotB = document.createElement('span');
+    rotB.textContent = l.chars + ' caracteres' + (l.chars > 500 ? ' · acima da convenção' : '');
+    rot.append(rotA, rotB);
+    const p2 = document.createElement('p');
+    p2.textContent = l.t2;
+    msg.append(rot, p2);
+
+    // Ações
+    const acoes = document.createElement('div');
+    acoes.className = 'acoes';
+
+    const bCopiar = document.createElement('button');
+    bCopiar.type = 'button';
+    bCopiar.className = 'btn principal';
+    bCopiar.textContent = 'Copiar mensagem';
+    bCopiar.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(l.t2);
+        bCopiar.textContent = 'Copiado';
+        setTimeout(() => { bCopiar.textContent = 'Copiar mensagem'; }, 1800);
+      } catch {
+        bCopiar.textContent = 'Selecione e copie manualmente';
+      }
+    });
+
+    const aPerfil = document.createElement('a');
+    aPerfil.className = 'btn';
+    aPerfil.href = l.url || '#';
+    aPerfil.target = '_blank';
+    aPerfil.rel = 'noopener noreferrer';
+    aPerfil.textContent = 'Abrir conversa';
+
+    const bFeito = document.createElement('button');
+    bFeito.type = 'button';
+    bFeito.className = 'btn' + (feito ? ' feito' : '');
+    bFeito.textContent = feito ? '✓ Enviado' : 'Marcar como enviado';
+    bFeito.addEventListener('click', () => alternar(id));
+
+    acoes.append(bCopiar, aPerfil, bFeito);
+
+    if (feito && st.quando) {
+      const t = document.createElement('span');
+      t.className = 'marca-tempo';
+      t.textContent = horaCurta(st.quando);
+      acoes.appendChild(t);
+    }
+
+    li.append(topo, det, msg, acoes);
+    lista.appendChild(li);
+  }
+
+  // Fila vazia não é o mesmo que filtro sem resultado: um diz que o trabalho
+  // acabou, o outro que não há nada naquela aba.
+  vazio.hidden = visiveis > 0;
+  const vTitulo = document.getElementById('vazio-titulo');
+  const vDetalhe = document.getElementById('vazio-detalhe');
+  if (LEADS.length === 0) {
+    vTitulo.textContent = 'Fila vazia — está tudo em dia.';
+    vDetalhe.textContent = 'Todo mundo que aceitou a conexão já recebeu a segunda mensagem. Quando chegarem aceites novos, esta lista volta a ter gente.';
+  } else if (visiveis === 0) {
+    vTitulo.textContent = filtro === 'feitos' ? 'Nada marcado como enviado ainda.' : 'Nada neste filtro.';
+    vDetalhe.textContent = '';
+  }
+  const feitosN = LEADS.filter((l) => estado[idDe(l)]?.enviado).length;
+  elFeitos.textContent = feitosN;
+  elTotal.textContent = LEADS.length;
+  elBarra.style.width = (LEADS.length ? (feitosN / LEADS.length) * 100 : 0) + '%';
+}
+
+async function alternar(id) {
+  const atual = !!estado[id]?.enviado;
+  const novo = { enviado: !atual, quando: new Date().toISOString() };
+  estado[id] = novo;
+  gravarLocal(estado);
+  montar();
+  if (db) {
+    try { await db.doc('t2/' + id).set(novo); }
+    catch { elSinc.textContent = 'Não consegui salvar esta marcação — ela vale só para você.'; }
+  }
+}
+
+// Sem sincronizacao entre pessoas, o progresso volta a mao: este botao monta o
+// resumo pronto para colar no WhatsApp.
+document.getElementById('exportar').addEventListener('click', async (ev) => {
+  const feitos = LEADS.filter((l) => estado[idDe(l)]?.enviado);
+  const btn = ev.currentTarget;
+  if (feitos.length === 0) {
+    btn.textContent = 'Nada marcado ainda';
+    setTimeout(() => { btn.textContent = 'Copiar o que já enviei'; }, 2000);
+    return;
+  }
+  const linhas = feitos.map((l) => {
+    const q = estado[idDe(l)]?.quando;
+    return '- ' + l.nome + ' (' + l.empresa + ')' + (q ? ' — ' + horaCurta(q) : '');
+  });
+  const texto = `T2 enviados (${feitos.length} de ${LEADS.length}):\n${linhas.join('\n')}`;
+  try {
+    await navigator.clipboard.writeText(texto);
+    btn.textContent = 'Copiado — é só colar';
+  } catch {
+    btn.textContent = 'Não consegui copiar';
+  }
+  setTimeout(() => { btn.textContent = 'Copiar o que já enviei'; }, 2200);
+});
+
+// Os botoes de filtro: sem isto, a barra so parecia interativa.
+const botoesFiltro = Array.from(document.querySelectorAll('.filtros button'));
+for (const b of botoesFiltro) {
+  b.addEventListener('click', () => {
+    filtro = b.dataset.filtro;
+    for (const o of botoesFiltro) o.setAttribute('aria-pressed', String(o === b));
+    montar();
+  });
+}
+
+montar();
+
+elSinc.textContent = 'As marcações ficam neste navegador. Ao terminar, use o botão ao lado para devolver o progresso.';
+</script>
