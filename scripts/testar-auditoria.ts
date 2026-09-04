@@ -47,6 +47,38 @@ const CASE_SEMELHANCA: [string, boolean, string][] = [
   ['Vi que você enfrenta desafios de integração entre sistemas.', false, 'desafio do lead, sem semelhanca'],
 ]
 
+// AUTOMACAO no ASSUNTO: o titulo do e-mail nao tem sujeito, entao a checagem de
+// CONTEXTO_DO_LEAD nao tem o que reconhecer -- e o assunto caia mesmo com o corpo
+// inteiro falando do lead. Terceiro caso do mesmo padrao: Mayra Benaion Lachter e
+// Marcelo da Veiga em 02/09, Diego Alvim (BTG) em 04/09.
+const AUTOMACAO_NO_ASSUNTO: [string, boolean, string][] = [
+  [
+    'Conexão — Automação & IA no BTG\nDiego, parabéns pela posição de Associate Director em Process Automation & AI no BTG. Você lidera essa área num banco desse porte.',
+    false,
+    'assunto cita o CARGO do lead e o corpo fala dele',
+  ],
+  [
+    'Canal de denúncias, due diligence, auditorias — e os docs?\nVi que você toca todas essas frentes.',
+    false,
+    'assunto enumera a rotina do lead',
+  ],
+  [
+    'Workflow e robôs\nA DAISEE automatiza o seu fluxo de aprovação de contratos.',
+    true,
+    'assunto solto, mas o corpo promete: continua acusando',
+  ],
+  [
+    'Automação de processos\nNossa plataforma faz o monitoramento de risco dos seus fornecedores.',
+    true,
+    'sujeito nosso no corpo: continua acusando',
+  ],
+  [
+    'Automação de processos\nBom dia, tudo bem?',
+    true,
+    'assunto sem corpo que fale do lead: continua acusando',
+  ],
+]
+
 // Autoria: a MasterVendas e parceira da DAISEE, nao a desenvolvedora.
 // As formulacoes abaixo sairam da propria base em 25/08.
 const AUTORIA: [string, boolean, string][] = [
@@ -108,6 +140,13 @@ for (const [texto, deveAcusar, rotulo] of AUTORIA) {
 
 for (const [texto, deveAcusar, rotulo] of CASE_SEMELHANCA) {
   const acusou = violacoesEmTexto(texto).some(x => x.regra === 'CASE')
+  const ok = acusou === deveAcusar
+  if (!ok) falhas++
+  console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
+}
+
+for (const [texto, deveAcusar, rotulo] of AUTOMACAO_NO_ASSUNTO) {
+  const acusou = violacoesEmTexto(texto).some(x => x.regra === 'AUTOMACAO')
   const ok = acusou === deveAcusar
   if (!ok) falhas++
   console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)

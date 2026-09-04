@@ -113,8 +113,12 @@ const SUJEITO_NOSSO =
 // já cobria isso, mas só com verbo terminado em -ou ("você liderou") — "você
 // coordena", "você construiu", "você trabalha" e "você descreveu" passavam
 // batido e a auditoria acusava justamente os textos corretos.
+// "voc[êe]" fica FORA do grupo fechado por \b: em JS o ê não é caractere de
+// palavra, então entre o "ê" e o espaço seguinte não há fronteira e o \b nunca
+// casa — com o acento, que é a grafia correta, o ramo estava morto. Era por isso
+// que "Você lidera essa área" não contava como contexto do lead.
 const CONTEXTO_DO_LEAD =
-  /\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time|escopo|cargo|dia a dia)|voc[êe]|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b/i
+  /(\b(vi (que|no|em|sobre)|no seu perfil|seu (perfil|hist[óo]rico|trabalho|time|escopo|cargo|dia a dia)|a empresa (tem|vem|est[áa]|j[áa])|na sua (rotina|[áa]rea|opera[çc][ãa]o))\b|\bvoc[êe])/i
 
 export function violacoesEmTexto(texto: string): Violacao[] {
   const achados: Violacao[] = []
@@ -158,6 +162,20 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       if (regra.id === 'AUTOMACAO') {
         const frase = fraseAoRedor(texto, m.index)
         if (!SUJEITO_NOSSO.test(frase) && CONTEXTO_DO_LEAD.test(frase)) continue
+
+        // O assunto é a primeira linha (textoDoTouch junta subject e content com
+        // \n) e não tem sujeito: "Conexão — Automação & IA no BTG" é o CARGO do
+        // lead, "Canal de denúncias, due diligence, auditorias" é a rotina dele.
+        // Sem sujeito, CONTEXTO_DO_LEAD acima não tem o que reconhecer, e o
+        // título caía mesmo com o corpo inteiro falando do lead. Terceiro caso
+        // desse padrão: Mayra Benaion Lachter e Marcelo da Veiga em 02/09,
+        // Diego Alvim (BTG) em 04/09.
+        const fimDoAssunto = texto.indexOf('\n')
+        const noAssunto = fimDoAssunto > 0 && m.index < fimDoAssunto
+        if (noAssunto) {
+          const corpo = texto.slice(fimDoAssunto)
+          if (CONTEXTO_DO_LEAD.test(corpo) && !SUJEITO_NOSSO.test(frase)) continue
+        }
       }
 
       const ini = Math.max(0, m.index - 60)
