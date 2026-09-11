@@ -4,7 +4,7 @@
 //
 // Uso: npx dotenv -e .env.local -- npx tsx scripts/auditar-claims.ts [--lead "Nome"]
 import { prisma } from '../lib/prisma'
-import { violacoesEmTexto, textoDoTouch } from '../lib/auditoriaClaims'
+import { violacoesEmTexto, textoDoTouch, type RegraId } from '../lib/auditoriaClaims'
 
 const argLead = process.argv.includes('--lead')
   ? process.argv[process.argv.indexOf('--lead') + 1]
@@ -81,7 +81,10 @@ async function main() {
   console.log(`Leads verificados ....... ${leads.length}`)
   console.log(`Touches com violação .... ${achados.length}`)
   console.log(`Leads afetados .......... ${porLead.size}`)
-  for (const r of ['CASE', 'NUMERO', 'AUTOMACAO']) {
+  // Todas as seis regras, nao so tres. INTENCAO ficava de fora do resumo e era
+  // justamente a inegociavel: quem lia o cabecalho nao via o "Sem compromisso".
+  const REGRAS: RegraId[] = ['CASE', 'NUMERO', 'AUTOMACAO', 'REPERTORIO', 'AUTORIA', 'INTENCAO']
+  for (const r of REGRAS) {
     console.log(`  ${r.padEnd(22, '.')} ${achados.filter((a) => a.regras.includes(r)).length}`)
   }
 
