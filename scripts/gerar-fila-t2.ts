@@ -75,6 +75,24 @@ async function main() {
   mkdirSync('saidas', { recursive: true })
   writeFileSync('saidas/fila-t2.html', html, 'utf8')
 
+  // O mesmo conteudo em markdown. O artifact depende do link chegar ao Joao; o
+  // .md e a saida que sempre funciona -- da pra colar no WhatsApp. Era montado
+  // a mao e por isso envelhecia sozinho enquanto o HTML era regerado.
+  const md = [
+    `# Fila de T2 — ${linhas.length} pendentes (apurado ${apurado})`,
+    '',
+    ...linhas.flatMap((l, i) => [
+      `## ${i + 1}. ${l.nome} — ${l.empresa}`,
+      `**Score ${l.score}** · espera: ${l.dias === null ? '?' : l.dias === 0 ? 'aceitou hoje' : `${l.dias} dia${l.dias > 1 ? 's' : ''}`} · T1 em ${l.t1Em ?? '?'} · ${l.chars} chars${l.problemas.length ? `  ⚠️ ${l.problemas.join(', ')}` : ''}`,
+      l.cargo ?? '',
+      l.url ?? '',
+      '',
+      `> ${l.t2.replace(/\n+/g, ' ')}`,
+      '',
+    ]),
+  ].join('\n')
+  writeFileSync('saidas/fila-t2.md', md, 'utf8')
+
   console.log(`Aceitaram com T2 agendado ... ${leads.length}`)
   console.log(`  já em conversa (pausados) . ${emConversa.length}`)
   console.log(`  ESPERANDO O T2 ............ ${pendentes.length}`)
