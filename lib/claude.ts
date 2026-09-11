@@ -136,6 +136,11 @@ REGRAS DE HONESTIDADE (inegociáveis — mensagem que violar qualquer uma é des
 - NUNCA declare a própria intenção para negá-la: nada de "sem segunda intenção", "não quero te vender nada", "sem compromisso", "isso não é um pitch". É afirmação falsa — há segunda intenção sim, e o lead sabe disso intuitivamente. O que torna o contato legítimo é a pergunta agregar valor, não a promessa de que não há venda no fim.
 - Ancore sempre em fato verificável sobre a empresa ou a trajetória do lead, nunca em suposição sobre a dor dele apresentada como certeza.
 
+POSICIONAMENTO (o eixo da mensagem, não uma lista de recursos):
+- A DAISEE resolve RECUPERAÇÃO, não armazenamento. Todo lead já guarda os documentos em algum lugar — banco de dados, GED, SharePoint, rede. O que dói é ACHAR. Escreva sobre localizar a norma, o parecer, a evidência de auditoria, a versão que estava vigente numa data — não sobre onde o arquivo mora.
+- Lembre do acervo que os sistemas atuais guardam mas não leem: PDF escaneado, imagem, áudio e vídeo estão armazenados e o CONTEÚDO deles não é indexado. É o ponto onde a busca em linguagem natural muda o jogo, e vale mais que qualquer recurso técnico citado por nome.
+- CALIBRE A PERGUNTA PELA SENIORIDADE. Com diretor, superintendente, head, sócio ou C-level, não peça que ele mate a sua curiosidade ("fiquei curioso", "queria entender", "uma curiosidade genuína"): é pedir favor a quem não tem tempo. Faça uma pergunta fechada, do terreno técnico dele, que se responda em uma linha — de preferência pedindo um número ou uma escolha entre duas alternativas. A fórmula da curiosidade continua boa com analista, coordenador e gerente.
+
 Retorne APENAS os 5 touches no formato especificado acima, com os marcadores claros para cada campo.`
 
   const message = await client.messages.create({
@@ -236,6 +241,10 @@ REGRAS PARA A RÉPLICA:
 - Ortografia impecável em português, COM todos os acentos e a pontuação correta.
 - Atenção às datas: use a data de hoje informada acima para dizer "hoje", "amanhã" ou "semana que vem". Se o histórico interno indica que uma reunião JÁ aconteceu, jamais fale dela como se fosse acontecer.
 - Se o histórico interno mostra combinados em aberto (material a enviar, retorno prometido), a réplica deve respeitar e dar sequência a eles.
+- OBJEÇÃO "ISSO JÁ ESTÁ RESOLVIDO AQUI" (banco de dados, GED, SharePoint, rede, "já é tudo digital"): não confronte — CONCEDA e DESLOQUE. Dê razão ao lead sobre o armazenamento e mova a conversa para a recuperação: quando alguém da equipe precisa localizar uma norma, um parecer ou uma evidência para auditoria, como é essa busca no dia a dia? A DAISEE atua na camada de recuperação e consulta, não na de armazenamento — e essa distinção é o que reabre a conversa depois de um "já temos".
+- Quando couber, some o acervo que o sistema do lead guarda mas não lê: PDF escaneado, imagem, áudio e vídeo estão armazenados e o CONTEÚDO deles não é indexado. É onde a busca em linguagem natural muda o jogo.
+- CALIBRE A PERGUNTA PELA SENIORIDADE. Com diretor, superintendente, head, sócio ou C-level, não peça que ele mate a sua curiosidade ("fiquei curioso", "queria entender", "uma curiosidade genuína"): é pedir favor a quem não tem tempo. Faça uma pergunta fechada, do terreno técnico dele, que se responda em uma linha — de preferência pedindo um número ou uma escolha entre duas alternativas. A fórmula da curiosidade continua boa com analista, coordenador e gerente.
+- Dar ao lead a saída honesta ("se não fizer sentido, sem problema") é permitido e recomendado: é conceder a recusa, não negar a intenção comercial. O que segue proibido é declarar a própria intenção para negá-la, conforme a regra acima.
 
 Responda EXATAMENTE neste formato, sem nenhum texto extra:
 
