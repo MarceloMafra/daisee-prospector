@@ -59,6 +59,27 @@ function cadenciaPausada(lead: Lead): boolean {
 
 const T1_JA_SAIU = ['ENVIADO', 'ENTREGUE', 'RESPONDIDO']
 
+// O mesmo intervalo de scripts/send-t2.ts. Rajada sem espera entre as DMs é o
+// que derruba a conta — o tempo aqui não é enfeite.
+const MIN_GAP_MS = 30_000
+const MAX_GAP_MS = 90_000
+const sortearIntervalo = () => MIN_GAP_MS + Math.floor(Math.random() * (MAX_GAP_MS - MIN_GAP_MS))
+const esperar = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+interface EnvioEmLote {
+  total: number
+  feitos: number
+  atual: string
+  erros: { nome: string; motivo: string }[]
+  aguardandoSegundos: number
+}
+
+function estimativaDeTempo(qtd: number): string {
+  if (qtd <= 1) return 'alguns segundos'
+  const minutos = Math.round(((qtd - 1) * (MIN_GAP_MS + MAX_GAP_MS)) / 2 / 60_000)
+  return minutos <= 1 ? 'cerca de 1 minuto' : `cerca de ${minutos} minutos`
+}
+
 function touchDaSequencia(lead: Lead, sequence: number): Touch | undefined {
   return lead.cadencia?.touches.find(t => t.sequence === sequence)
 }
@@ -154,7 +175,7 @@ export default function ProspectingPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('ALL')
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
-  const [aplicando, setAplicando] = useState(false)
+  const [envio, setEnvio] = useState<EnvioEmLote | null>(null)
 
   const fetchData = async () => {
     try {
@@ -220,30 +241,59 @@ export default function ProspectingPage() {
     })
   }
 
-  // Marca o T2 de cada selecionado como enviado. A API carimba o sentAt.
-  const marcarT2Enviado = async () => {
+  // Dispara de verdade o T2 dos selecionados, um a um, com o intervalo de
+  // segurança entre eles. O envio acontece aqui no navegador: fechar a aba
+  // interrompe a fila, e o que já saiu está enviado — por isso o aviso.
+  const enviarT2 = async () => {
     const alvos = filaT2
       .filter(l => selecionados.has(l.id))
-      .map(l => touchDaSequencia(l, 2))
-      .filter((t): t is Touch => Boolean(t))
+      .map(l => ({ lead: l, touch: touchDaSequencia(l, 2) }))
+      .filter((a): a is { lead: Lead; touch: Touch } => Boolean(a.touch))
 
     if (!alvos.length) return
-    const plural = alvos.length === 1 ? '' : 's'
-    if (!confirm(`Marcar ${alvos.length} T2 como enviado${plural}? Os leads saem da fila.`)) return
 
-    setAplicando(true)
-    try {
-      for (const touch of alvos) {
-        await fetch(`/api/touches/${touch.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'ENVIADO' }),
-        })
+    const plural = alvos.length === 1 ? '' : 's'
+    const ok = confirm(
+      `Enviar ${alvos.length} DM${plural} de T2 agora, de verdade, pelo LinkedIn?\n\n` +
+      `As mensagens saem uma a cada 30-90 segundos, o que leva ${estimativaDeTempo(alvos.length)}.\n` +
+      `Mantenha esta aba aberta até o fim — fechar interrompe a fila.`
+    )
+    if (!ok) return
+
+    const erros: { nome: string; motivo: string }[] = []
+    setEnvio({ total: alvos.length, feitos: 0, atual: alvos[0].lead.name, erros, aguardandoSegundos: 0 })
+
+    for (const [i, { lead, touch }] of alvos.entries()) {
+      setEnvio({ total: alvos.length, feitos: i, atual: lead.name, erros: [...erros], aguardandoSegundos: 0 })
+      try {
+        const res = await fetch(`/api/touches/${touch.id}/send`, { method: 'POST' })
+        if (!res.ok) {
+          const corpo = await res.json().catch(() => ({}))
+          erros.push({ nome: lead.name, motivo: corpo.error || `HTTP ${res.status}` })
+        }
+      } catch (e) {
+        erros.push({ nome: lead.name, motivo: e instanceof Error ? e.message : 'falha de rede' })
       }
-      setSelecionados(new Set())
-      await fetchData()
-    } finally {
-      setAplicando(false)
+
+      // A espera fica entre um envio e o próximo, nunca depois do último.
+      if (i < alvos.length - 1) {
+        const intervalo = sortearIntervalo()
+        for (let resta = Math.round(intervalo / 1000); resta > 0; resta--) {
+          setEnvio({ total: alvos.length, feitos: i + 1, atual: alvos[i + 1].lead.name, erros: [...erros], aguardandoSegundos: resta })
+          await esperar(1000)
+        }
+      }
+    }
+
+    setEnvio(null)
+    setSelecionados(new Set())
+    await fetchData()
+
+    if (erros.length) {
+      alert(
+        `${alvos.length - erros.length} de ${alvos.length} enviados.\n\n` +
+        `Não saíram:\n${erros.map(e => `• ${e.nome}: ${e.motivo}`).join('\n')}`
+      )
     }
   }
 
@@ -324,32 +374,63 @@ export default function ProspectingPage() {
 
       {/* Ações em lote — só no modo T2, que é onde existe um lote a despachar */}
       {modoT2 && filaT2.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
-          <span className="text-sm text-amber-900 dark:text-amber-200">
-            <strong>{selecionados.size}</strong> de {filaT2.length} selecionado{selecionados.size === 1 ? '' : 's'}
-          </span>
-          <button
-            onClick={() => setSelecionados(new Set(filaT2.map(l => l.id)))}
-            className="text-xs text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:no-underline"
-          >
-            Selecionar todos
-          </button>
-          <button
-            onClick={() => setSelecionados(new Set())}
-            className="text-xs text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:no-underline"
-          >
-            Limpar
-          </button>
-          <div className="flex-1" />
-          <button
-            onClick={marcarT2Enviado}
-            disabled={aplicando || selecionados.size === 0}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            {aplicando ? 'Aplicando...' : `Marcar T2 como enviado${selecionados.size ? ` (${selecionados.size})` : ''}`}
-          </button>
-        </div>
+        envio ? (
+          <div className="rounded-lg border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                Enviando {envio.feitos}/{envio.total}
+              </span>
+              <span className="text-sm text-blue-800 dark:text-blue-300">
+                {envio.aguardandoSegundos > 0
+                  ? `aguardando ${envio.aguardandoSegundos}s antes de ${envio.atual}`
+                  : `enviando para ${envio.atual}...`}
+              </span>
+              {envio.erros.length > 0 && (
+                <span className="text-sm text-red-600 dark:text-red-400">{envio.erros.length} falhou</span>
+              )}
+              <div className="flex-1" />
+              <span className="text-xs text-blue-700 dark:text-blue-400">Não feche esta aba</span>
+            </div>
+            <div className="h-1.5 bg-blue-200 dark:bg-blue-900 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all"
+                style={{ width: `${Math.round((envio.feitos / envio.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+            <span className="text-sm text-amber-900 dark:text-amber-200">
+              <strong>{selecionados.size}</strong> de {filaT2.length} selecionado{selecionados.size === 1 ? '' : 's'}
+            </span>
+            <button
+              onClick={() => setSelecionados(new Set(filaT2.map(l => l.id)))}
+              className="text-xs text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:no-underline"
+            >
+              Selecionar todos
+            </button>
+            <button
+              onClick={() => setSelecionados(new Set())}
+              className="text-xs text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:no-underline"
+            >
+              Limpar
+            </button>
+            <div className="flex-1" />
+            {selecionados.size > 0 && (
+              <span className="text-xs text-amber-800 dark:text-amber-300">
+                sai 1 a cada 30-90s · {estimativaDeTempo(selecionados.size)}
+              </span>
+            )}
+            <button
+              onClick={enviarT2}
+              disabled={selecionados.size === 0}
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send className="w-4 h-4" />
+              Enviar T2{selecionados.size ? ` (${selecionados.size})` : ''}
+            </button>
+          </div>
+        )
       )}
 
       {/* Table */}
@@ -386,8 +467,9 @@ export default function ProspectingPage() {
                           type="checkbox"
                           aria-label="Selecionar todos os T2 pendentes"
                           checked={filaT2.length > 0 && selecionados.size === filaT2.length}
+                          disabled={Boolean(envio)}
                           onChange={e => setSelecionados(e.target.checked ? new Set(filaT2.map(l => l.id)) : new Set())}
-                          className="h-4 w-4 cursor-pointer accent-amber-600"
+                          className="h-4 w-4 cursor-pointer accent-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
                         />
                       </th>
                     )}
@@ -414,8 +496,9 @@ export default function ProspectingPage() {
                               type="checkbox"
                               aria-label={`Selecionar ${lead.name}`}
                               checked={selecionados.has(lead.id)}
+                              disabled={Boolean(envio)}
                               onChange={() => alternarSelecao(lead.id)}
-                              className="h-4 w-4 cursor-pointer accent-amber-600"
+                              className="h-4 w-4 cursor-pointer accent-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
                             />
                           </td>
                         )}
