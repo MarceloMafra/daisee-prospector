@@ -68,6 +68,15 @@ export async function PUT(
       }
     }
 
+    // Marcar como enviado à mão tem que carimbar a data, senão o touch fica com
+    // status de enviado e sentAt nulo — e é o sentAt que o status-campanha e a
+    // fila de T2 leem para dizer quando a mensagem saiu.
+    const JA_SAIU = ['ENVIADO', 'ENTREGUE', 'RESPONDIDO']
+    const carimbaSaida = body.status && JA_SAIU.includes(body.status) && !existing.sentAt
+    // O caminho inverso também: devolver para AGENDADO limpa a data, senão
+    // sobra o carimbo de um envio que foi desfeito.
+    const limpaSaida = body.status === 'AGENDADO' && existing.sentAt
+
     const touch = await prisma.touch.update({
       where: { id: params.id },
       data: {
@@ -75,6 +84,7 @@ export async function PUT(
         message: body.message ?? undefined,
         status: body.status ?? undefined,
         scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : undefined,
+        sentAt: carimbaSaida ? new Date() : limpaSaida ? null : undefined,
       },
       select: {
         id: true,
@@ -82,6 +92,7 @@ export async function PUT(
         channel: true,
         message: true,
         status: true,
+        sentAt: true,
         scheduledFor: true,
         createdAt: true,
         updatedAt: true,

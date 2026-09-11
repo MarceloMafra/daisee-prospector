@@ -57,6 +57,32 @@ function cadenciaPausada(lead: Lead): boolean {
   return Boolean(lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO'))
 }
 
+const T1_JA_SAIU = ['ENVIADO', 'ENTREGUE', 'RESPONDIDO']
+
+function touchDaSequencia(lead: Lead, sequence: number): Touch | undefined {
+  return lead.cadencia?.touches.find(t => t.sequence === sequence)
+}
+
+// Aceitou o convite e o T2 ainda não saiu. Mesmo critério de
+// scripts/gerar-fila-t2.ts, para a tela e a fila nunca discordarem: quem já
+// respondeu está em conversa humana e sai da lista de propósito — mandar o T2
+// agora atropelaria o diálogo.
+function t2Pendente(lead: Lead): boolean {
+  if (lead.excludedFromAutomation) return false
+  if (!lead.linkedinConnectedAt) return false
+
+  const t2 = touchDaSequencia(lead, 2)
+  if (!t2 || t2.status !== 'AGENDADO') return false
+
+  const t1 = touchDaSequencia(lead, 1)
+  if (!t1 || !T1_JA_SAIU.includes(t1.status)) return false
+
+  if ((lead.interacoes || []).length > 0) return false
+  if (lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO')) return false
+
+  return true
+}
+
 const TOUCH_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
   AGENDADO:   { label: 'Agendado',   color: 'text-gray-400',   bg: 'bg-gray-100 dark:bg-gray-800',   icon: Clock },
   ENVIADO:    { label: 'Enviado',    color: 'text-blue-600',   bg: 'bg-blue-100 dark:bg-blue-900/40', icon: Send },
@@ -127,6 +153,8 @@ export default function ProspectingPage() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('ALL')
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+  const [aplicando, setAplicando] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -163,6 +191,8 @@ export default function ProspectingPage() {
   }
 
   const aguardandoVoce = leads.filter(l => vezDe(l) === 'VOCE').length
+  const filaT2 = leads.filter(t2Pendente)
+  const modoT2 = filter === 'T2_PENDENTE'
 
   const FILTERS = [
     { value: 'ALL', label: 'Todos' },
@@ -170,7 +200,52 @@ export default function ProspectingPage() {
     { value: 'AGENDADO', label: 'Com pendências' },
     { value: 'CONECTADO', label: 'Conexão aceita' },
     { value: 'RESPONDIDO', label: 'Com resposta' },
+    { value: 'T2_PENDENTE', label: `T2 pendentes${filaT2.length ? ` (${filaT2.length})` : ''}` },
   ]
+
+  // Entrar no modo T2 já marca a fila inteira: o uso normal é despachar o lote
+  // todo e desmarcar a exceção. Sair limpa a seleção, para não sobrar marcação
+  // invisível de um filtro que não está mais na tela.
+  const trocarFiltro = (novo: string) => {
+    setFilter(novo)
+    setSelecionados(novo === 'T2_PENDENTE' ? new Set(filaT2.map(l => l.id)) : new Set())
+  }
+
+  const alternarSelecao = (leadId: string) => {
+    setSelecionados(atual => {
+      const proximo = new Set(atual)
+      if (proximo.has(leadId)) proximo.delete(leadId)
+      else proximo.add(leadId)
+      return proximo
+    })
+  }
+
+  // Marca o T2 de cada selecionado como enviado. A API carimba o sentAt.
+  const marcarT2Enviado = async () => {
+    const alvos = filaT2
+      .filter(l => selecionados.has(l.id))
+      .map(l => touchDaSequencia(l, 2))
+      .filter((t): t is Touch => Boolean(t))
+
+    if (!alvos.length) return
+    const plural = alvos.length === 1 ? '' : 's'
+    if (!confirm(`Marcar ${alvos.length} T2 como enviado${plural}? Os leads saem da fila.`)) return
+
+    setAplicando(true)
+    try {
+      for (const touch of alvos) {
+        await fetch(`/api/touches/${touch.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'ENVIADO' }),
+        })
+      }
+      setSelecionados(new Set())
+      await fetchData()
+    } finally {
+      setAplicando(false)
+    }
+  }
 
   const filtered = leads
     .filter(lead => {
@@ -179,6 +254,7 @@ export default function ProspectingPage() {
       if (filter === 'AGENDADO') return lead.cadencia?.touches.some(t => t.status === 'AGENDADO')
       if (filter === 'CONECTADO') return Boolean(lead.linkedinConnectedAt)
       if (filter === 'RESPONDIDO') return lead.cadencia?.touches.some(t => t.status === 'RESPONDIDO')
+      if (filter === 'T2_PENDENTE') return t2Pendente(lead)
       return true
     })
     // Quem está esperando resposta vai para o topo: é a única coisa da lista
@@ -234,17 +310,47 @@ export default function ProspectingPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {FILTERS.map(f => (
           <button
             key={f.value}
-            onClick={() => setFilter(f.value)}
+            onClick={() => trocarFiltro(f.value)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === f.value ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
           >
             {f.label}
           </button>
         ))}
       </div>
+
+      {/* Ações em lote — só no modo T2, que é onde existe um lote a despachar */}
+      {modoT2 && filaT2.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+          <span className="text-sm text-amber-900 dark:text-amber-200">
+            <strong>{selecionados.size}</strong> de {filaT2.length} selecionado{selecionados.size === 1 ? '' : 's'}
+          </span>
+          <button
+            onClick={() => setSelecionados(new Set(filaT2.map(l => l.id)))}
+            className="text-xs text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:no-underline"
+          >
+            Selecionar todos
+          </button>
+          <button
+            onClick={() => setSelecionados(new Set())}
+            className="text-xs text-amber-800 dark:text-amber-300 underline underline-offset-2 hover:no-underline"
+          >
+            Limpar
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={marcarT2Enviado}
+            disabled={aplicando || selecionados.size === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Send className="w-4 h-4" />
+            {aplicando ? 'Aplicando...' : `Marcar T2 como enviado${selecionados.size ? ` (${selecionados.size})` : ''}`}
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       {loading ? (
@@ -254,7 +360,13 @@ export default function ProspectingPage() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
           <MessageSquare className="w-10 h-10" />
-          <p>Nenhum lead com cadência gerada ainda.</p>
+          <p>
+            {modoT2
+              ? 'Nenhum T2 esperando — a fila está em dia.'
+              : filter === 'ALL'
+                ? 'Nenhum lead com cadência gerada ainda.'
+                : 'Nenhum lead neste filtro.'}
+          </p>
         </div>
       ) : (
         <Card>
@@ -268,6 +380,17 @@ export default function ProspectingPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b dark:border-gray-700">
+                    {modoT2 && (
+                      <th className="pb-3 pr-3 w-8">
+                        <input
+                          type="checkbox"
+                          aria-label="Selecionar todos os T2 pendentes"
+                          checked={filaT2.length > 0 && selecionados.size === filaT2.length}
+                          onChange={e => setSelecionados(e.target.checked ? new Set(filaT2.map(l => l.id)) : new Set())}
+                          className="h-4 w-4 cursor-pointer accent-amber-600"
+                        />
+                      </th>
+                    )}
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium">Lead</th>
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium">Situação</th>
                     <th className="text-left text-xs text-gray-500 uppercase pb-3 pr-4 font-medium hidden lg:table-cell">Status</th>
@@ -281,7 +404,21 @@ export default function ProspectingPage() {
                     const touches = lead.cadencia?.touches || []
                     const { sent, total, pct } = progressOf(touches)
                     return (
-                      <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <tr
+                        key={lead.id}
+                        className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${modoT2 && selecionados.has(lead.id) ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}`}
+                      >
+                        {modoT2 && (
+                          <td className="py-4 pr-3 align-middle">
+                            <input
+                              type="checkbox"
+                              aria-label={`Selecionar ${lead.name}`}
+                              checked={selecionados.has(lead.id)}
+                              onChange={() => alternarSelecao(lead.id)}
+                              className="h-4 w-4 cursor-pointer accent-amber-600"
+                            />
+                          </td>
+                        )}
                         <td className="py-4 pr-4">
                           <div className="flex items-center gap-2">
                             <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white hover:text-red-600 hover:underline text-sm">
