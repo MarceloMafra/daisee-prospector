@@ -41,7 +41,18 @@ export async function GET(request: NextRequest) {
       orderBy: { recebidaEm: 'desc' },
       include: {
         lead: {
-          select: { id: true, name: true, company: true, seniority: true, linkedinUrl: true },
+          // status e linkedinProviderId vão junto: o primeiro abastece a caixa que
+          // pergunta a fase do pipeline ao arquivar, o segundo diz se dá para
+          // responder pelo painel ou só pela conversa.
+          select: {
+            id: true,
+            name: true,
+            company: true,
+            seniority: true,
+            linkedinUrl: true,
+            status: true,
+            linkedinProviderId: true,
+          },
         },
       },
     })

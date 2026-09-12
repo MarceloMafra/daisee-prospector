@@ -175,6 +175,7 @@ export default function InteracoesPage() {
               interacao={interacao}
               mostrarLead
               onStatusChange={handleStatusChange}
+              onAtualizar={carregar}
             />
           ))}
         </div>
