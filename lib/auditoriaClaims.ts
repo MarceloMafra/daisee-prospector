@@ -51,7 +51,7 @@ const REGRAS: { id: RegraId; rotulo: string; re: RegExp }[] = [
     // de la sabe intuitivamente que sim." Negar o interesse comercial e uma
     // afirmacao falsa, e o lead percebe -- a legitimidade vem da pergunta agregar
     // valor, nao de jurar que nao ha venda no fim da conversa.
-    re: /(sem segundas? inten[çc][ãa]?[oõ][ee]?s?\b|sem (nenhum |qualquer )?interesse comercial|sem (nenhuma |qualquer )?agenda (escondida|oculta)|sem compromisso (algum|nenhum)?|n[ãa]o (quero|vou|pretendo|estou|venho|vim)[^.!?]{0,30}\bvend|n[ãa]o estou (te )?vendendo|n[ãa]o (é|e) (um |uma )?(pitch|venda|tentativa de venda|abordagem comercial|abordagem de venda)|n[ãa]o (é|e) nada comercial|nada de (pitch|venda)|sem (querer )?(te )?vender nada|n[ãa]o vou (te )?(empurrar|insistir)|prometo que n[ãa]o (vou|é))/gi,
+    re: /(sem segundas? inten[çc][ãa]?[oõ][ee]?s?\b|sem (nenhum |qualquer )?interesse comercial|sem (nenhuma |qualquer )?agenda (escondida|oculta)|sem compromisso( (algum|nenhum))?|n[ãa]o (quero|vou|pretendo|estou|venho|vim)[^.!?]{0,30}\bvend|n[ãa]o estou (te )?vendendo|n[ãa]o (é|e) (um |uma )?(pitch|venda|tentativa de venda|abordagem comercial|abordagem de venda)|n[ãa]o (é|e) nada comercial|nada de (pitch|venda)|sem (querer )?(te )?vender nada|n[ãa]o vou (te )?(empurrar|insistir)|prometo que n[ãa]o (vou|é))/gi,
   },
   {
     id: 'AUTORIA',
