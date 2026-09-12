@@ -153,7 +153,7 @@ export default function PipelinePage() {
                         key={lead.id}
                         className="p-3 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
                       >
-                        <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white text-sm leading-tight hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer">
+                        <a href={`/dashboard/leads/${lead.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 dark:text-white text-sm leading-tight hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer">
                           {lead.name}
                         </a>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

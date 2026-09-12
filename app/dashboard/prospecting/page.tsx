@@ -504,7 +504,7 @@ export default function ProspectingPage() {
                         )}
                         <td className="py-4 pr-4">
                           <div className="flex items-center gap-2">
-                            <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white hover:text-red-600 hover:underline text-sm">
+                            <a href={`/dashboard/leads/${lead.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 dark:text-white hover:text-red-600 hover:underline text-sm">
                               {lead.name}
                             </a>
                             {lead.linkedinConnectedAt && (

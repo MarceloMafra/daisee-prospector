@@ -601,7 +601,7 @@ export default function LeadsPage() {
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <a href={`/dashboard/leads/${lead.id}`} className="font-medium text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer">
+                        <a href={`/dashboard/leads/${lead.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer">
                           {lead.name}
                         </a>
                       </td>
