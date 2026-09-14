@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { InteracaoItem, InteracaoView } from '@/components/interacoes/interacao-item'
-import { Inbox, Loader2, RefreshCw } from 'lucide-react'
+import { Inbox, Loader2, RefreshCw, Search, X } from 'lucide-react'
 
 type Filtro = 'NOVA' | 'RESPONDIDA' | 'ARQUIVADA' | 'TODAS'
 
@@ -27,6 +27,10 @@ const VAZIO: Record<Filtro, string> = {
   TODAS: 'Nenhuma resposta registrada até agora.',
 }
 
+// "Debora" precisa achar a "Débora" — ninguém digita acento numa busca rápida.
+const semAcento = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
 export default function InteracoesPage() {
   const [interacoes, setInteracoes] = useState<InteracaoView[]>([])
   const [contagem, setContagem] = useState<Contagem>({ NOVA: 0, RESPONDIDA: 0, ARQUIVADA: 0 })
@@ -35,6 +39,7 @@ export default function InteracoesPage() {
   const [erro, setErro] = useState('')
   const [varrendo, setVarrendo] = useState(false)
   const [resultadoVarredura, setResultadoVarredura] = useState('')
+  const [busca, setBusca] = useState('')
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -56,6 +61,15 @@ export default function InteracoesPage() {
   useEffect(() => {
     carregar()
   }, [carregar])
+
+  const termo = semAcento(busca.trim())
+  const visiveis = useMemo(
+    () =>
+      termo
+        ? interacoes.filter((i) => semAcento(`${i.lead?.name ?? ''} ${i.lead?.company ?? ''}`).includes(termo))
+        : interacoes,
+    [interacoes, termo]
+  )
 
   // Atualizar a página só relê o banco. Quem estava esperando uma resposta
   // chegar dependia do cron (08:00 e 17:00 de Brasília) e não tinha como pedir
@@ -154,6 +168,35 @@ export default function InteracoesPage() {
         })}
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar por nome ou empresa..."
+          className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+        {busca && (
+          <button
+            type="button"
+            onClick={() => setBusca('')}
+            aria-label="Limpar busca"
+            className="absolute right-2 top-2 p-0.5 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {termo && !carregando && interacoes.length > 0 && (
+        <p className="text-sm text-gray-600 dark:text-gray-400 -mt-2">
+          {visiveis.length === 0
+            ? `Nenhuma resposta de “${busca.trim()}” nesta aba.${filtro !== 'TODAS' ? ' Veja em Todas.' : ''}`
+            : `${visiveis.length} resposta${visiveis.length > 1 ? 's' : ''} de ${interacoes.length} nesta aba.`}
+        </p>
+      )}
+
       {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
 
       {carregando ? (
@@ -169,7 +212,7 @@ export default function InteracoesPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {interacoes.map((interacao) => (
+          {visiveis.map((interacao) => (
             <InteracaoItem
               key={interacao.id}
               interacao={interacao}
