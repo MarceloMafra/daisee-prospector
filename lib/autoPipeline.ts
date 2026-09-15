@@ -1,11 +1,15 @@
 // Pipeline automático: enriquecer via LinkedIn + gerar cadência, para leads
 // que não estão excluídos da automação (Lead.excludedFromAutomation = false).
 // Roda antes do scheduler de envio (lib/scheduler.ts) na mesma execução do cron.
+//
+// Aplica a mesma qualificação do bulk-prepare (lib/qualificacaoPreparo.ts):
+// ordem pelos pontos da triagem, sem empregador fica de fora, e o perfil
+// enriquecido é conferido antes da cadência.
 import { prisma } from '@/lib/prisma'
 import { enrichLeadFromLinkedIn } from '@/lib/enrichment'
 import { ensureCadenciaGenerated } from '@/lib/cadenciaGeneration'
 import { isUnipileConfigured } from '@/lib/unipile'
-import type { Lead } from '@prisma/client'
+import { bloquearPreparo, motivoBloqueioPosEnriquecimento, selecionarParaPreparo } from '@/lib/qualificacaoPreparo'
 
 interface PipelineLimits {
   maxEnrichPerRun: number
@@ -22,7 +26,7 @@ function getPipelineLimits(): PipelineLimits {
 interface StageAction {
   leadId: string
   leadName: string
-  outcome: 'concluido' | 'falhou' | 'simulado'
+  outcome: 'concluido' | 'falhou' | 'simulado' | 'bloqueado'
   reason?: string
 }
 
@@ -44,15 +48,18 @@ async function runEnrichmentStage(dryRun: boolean, limit: number) {
     return { candidates: 0, actions }
   }
 
-  const candidates: Lead[] = await prisma.lead.findMany({
+  // Sem perfil, e não "sem linkedinProviderId": lead do Sales Navigator já chega
+  // com um provider_id (o URN ACwAAA…) e nunca era enriquecido aqui — ia direto
+  // para a cadência, sem perfil e sem conferência de cargo.
+  const semPerfil = await prisma.lead.findMany({
     where: {
       excludedFromAutomation: false,
-      linkedinProviderId: null,
+      profileText: null,
       linkedinUrl: { not: null },
+      cadencia: { is: null },
     },
-    take: limit,
-    orderBy: { createdAt: 'asc' },
   })
+  const candidates = selecionarParaPreparo(semPerfil).elegiveis.slice(0, limit)
 
   for (const lead of candidates) {
     if (dryRun) {
@@ -60,8 +67,19 @@ async function runEnrichmentStage(dryRun: boolean, limit: number) {
       continue
     }
     try {
-      await enrichLeadFromLinkedIn(lead, {})
+      const enriched = await enrichLeadFromLinkedIn(lead, {})
       await logAudit(lead.id, 'AUTO_ENRICH_LINKEDIN', 'Enriquecido automaticamente pelo pipeline.')
+
+      const bloqueio = motivoBloqueioPosEnriquecimento({
+        empresaNaLista: lead.company,
+        empresaNoPerfil: (enriched.fieldsToUpdate.company as string | undefined) ?? lead.company,
+        profileText: enriched.profileText,
+      })
+      if (bloqueio) {
+        await bloquearPreparo(lead.id, bloqueio)
+        actions.push({ leadId: lead.id, leadName: lead.name, outcome: 'bloqueado', reason: bloqueio })
+        continue
+      }
       actions.push({ leadId: lead.id, leadName: lead.name, outcome: 'concluido' })
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
@@ -76,15 +94,17 @@ async function runEnrichmentStage(dryRun: boolean, limit: number) {
 async function runCadenciaGenerationStage(dryRun: boolean, limit: number) {
   const actions: StageAction[] = []
 
-  const candidates: Lead[] = await prisma.lead.findMany({
+  // Só quem já tem perfil: a cadência sem perfil sai genérica, e sem perfil não
+  // há como conferir se a pessoa segue no cargo.
+  const prontos = await prisma.lead.findMany({
     where: {
       excludedFromAutomation: false,
+      profileText: { not: null },
       linkedinProviderId: { not: null },
       cadencia: { is: null },
     },
-    take: limit,
-    orderBy: { createdAt: 'asc' },
   })
+  const candidates = selecionarParaPreparo(prontos).elegiveis.slice(0, limit)
 
   for (const lead of candidates) {
     if (dryRun) {
@@ -92,6 +112,17 @@ async function runCadenciaGenerationStage(dryRun: boolean, limit: number) {
       continue
     }
     try {
+      // Enriquecido antes desta trava existir (ou à mão): confere o cargo atual.
+      const bloqueio = motivoBloqueioPosEnriquecimento({
+        empresaNaLista: lead.company,
+        empresaNoPerfil: lead.company,
+        profileText: lead.profileText,
+      })
+      if (bloqueio) {
+        await bloquearPreparo(lead.id, bloqueio)
+        actions.push({ leadId: lead.id, leadName: lead.name, outcome: 'bloqueado', reason: bloqueio })
+        continue
+      }
       await ensureCadenciaGenerated(lead.id)
       await logAudit(lead.id, 'AUTO_CADENCIA_GERADA', 'Cadência gerada automaticamente pelo pipeline.')
       actions.push({ leadId: lead.id, leadName: lead.name, outcome: 'concluido' })

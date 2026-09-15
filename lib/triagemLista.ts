@@ -126,8 +126,11 @@ const CARGO_DONO =
 const FORNECEDOR =
   /\b(consultoria em compliance|compliance solutions?|govtech|legaltech|regtech|plataforma de (governan[çc]a|compliance)|solu[çc][õo]es? de (compliance|governan[çc]a)|software de (compliance|governan[çc]a)|saas)\b/i
 
-const SEM_EMPREGADOR =
-  /(transi[çc][ãa]o de carreira|career transition|open to work|dispon[íi]vel para|aposentad[oa]|autonom[oa]|freelan|n[ãa]o informad[oa])/i
+// Exportada para o preparo (lib/qualificacaoPreparo.ts) aplicar a mesma regra a
+// quem já está na base. "aut[ôo]nom": com o acento, que é a grafia real, o
+// "Profissional autônomo" do Eduardo Mormino passava batido.
+export const SEM_EMPREGADOR =
+  /(transi[çc][ãa]o de carreira|career transition|open to work|dispon[íi]vel para|aposentad[oa]|aut[ôo]nom[oa]|freelan|n[ãa]o informad[oa])/i
 
 export function triar(f: FichaTriagem): Veredito {
   const motivos: string[] = []
