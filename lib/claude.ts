@@ -8,6 +8,8 @@ interface LeadInfo {
   daiseeScore: number
   profileText?: string | null
   companyContext?: string | null
+  // Quem indicou este lead e o que escreveu (lib/indicacao.ts).
+  indicacao?: { indicador: string; empresaIndicador: string; trecho: string } | null
 }
 
 interface GeneratedTouch {
@@ -70,6 +72,19 @@ Os touches acima já foram lidos pelo lead. Não os repita, não reapresente a e
 `
     : ''
 
+  // A indicação é o melhor gancho que a cadência pode ter, e o mais fácil de
+  // estragar: o indicador apontou quem cuida do tema, não recomendou a DAISEE.
+  const indicacaoSection = lead.indicacao
+    ? `**INDICAÇÃO — este é o eixo da cadência:**
+${lead.indicacao.indicador} (${lead.indicacao.empresaIndicador}) indicou ${lead.name} como a pessoa certa para esta conversa. O que ${lead.indicacao.indicador} escreveu ao Marcelo, palavra por palavra: "${lead.indicacao.trecho}"
+- Abra o T1 pela indicação, curto e natural, por exemplo: "${lead.name.split(' ')[0]}, ${lead.indicacao.indicador.split(' ')[0]}, da ${lead.indicacao.empresaIndicador}, comentou que você cuida de ... Posso te adicionar?". Não use artigo antes do nome de quem indicou.
+- Cite SÓ o que está no trecho acima. Não invente o que foi dito, nem proximidade entre quem indicou e o Marcelo.
+- Quem indicou apontou quem cuida do tema — NÃO endossou a DAISEE nem a MasterVendas. Nunca escreva que ele recomendou a solução.
+- A indicação pode voltar uma vez nos touches seguintes, sem virar bordão.
+
+`
+    : ''
+
   const prompt = `Você assessora Marcelo Mafra, fundador da MasterVendas, na prospecção B2B. Gere uma cadência de vendas com 5 touches TOTALMENTE EM PORTUGUÊS BRASILEIRO para o prospect abaixo. Quem escreve e assina todas as mensagens é o Marcelo — homem. Faça toda concordância de gênero da PRIMEIRA PESSOA no masculino ("prefiro ser honesto", "fico à disposição"), independentemente do gênero do prospect. As mensagens devem ser naturais, ALTAMENTE PERSONALIZADAS com base no perfil real do LinkedIn, e adequadas ao mercado brasileiro.
 
 **Dados do Prospect:**
@@ -78,7 +93,7 @@ Os touches acima já foram lidos pelo lead. Não os repita, não reapresente a e
 - Cargo: ${lead.seniority}
 ${lead.email ? `- E-mail: ${lead.email}\n` : ''}- Score DAISEE: ${lead.daiseeScore}/100
 
-${profileSection}${companyContextSection}${enviadosSection}**Tom:** ${toneDescriptions[tone]}
+${indicacaoSection}${profileSection}${companyContextSection}${enviadosSection}**Tom:** ${toneDescriptions[tone]}
 
 Gere exatamente 5 touches na ordem e formato abaixo:
 

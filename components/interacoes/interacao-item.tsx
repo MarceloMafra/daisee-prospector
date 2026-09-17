@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { IndicacaoPainel } from '@/components/interacoes/indicacao-painel'
 import { corDaTemperatura, parseSugestao, STATUS_LABELS } from '@/lib/interacao'
-import { Archive, CheckCircle2, Copy, Linkedin, RotateCcw, Send, User, X } from 'lucide-react'
+import { Archive, CheckCircle2, Copy, Linkedin, RotateCcw, Send, User, UserPlus, X } from 'lucide-react'
 
 export interface InteracaoView {
   id: string
@@ -61,6 +62,7 @@ export function InteracaoItem({
   const [arquivando, setArquivando] = useState(false)
   const [faseEscolhida, setFaseEscolhida] = useState('')
   const [salvandoFase, setSalvandoFase] = useState(false)
+  const [indicando, setIndicando] = useState(false)
 
   const { temperatura, leitura, replica } = parseSugestao(interacao.sugestao)
   const tratada = interacao.status !== 'NOVA'
@@ -225,6 +227,19 @@ export function InteracaoItem({
         </div>
       )}
 
+      {/* Lead apontou outra pessoa: cadastra a indicada e arquiva esta conversa */}
+      {indicando && (
+        <IndicacaoPainel
+          interacaoId={interacao.id}
+          indicador={interacao.lead?.name ?? 'o lead'}
+          onFechar={() => setIndicando(false)}
+          onConcluido={() => {
+            setIndicando(false)
+            onAtualizar?.()
+          }}
+        />
+      )}
+
       {/* Arquivar quase sempre significa que o lead mudou de fase */}
       {arquivando && (
         <div className="rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-3">
@@ -320,6 +335,12 @@ export function InteracaoItem({
               <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
               Já respondi
             </Button>
+            {!indicando && (
+              <Button size="sm" variant="outline" onClick={() => setIndicando(true)}>
+                <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                Indicou outra pessoa
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={abrirArquivamento}>
               <Archive className="w-3.5 h-3.5 mr-1.5" />
               Arquivar

@@ -320,6 +320,42 @@ export function getSalesNavFullName(item: SalesNavLeadListItem): string | null {
   return name || null
 }
 
+// ── Busca comum de pessoas (LinkedIn clássico) ──────────────────────────────
+
+export interface LinkedInPersonResult {
+  type?: string
+  id?: string // provider_id
+  name?: string
+  headline?: string
+  location?: string
+  public_identifier?: string | null
+  public_profile_url?: string
+  profile_url?: string
+  network_distance?: string
+  shared_connections_count?: number
+}
+
+// POST /linkedin/search com api "classic": a busca por palavra-chave do LinkedIn.
+// É aproximada — "Mariana Lage Clara" devolveu "Mariana M.", "Mariana Lago" e um
+// perfil anônimo —, então o resultado é sempre candidato para uma pessoa
+// confirmar, nunca a pessoa certa. Com companyIds (empresa ATUAL), a mesma busca
+// passou de 7 homônimas para 1 pessoa.
+export async function searchLinkedInPeople(
+  keywords: string,
+  limit = 10,
+  opts: { companyIds?: string[] } = {}
+): Promise<LinkedInPersonResult[]> {
+  const accountId = process.env.UNIPILE_ACCOUNT_ID || ''
+  const query = new URLSearchParams({ account_id: accountId, limit: String(limit) })
+  const data = await unipilePost(`/linkedin/search?${query.toString()}`, {
+    api: 'classic',
+    category: 'people',
+    keywords,
+    ...(opts.companyIds?.length ? { company: opts.companyIds } : {}),
+  })
+  return ((data?.items || []) as LinkedInPersonResult[]).filter((p) => p.type === 'PEOPLE' && p.id)
+}
+
 // ── Envio: convite, DM, checagem de conexão, e-mail ─────────────────────────
 
 export interface SendConnectionRequestParams {

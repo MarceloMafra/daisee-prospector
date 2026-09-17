@@ -3,6 +3,7 @@
 // também pelo pipeline automático (lib/autoPipeline.ts) sem duplicar código.
 import { prisma } from '@/lib/prisma'
 import { generateCadencia } from '@/lib/claude'
+import { lerIndicacao } from '@/lib/indicacao'
 import type { Touch } from '@prisma/client'
 
 export type CadenciaTone = 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO'
@@ -64,6 +65,9 @@ export async function generateTouchesForCadencia(
       daiseeScore: cadencia.lead.daiseeScore,
       profileText: cadencia.lead.profileText,
       companyContext: cadencia.lead.companyContext,
+      // Lida das notas, e não passada por quem chama: a regeneração de uma
+      // cadência de lead indicado também precisa saber quem indicou.
+      indicacao: lerIndicacao(cadencia.lead.notes),
     },
     tone,
     jaSairam.map((t) => ({
@@ -189,6 +193,9 @@ export async function regenerarTouchesPendentes(
       daiseeScore: cadencia.lead.daiseeScore,
       profileText: cadencia.lead.profileText,
       companyContext: cadencia.lead.companyContext,
+      // Lida das notas, e não passada por quem chama: a regeneração de uma
+      // cadência de lead indicado também precisa saber quem indicou.
+      indicacao: lerIndicacao(cadencia.lead.notes),
     },
     tone,
     enviados.map((t) => ({
