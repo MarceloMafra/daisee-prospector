@@ -90,7 +90,8 @@ export async function generateTouchesForCadencia(
   // ambos apagavam (nada, porque nenhum tinha gravado ainda), ambos chamavam a
   // IA e ambos gravavam — 10 touches, cada mensagem em duplicata. Apagar e
   // gravar na mesma transação faz a última geração vencer, sem sobreposição.
-  const createdTouches = await prisma.$transaction(async (tx) => {
+  const createdTouches = await prisma.$transaction(
+    async (tx) => {
     await tx.touch.deleteMany({
       where: { cadenciaId, status: { notIn: [...STATUS_JA_SAIU] } },
     })
@@ -119,8 +120,14 @@ export async function generateTouchesForCadencia(
             },
           })
         })
-    )
-  })
+      )
+    },
+    // O padrão do Prisma (5s de execução, 2s de espera na fila) é apertado para
+    // a latência do Neon: em 15/09 derrubou 2 leads e em 23/09 outros 6, todos
+    // com "Unable to start a transaction in the given time" DEPOIS de a IA já
+    // ter escrito a cadência — o texto estava pronto e se perdia na gravação.
+    { timeout: 30_000, maxWait: 20_000 }
+  )
 
   await prisma.cadencia.update({
     where: { id: cadenciaId },
