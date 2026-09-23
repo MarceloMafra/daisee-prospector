@@ -126,6 +126,23 @@ const CARGO_DONO =
 const FORNECEDOR =
   /\b(consultoria em compliance|compliance solutions?|govtech|legaltech|regtech|plataforma de (governan[çc]a|compliance)|solu[çc][õo]es? de (compliance|governan[çc]a)|software de (compliance|governan[çc]a)|saas)\b/i
 
+// Big4 e casas de auditoria ou consultoria independente: vivem do mesmo mercado
+// que a gente atende. Podem virar parceiro, não cliente da cadência — a lista de
+// 22/09 trouxe EY, KPMG, Deloitte, Grant Thornton, RSM e afins como ALVO.
+const AUDITORIA_CONSULTORIA =
+  /\b(kpmg|deloitte|pwc|pricewaterhouse|ernst\s*&?\s*young|ey\b|grant thornton|bdo\b|rsm\b|mazars|crowe|baker tilly|protiviti|accenture|auditor(es|ia)?\s+independentes?|auditoria e consultoria|consultoria (empresarial|em gest[ãa]o|cont[áa]bil)|assessoria cont[áa]bil|advisory)\b/i
+
+// Associação, instituto, clube, ONG: não têm acervo regulatório de instituição
+// financeira, e o interlocutor costuma ser voluntário ou conselheiro. Fundo de
+// pensão fica FORA desta regra de propósito — Serpros e Funcef são regulados
+// pela Previc e têm o mesmo problema documental de um banco.
+const TERCEIRO_SETOR =
+  /\b(associa[çc][ãa]o|association|instituto|ong\b|sindicato|clube|volunt[áa]ri\w*|terceiro setor|conselho regional)\b/i
+
+// Administração pública: outro regulador, outro ciclo de compra (licitação).
+const SETOR_PUBLICO =
+  /\b(minist[ée]rio|prefeitura|secretaria (municipal|estadual|de estado|de obras|da fazenda|de sa[úu]de)|governo do estado|c[âa]mara municipal|tribunal|autarquia|senado federal|assembleia legislativa)\b/i
+
 // Exportada para o preparo (lib/qualificacaoPreparo.ts) aplicar a mesma regra a
 // quem já está na base. "aut[ôo]nom": com o acento, que é a grafia real, o
 // "Profissional autônomo" do Eduardo Mormino passava batido.
@@ -204,6 +221,24 @@ export function triar(f: FichaTriagem): Veredito {
   if (FORNECEDOR.test(`${cargoTexto} ${setorTexto}`)) {
     pontos -= 35
     motivos.push('parece fornecedor do mesmo mercado (-35)')
+  }
+
+  if (AUDITORIA_CONSULTORIA.test(setorTexto)) {
+    pontos -= 40
+    motivos.push('auditoria/consultoria independente (-40)')
+  }
+
+  // Olha o cargo também: "Coordenadora Voluntária de Planejamento" num clube de
+  // canoa havaiana entrou com 71,8 pontos na lista de 22/09, porque o nome da
+  // empresa não dizia nada.
+  if (TERCEIRO_SETOR.test(`${setorTexto} ${cargoTexto}`)) {
+    pontos -= 30
+    motivos.push('associação, instituto ou terceiro setor (-30)')
+  }
+
+  if (SETOR_PUBLICO.test(setorTexto)) {
+    pontos -= 40
+    motivos.push('administração pública (-40)')
   }
 
   if (SEM_EMPREGADOR.test(`${f.empresa} ${f.headline}`)) {
