@@ -183,6 +183,9 @@ export interface SugestaoContexto {
   historicoConversa: Array<{ de: 'NOS' | 'LEAD'; texto: string }>
   mensagemNova: string
   recebidaEm?: Date | null // quando o lead escreveu — evita erro de "amanhã/hoje"
+  // Horários livres conferidos na agenda do Marcelo (lib/agenda.ts). Vazio
+  // quando a agenda não está conectada ou não respondeu.
+  horariosLivres?: string[]
 }
 
 export interface SugestaoResposta {
@@ -214,6 +217,14 @@ export async function sugerirRespostaParaLead(ctx: SugestaoContexto): Promise<Su
   const agora = `HOJE É ${fmt(new Date())} (horário de Brasília).`
   const quando = ctx.recebidaEm ? ` A mensagem do lead chegou em ${fmt(ctx.recebidaEm)}.` : ''
 
+  // Agenda conferida no Google Calendar segundos atrás. Sem isso, a réplica
+  // dizia "me diga sua disponibilidade" e a conversa ia e voltava dois dias.
+  const agenda = ctx.horariosLivres?.length
+    ? `AGENDA DO MARCELO — HORÁRIOS LIVRES CONFERIDOS AGORA (fuso de Brasília):
+${ctx.horariosLivres.map((h) => `- ${h}`).join('\n')}
+`
+    : ''
+
   // Histórico de negociação registrado manualmente (briefing de reunião etc).
   const notas = ctx.lead.notes?.trim()
     ? `HISTÓRICO INTERNO DESTE LEAD (registrado pela equipe — pode conter reuniões já realizadas e combinados em aberto):\n${ctx.lead.notes.substring(0, 2500)}\n`
@@ -226,7 +237,7 @@ Um lead respondeu a uma mensagem da cadência. Sua tarefa é ler a resposta e su
 
 ${agora}${quando}
 
-${perfil}${empresa}${notas}
+${perfil}${empresa}${notas}${agenda}
 CARGO: ${ctx.lead.seniority}
 EMPRESA: ${ctx.lead.company}
 
@@ -244,6 +255,8 @@ REGRAS PARA A RÉPLICA:
 - Continue a conversa de onde ela parou. NUNCA repita o que já foi dito na cadência nem reapresente a empresa se ela já foi apresentada.
 - Se o lead só respondeu por cortesia ao convite (ex.: "claro, pode me adicionar"), o objetivo é abrir assunto de negócio com naturalidade — uma pergunta sobre a rotina/desafio dele, ancorada no cargo e na empresa. NÃO faça pitch ainda.
 - Se o lead demonstrou interesse concreto, o objetivo é propor uma conversa de 15 a 20 minutos, oferecendo escolha de horário.
+- QUANDO HOUVER "AGENDA DO MARCELO" ACIMA: proponha DOIS daqueles horários, copiados exatamente como estão escritos (dia da semana, data e hora). Eles vieram do Google Agenda conferido agora, então são reais. NUNCA invente outro horário, não escreva "me diga sua disponibilidade" nem "qual horário funciona para você?" sem antes oferecer os dois — pedir a agenda do lead joga a marcação para a semana seguinte. Feche com uma saída: "se nenhum dos dois servir, me diga o melhor dia".
+- Sem a seção de agenda, não cite horário nenhum: ofereça a conversa e peça a disponibilidade dele.
 - Se o lead levantou objeção ou desinteresse, responda com respeito, sem insistir, deixando a porta aberta.
 - Se o lead puxou assunto pessoal ou fora do tema (política, mercado, carreira), acompanhe o assunto com genuinidade e só então faça a ponte para o trabalho dele — sem forçar.
 - Máximo de 600 caracteres. Sem emoji. Sem "espero que esteja bem". Sem jargão de vendas.

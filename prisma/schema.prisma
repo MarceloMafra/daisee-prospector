@@ -230,3 +230,11 @@ enum Regulation {
   INSURANCE   // SUSEP (Seguros)
   CONAR       // Publicidade
 }
+
+// Chave/valor para o que o painel precisa guardar e não é lead: hoje, o espelho
+// da agenda (horários livres lidos do Google Calendar). Ver lib/agenda.ts.
+model Config {
+  chave     String   @id @db.VarChar(100)
+  valor     String   @db.Text
+  updatedAt DateTime @updatedAt
+}

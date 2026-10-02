@@ -41,6 +41,7 @@
     "next": "^14.0.3",
     "next-auth": "^4.24.15",
     "next-themes": "^0.2.1",
+    "node-ical": "^0.27.2",
     "openai": "^6.34.0",
     "pdf-parse": "^1.1.1",
     "react": "^18.2.0",

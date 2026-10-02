@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { IndicacaoPainel } from '@/components/interacoes/indicacao-painel'
 import { corDaTemperatura, parseSugestao, STATUS_LABELS } from '@/lib/interacao'
-import { Archive, CheckCircle2, Copy, Linkedin, RotateCcw, Send, User, UserPlus, X } from 'lucide-react'
+import { Archive, CalendarCheck, CheckCircle2, Copy, Linkedin, RotateCcw, Send, User, UserPlus, X } from 'lucide-react'
 
 export interface InteracaoView {
   id: string
@@ -63,6 +63,9 @@ export function InteracaoItem({
   const [faseEscolhida, setFaseEscolhida] = useState('')
   const [salvandoFase, setSalvandoFase] = useState(false)
   const [indicando, setIndicando] = useState(false)
+  const [horarios, setHorarios] = useState<string[]>([])
+  const [avisoAgenda, setAvisoAgenda] = useState('')
+  const [conferidaEm, setConferidaEm] = useState('')
 
   const { temperatura, leitura, replica } = parseSugestao(interacao.sugestao)
   const tratada = interacao.status !== 'NOVA'
@@ -70,10 +73,31 @@ export function InteracaoItem({
   const podeResponderAqui = interacao.canal === 'LINKEDIN' && Boolean(interacao.lead?.linkedinProviderId)
   const faseAtual = interacao.lead?.status ?? 'PROSPECTANDO'
 
-  const abrirResposta = () => {
+  // A sugestão foi escrita quando a resposta chegou; o SDR pode estar
+  // respondendo horas depois. Os horários aqui são conferidos na abertura.
+  const abrirResposta = async () => {
     setTexto(replica || '')
     setErroEnvio('')
     setRespondendo(true)
+    try {
+      const res = await fetch('/api/agenda/horarios')
+      const data = await res.json()
+      setHorarios(data.horarios ?? [])
+      const quando = data.consultadaEm
+        ? new Date(data.consultadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+        : ''
+      setConferidaEm(data.fonte === 'espelho' && quando ? ` (conferida em ${quando})` : '')
+      setAvisoAgenda(
+        data.aviso ??
+          (data.fonte === 'falhou'
+            ? 'Não consegui ler a agenda agora.'
+            : (data.horarios ?? []).length === 0 && data.fonte === 'espelho'
+              ? `Agenda conferida em ${quando} — desatualizada. Peça ao Claude para atualizar o espelho.`
+              : '')
+      )
+    } catch {
+      setAvisoAgenda('Não consegui ler a agenda agora.')
+    }
   }
 
   const enviarResposta = async () => {
@@ -204,6 +228,25 @@ export function InteracaoItem({
               <X className="w-4 h-4" />
             </button>
           </div>
+          {(horarios.length > 0 || avisoAgenda) && (
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                <CalendarCheck className="w-3.5 h-3.5" />
+                {horarios.length ? `Livre na sua agenda${conferidaEm}:` : avisoAgenda}
+              </span>
+              {horarios.map(h => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => setTexto(t => `${t.trimEnd()}${t.trim() ? ' ' : ''}${h}`)}
+                  className="rounded-full px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/70"
+                  title="Inserir no texto"
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
+          )}
           <textarea
             value={texto}
             onChange={e => setTexto(e.target.value)}

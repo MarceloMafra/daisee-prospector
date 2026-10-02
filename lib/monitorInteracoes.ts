@@ -7,6 +7,7 @@
 import { prisma } from '@/lib/prisma'
 import { listChats, listChatMessages, isUnipileConfigured } from '@/lib/unipile'
 import { sugerirRespostaParaLead } from '@/lib/claude'
+import { buscarDisponibilidade } from '@/lib/agenda'
 import { notifySdr } from '@/lib/notifySdr'
 
 export interface MonitorResult {
@@ -49,6 +50,13 @@ export async function monitorarInteracoes(opts: MonitorOptions = {}): Promise<Mo
 
   const chats = await listChats(maxChats)
   result.chatsVarridos = chats.length
+
+  // Uma consulta à agenda por rodada: todos os leads desta varredura recebem os
+  // mesmos horários livres, e a sugestão já sai com dia e hora que existem.
+  const agenda = await buscarDisponibilidade()
+  if (agenda.fonte === 'falhou') {
+    result.falhas.push({ lead: '—', motivo: `agenda não respondeu: ${agenda.erro}` })
+  }
 
   // Só interessam conversas com alguém que é lead nosso.
   const providerIds = chats.map((c) => c.attendee_provider_id).filter(Boolean) as string[]
@@ -131,6 +139,7 @@ export async function monitorarInteracoes(opts: MonitorOptions = {}): Promise<Mo
         historicoConversa: historico,
         mensagemNova: texto,
         recebidaEm: ultima.timestamp ? new Date(ultima.timestamp) : null,
+        horariosLivres: agenda.horarios,
       })
       result.sugestoesGeradas++
     } catch (err) {
