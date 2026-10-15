@@ -2,12 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Papéis semânticos — canais RGB para aceitar opacidade (bg-card/50) */
+:root {
+  --background: 242 247 246; /* gray-50 */
+  --foreground: 25 48 55; /* brand-800 */
+  --card: 255 255 255;
+  --border: 221 228 228; /* gray-200 */
+  --muted: 237 241 241; /* gray-100 */
+  --muted-foreground: 107 120 120; /* gray-500 */
+  color-scheme: light;
+}
+
+.dark {
+  --background: 18 35 40; /* #122328 */
+  --foreground: 237 241 241; /* gray-100 */
+  --card: 25 48 55; /* #193037 */
+  --border: 51 71 76; /* gray-700 */
+  --muted: 25 48 55;
+  --muted-foreground: 151 164 164; /* gray-400 */
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     @apply scroll-smooth;
   }
 
   body {
-    @apply bg-white dark:bg-gray-950 text-gray-900 dark:text-white;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Dados e números: JetBrains Mono */
+  .tabular,
+  code,
+  kbd {
+    @apply font-mono;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-500/40 ring-offset-2 ring-offset-background;
   }
 }

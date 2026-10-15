@@ -137,7 +137,7 @@ export default function CompliancePage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Cole sua mensagem aqui..."
-                  className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 min-h-32 resize-none bg-white dark:bg-gray-800"
+                  className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-32 resize-none bg-white dark:bg-gray-800"
                 />
               </div>
 

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { Brand } from '@/components/layout/brand'
 import {
   BarChart3,
   Users,
@@ -62,13 +63,10 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 bg-card border-r border-border h-screen overflow-y-auto">
+    <aside className="w-64 shrink-0 bg-brand-800 dark:bg-brand-900 border-r border-brand-700 h-screen overflow-y-auto">
       <div className="p-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <BarChart3 className="w-8 h-8 text-primary-600" />
-          <span className="font-bold text-lg text-gray-900 dark:text-white">
-            DAISEE
-          </span>
+        <Link href="/dashboard" aria-label="MV-Prospector — início">
+          <Brand tone="dark" tagline />
         </Link>
       </div>
 
@@ -82,10 +80,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-4 py-2 rounded-lg transition-colors',
+                'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors',
                 isActive
-                  ? 'bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400 font-medium'
-                  : 'text-gray-700 dark:text-gray-400 hover:bg-muted dark:hover:bg-gray-800'
+                  ? 'bg-primary-500 text-white font-semibold shadow-sm'
+                  : 'text-brand-100 hover:bg-brand-700 hover:text-white'
               )}
             >
               <Icon className="w-5 h-5" />
@@ -95,8 +93,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border p-4 mt-6">
-        <button className="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full rounded-lg hover:bg-muted dark:hover:bg-gray-800 transition-colors">
+      <div className="border-t border-brand-700 p-4 mt-6">
+        <button className="flex items-center gap-3 px-4 py-2.5 text-brand-100 hover:text-white w-full rounded-lg hover:bg-brand-700 transition-colors">
           <LogOut className="w-5 h-5" />
           <span>Sair</span>
         </button>

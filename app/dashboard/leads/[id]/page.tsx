@@ -610,7 +610,7 @@ export default function LeadDetailPage() {
                 autoFocus
               />
               <div className="flex gap-2">
-                <button onClick={() => saveField('name', nameInput, setEditingName, setSavingName)} disabled={savingName} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                <button onClick={() => saveField('name', nameInput, setEditingName, setSavingName)} disabled={savingName} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                   {savingName ? 'Salvando...' : 'Salvar'}
                 </button>
                 <button onClick={() => setEditingName(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -726,7 +726,7 @@ export default function LeadDetailPage() {
                       className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
                     />
                     <div className="flex gap-2">
-                      <button onClick={handleSaveEmail} disabled={savingEmail} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                      <button onClick={handleSaveEmail} disabled={savingEmail} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                         {savingEmail ? 'Salvando...' : 'Salvar'}
                       </button>
                       <button onClick={() => setEditingEmail(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -762,7 +762,7 @@ export default function LeadDetailPage() {
                       autoFocus
                     />
                     <div className="flex gap-2">
-                      <button onClick={() => saveField('company', companyInput, setEditingCompany, setSavingCompany)} disabled={savingCompany} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                      <button onClick={() => saveField('company', companyInput, setEditingCompany, setSavingCompany)} disabled={savingCompany} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                         {savingCompany ? 'Salvando...' : 'Salvar'}
                       </button>
                       <button onClick={() => setEditingCompany(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -796,7 +796,7 @@ export default function LeadDetailPage() {
                       autoFocus
                     />
                     <div className="flex gap-2">
-                      <button onClick={() => saveField('seniority', seniorityInput, setEditingSeniority, setSavingSeniority)} disabled={savingSeniority} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                      <button onClick={() => saveField('seniority', seniorityInput, setEditingSeniority, setSavingSeniority)} disabled={savingSeniority} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                         {savingSeniority ? 'Salvando...' : 'Salvar'}
                       </button>
                       <button onClick={() => setEditingSeniority(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -843,7 +843,7 @@ export default function LeadDetailPage() {
                       <button
                         onClick={handleSaveLinkedin}
                         disabled={savingLinkedin}
-                        className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                        className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
                       >
                         {savingLinkedin ? 'Salvando...' : 'Salvar'}
                       </button>
@@ -877,7 +877,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={handleSaveLinkedin}
                       disabled={savingLinkedin}
-                      className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                      className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
                     >
                       {savingLinkedin ? 'Salvando...' : 'Salvar'}
                     </button>
@@ -915,7 +915,7 @@ export default function LeadDetailPage() {
                       className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
                     />
                     <div className="flex gap-2">
-                      <button onClick={handleSavePhone} disabled={savingPhone} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                      <button onClick={handleSavePhone} disabled={savingPhone} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                         {savingPhone ? 'Salvando...' : 'Salvar'}
                       </button>
                       <button onClick={() => setEditingPhone(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -939,7 +939,7 @@ export default function LeadDetailPage() {
                     className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full"
                   />
                   <div className="flex gap-2">
-                    <button onClick={handleSavePhone} disabled={savingPhone} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                    <button onClick={handleSavePhone} disabled={savingPhone} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                       {savingPhone ? 'Salvando...' : 'Salvar'}
                     </button>
                     <button onClick={() => setEditingPhone(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -992,7 +992,7 @@ export default function LeadDetailPage() {
                       className="text-sm border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-600 w-full resize-none"
                     />
                     <div className="flex gap-2">
-                      <button onClick={handleSaveNotes} disabled={savingNotes} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
+                      <button onClick={handleSaveNotes} disabled={savingNotes} className="text-xs px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50">
                         {savingNotes ? 'Salvando...' : 'Salvar'}
                       </button>
                       <button onClick={() => setEditingNotes(false)} className="text-xs px-2 py-1 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -1050,7 +1050,7 @@ export default function LeadDetailPage() {
                       <button
                         onClick={handleEnrich}
                         disabled={enriching}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1 text-xs px-3 py-1.5 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition-colors"
                       >
                         <Zap className="w-3 h-3" />
                         {enriching ? 'Enriquecendo...' : 'Atualizar via LinkedIn'}
@@ -1083,7 +1083,7 @@ export default function LeadDetailPage() {
                     <button
                       onClick={handleEnrich}
                       disabled={enriching}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
                     >
                       <Zap className="w-4 h-4" />
                       {enriching ? 'Buscando perfil no LinkedIn...' : 'Enriquecer via LinkedIn (automático)'}

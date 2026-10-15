@@ -10,7 +10,7 @@ export function Header() {
   const { data: session } = useSession()
 
   return (
-    <header className="bg-card sticky top-0 z-40">
+    <header className="bg-card border-b border-border sticky top-0 z-40">
       <div className="flex items-center justify-between h-16 px-6">
         <div className="flex-1" />
 

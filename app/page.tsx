@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle2, BarChart3, MessageSquare, Shield } from 'lucide-react'
 import { authOptions } from '@/lib/auth'
+import { Brand } from '@/components/layout/brand'
 
 export default async function Home() {
   const session = await getServerSession(authOptions)
@@ -12,18 +13,13 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-primary-50 to-white dark:from-gray-900 dark:to-gray-950">
+    <main className="min-h-screen bg-gradient-to-b from-brand-50 to-gray-50 dark:from-gray-900 dark:to-gray-950">
       {/* Navegação */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-8 h-8 text-primary-600" />
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">
-            DAISEE Prospector
-          </span>
-        </div>
+        <Brand tagline />
         <Link
           href="/login"
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          className="px-4 py-2 bg-primary-500 text-white rounded-full font-semibold hover:bg-primary-600 transition-colors"
         >
           Acessar
         </Link>
@@ -42,7 +38,7 @@ export default async function Home() {
             <div className="flex gap-4">
               <Link
                 href="/login"
-                className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                className="px-8 py-3 bg-primary-500 text-white rounded-full font-semibold hover:bg-primary-600 transition-colors font-medium"
               >
                 Acessar o App
               </Link>
@@ -63,7 +59,7 @@ export default async function Home() {
 
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
               <div className="flex gap-3 mb-2">
-                <BarChart3 className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                <BarChart3 className="w-6 h-6 text-primary-600 flex-shrink-0" />
                 <h3 className="font-semibold text-gray-900 dark:text-white">Score DAISEE</h3>
               </div>
               <p className="text-gray-600 dark:text-gray-400">

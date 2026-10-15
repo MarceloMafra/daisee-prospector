@@ -393,7 +393,7 @@ export default function ProspectingPage() {
             </div>
             <div className="h-1.5 bg-blue-200 dark:bg-blue-900 rounded-full overflow-hidden">
               <div
-                className="h-full bg-blue-600 rounded-full transition-all"
+                className="h-full bg-primary-600 rounded-full transition-all"
                 style={{ width: `${Math.round((envio.feitos / envio.total) * 100)}%` }}
               />
             </div>
@@ -567,7 +567,7 @@ export default function ProspectingPage() {
                           <div className="flex items-center gap-2 min-w-[100px]">
                             <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : pct > 0 ? 'bg-blue-500' : 'bg-gray-300'}`}
+                                className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : pct > 0 ? 'bg-primary-500' : 'bg-gray-300'}`}
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
