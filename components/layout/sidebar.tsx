@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { Brand } from '@/components/layout/brand'
 import { FunilLogo } from '@/components/layout/funil-logo'
@@ -151,6 +152,7 @@ export function Sidebar() {
         </button>
         <button
           type="button"
+          onClick={() => signOut({ callbackUrl: '/login' })}
           title={collapsed ? 'Sair' : undefined}
           aria-label={collapsed ? 'Sair' : undefined}
           className={cn(
