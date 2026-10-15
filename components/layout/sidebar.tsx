@@ -64,7 +64,7 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 shrink-0 bg-brand-800 dark:bg-brand-900 border-r border-brand-700 h-screen overflow-y-auto">
-      <div className="p-6">
+      <div className="px-5 py-6">
         <Link href="/dashboard" aria-label="MV-Prospector — início">
           <Brand tone="dark" tagline />
         </Link>
