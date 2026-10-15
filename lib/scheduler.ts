@@ -10,6 +10,7 @@ import {
 } from '@/lib/unipile'
 import { validateMessage } from '@/lib/compliance'
 import { notifySdr } from '@/lib/notifySdr'
+import { comRetentativaDeBanco } from '@/lib/dbRetry'
 import type { Touch, Lead } from '@prisma/client'
 
 interface RateLimits {
@@ -274,10 +275,17 @@ async function processTouch(touch: TouchWithLead, dryRun: boolean): Promise<Acti
 // do usuário — mas respeita o mesmo limite de ritmo (rate limit) do scheduler automático,
 // pra não estourar a cota diária da conta do LinkedIn só porque foi manual.
 export async function sendTouchNow(touchId: string): Promise<ActionResult> {
-  const touch = (await prisma.touch.findUnique({
-    where: { id: touchId },
-    include: { lead: true },
-  })) as TouchWithLead | null
+  // Só a LEITURA entra na rede de novas tentativas — ela é idempotente. O envio
+  // em si jamais pode ser repetido automaticamente: repetir depois de o convite
+  // ter saído manda a mesma mensagem duas vezes para o lead.
+  // Esta consulta derrubou três envios entre 10 e 14/10 (Daniel V., Jânio Heron
+  // e Melise Tauhyl), sempre com o pool de uma conexão esgotado no meio do lote.
+  const touch = (await comRetentativaDeBanco(`sendTouchNow(${touchId})`, () =>
+    prisma.touch.findUnique({
+      where: { id: touchId },
+      include: { lead: true },
+    })
+  )) as TouchWithLead | null
 
   if (!touch) {
     throw new SchedulerError('Touch não encontrado.', 404)

@@ -24,6 +24,7 @@ import {
   selecionarParaPreparo,
 } from '../lib/qualificacaoPreparo'
 import type { Faixa } from '../lib/triagemLista'
+import { comRetentativaDeBanco, ehErroDeConexao as isDbConnError } from '../lib/dbRetry'
 
 const PAUSE_MS = 3000 // pausa entre leads pra não fazer rajada na Unipile
 const DB_RETRY_DELAYS_MS = [10_000, 30_000, 60_000] // backoff quando o Neon cai no meio do lote
@@ -31,25 +32,14 @@ const MAX_CONSECUTIVE_DB_FAILURES = 3 // aborta o lote se o banco ficar fora por
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const isDbConnError = (err: unknown) =>
-  err instanceof Error && /Can't reach database server|Connection terminated|ECONNRESET|ETIMEDOUT/i.test(err.message)
-
-// Executa fn; em erro de conexão com o banco, espera e tenta de novo (backoff).
-async function withDbRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
-  let lastErr: unknown
-  for (let attempt = 0; attempt <= DB_RETRY_DELAYS_MS.length; attempt++) {
-    try {
-      return await fn()
-    } catch (err) {
-      lastErr = err
-      if (!isDbConnError(err) || attempt === DB_RETRY_DELAYS_MS.length) throw err
-      const wait = DB_RETRY_DELAYS_MS[attempt]
-      console.log(`${label}: banco inacessível, aguardando ${wait / 1000}s pra tentar de novo (tentativa ${attempt + 2})...`)
-      await sleep(wait)
-    }
-  }
-  throw lastErr
-}
+// O filtro de erro vive em lib/dbRetry.ts, compartilhado com o send-batch e o
+// scheduler. O que existia aqui reconhecia só quatro padrões e deixava passar
+// justamente os dois mais frequentes — esgotamento de pool e "Server has closed
+// the connection" —, que foram as falhas de 10 e 14/10. Os atrasos continuam
+// longos porque aqui o lote dura horas: não adianta insistir de 2 em 2 segundos
+// enquanto o Neon ainda está subindo.
+const withDbRetry = <T>(label: string, fn: () => Promise<T>) =>
+  comRetentativaDeBanco(label, fn, DB_RETRY_DELAYS_MS)
 
 const arg = (nome: string) => (process.argv.includes(nome) ? process.argv[process.argv.indexOf(nome) + 1] : undefined)
 const primeiraLinha = (err: unknown) => (err instanceof Error ? err.message : String(err)).split('\n')[0]
@@ -75,9 +65,14 @@ async function main() {
     : null
   const limite = limiteArg && limiteArg > 0 ? limiteArg : null
 
-  const leads = await prisma.lead.findMany({
-    include: { cadencia: { include: { touches: { select: { id: true } } } } },
-  })
+  // Esta era a última consulta fora da rede de novas tentativas: foi ela que
+  // derrubou a primeira tentativa de 01/10, e no preparo agendado das 19h a
+  // falha significa fila vazia no disparo da manhã seguinte.
+  const leads = await comRetentativaDeBanco('bulk-prepare: base', () =>
+    prisma.lead.findMany({
+      include: { cadencia: { include: { touches: { select: { id: true } } } } },
+    })
+  )
 
   const comCadencia = leads.filter((l) => l.cadencia && l.cadencia.touches.length > 0)
   // Fora da automação = trabalhado à mão ou bloqueado para revisão. Antes de
