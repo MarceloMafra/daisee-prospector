@@ -11,6 +11,8 @@
 // argumento desconhecido aborta, em vez de ser ignorado e virar disparo real.
 import { prisma } from '../lib/prisma'
 import { sendTouchNow } from '../lib/scheduler'
+import { violacoesEmTexto, textoDoTouch } from '../lib/auditoriaClaims'
+import { comRetentativaDeBanco } from '../lib/dbRetry'
 
 const FLAGS_CONHECIDAS = new Set(['--dry-run', '--apply', '--pular'])
 const extras = process.argv.slice(2).filter((a) => a.startsWith('-'))
@@ -43,14 +45,24 @@ async function main() {
   // do LinkedIn é o recurso escasso: com a base grande, gastar os convites de
   // hoje em ordem de importação deixaria diretor de compliance esperando dias
   // atrás de analista. Empate cai na ordem de criação, que preserva a fila antiga.
-  const leads = await prisma.lead.findMany({
-    where: {
-      excludedFromAutomation: false,
-      cadencia: { isNot: null },
-    },
-    include: { cadencia: { include: { touches: { orderBy: { sequence: 'asc' } } } } },
-    orderBy: [{ daiseeScore: 'desc' }, { createdAt: 'asc' }],
-  })
+  // Esta consulta ficava fora da rede de novas tentativas. Com o Neon dormindo,
+  // ela falha na primeira conexão e derruba o lote INTEIRO antes de enviar nada
+  // — num disparo agendado às 08h, isso perde o dia sem ninguém perceber.
+  // Atrasos longos aqui de propósito. Esta é a consulta que abre o lote: se ela
+  // falhar, NADA é enviado no dia. Os 2/5/10s padrão cobrem o Neon acordando,
+  // mas não uma indisponibilidade de verdade — em 14/10 o banco ficou fora mais
+  // de 30s e a janela padrão se esgotou. Aqui vale esperar ~2,5 minutos antes de
+  // desistir do dia inteiro.
+  const leads = await comRetentativaDeBanco('send-batch: fila', () =>
+    prisma.lead.findMany({
+      where: {
+        excludedFromAutomation: false,
+        cadencia: { isNot: null },
+      },
+      include: { cadencia: { include: { touches: { orderBy: { sequence: 'asc' } } } } },
+      orderBy: [{ daiseeScore: 'desc' }, { createdAt: 'asc' }],
+    })
+  , [15_000, 45_000, 90_000])
 
   // Só leads "frescos": cadência completa (5 touches) e próximo touch é o T1
   // ainda AGENDADO — ou seja, ninguém foi contactado. Cadência parcial fica de fora.
@@ -72,9 +84,25 @@ async function main() {
     console.log(`  ${i + 1}. ${l.name} (${l.company}) — score ${l.daiseeScore}`)
   )
 
+  // A conferência de copy aparece no ensaio, não só no envio: quem roda o
+  // --dry-run quer saber o que sairia, e "sairia menos do que você pediu
+  // porque N textos reprovaram" é parte da resposta.
+  const reprovados = candidates.slice(0, TARGET).flatMap((l) => {
+    const t = l.cadencia!.touches.find((x) => x.status === 'AGENDADO')!
+    const v = violacoesEmTexto(textoDoTouch(t))
+    return v.length ? [{ nome: l.name, rotulos: v.map((x) => `${x.regra} (${x.rotulo})`).join('; ') }] : []
+  })
+
+  if (reprovados.length) {
+    console.log(`\n⚠  ${reprovados.length} texto(s) reprovam na auditoria e serão PULADOS:`)
+    for (const r of reprovados) console.log(`   - ${r.nome}: ${r.rotulos}`)
+  } else {
+    console.log(`\n✅ Os ${Math.min(TARGET, candidates.length)} textos passam na auditoria de copy.`)
+  }
+
   if (!APPLY) {
     console.log(`\nDRY-RUN — nada foi enviado.`)
-    console.log(`Seriam convidados os ${Math.min(TARGET, candidates.length)} primeiros da lista acima.`)
+    console.log(`Seriam convidados os ${Math.min(TARGET, candidates.length) - reprovados.length} primeiros da lista acima.`)
     console.log(`Para enviar de verdade: repita o comando com --apply`)
     await prisma.$disconnect()
     return
@@ -87,6 +115,27 @@ async function main() {
     if (sent >= TARGET) break
     const touch = lead.cadencia!.touches.find((t) => t.status === 'AGENDADO')!
     const label = `[${sent + 1}/${TARGET}] ${lead.name}`
+
+    // A auditoria de copy rodava só na caixa de respostas: o lote saía sem crivo
+    // nenhum. Em 06/10 o T1 do Douglas Schmeisck Ribeiro (BRB) afirmava "99% de
+    // crescimento em AuC/AuM" — número sobre o negócio DELE, inventado pela IA —
+    // e só não foi para o lead porque a fila foi conferida à mão. Com a rotina
+    // diária não há ninguém conferindo, então o crivo tem de ser do código.
+    // Reprovado é PULADO, nunca enviado: a correção é humana.
+    const violacoes = violacoesEmTexto(textoDoTouch(touch))
+    if (violacoes.length) {
+      const rotulos = violacoes.map((v) => `${v.regra} (${v.rotulo})`).join('; ')
+      console.log(`${label}: PULADO pela auditoria de copy — ${rotulos}`)
+      results.push({ name: lead.name, outcome: `pulado pela auditoria: ${rotulos}` })
+      await prisma.auditLog.create({
+        data: {
+          leadId: lead.id,
+          action: 'COPY_REPROVADA',
+          details: `T${touch.sequence} não enviado pelo send-batch: ${rotulos}`,
+        },
+      })
+      continue
+    }
 
     try {
       const result = await sendTouchNow(touch.id)
