@@ -159,6 +159,18 @@ export function violacoesEmTexto(texto: string): Violacao[] {
       // a DAISEE apareça na sequência da frase. Só é claim quando o sujeito somos nós.
       if (regra.id === 'AUTORIA' && /\bvoc[êe][^.!?]{0,25}$/i.test(texto.slice(Math.max(0, m.index - 40), m.index))) continue
 
+      // REPERTORIO só é violação quando o repertório é NOSSO. "a busca nas
+      // pastas costuma resolver" tem como sujeito a rotina do LEAD — é pergunta
+      // sobre o dia a dia dele, não case inventado. Mesmo critério de sujeito já
+      // usado em AUTOMACAO logo abaixo, porque o guard genérico
+      // TRAJETORIA_DO_LEAD olha só 120 caracteres atrás: na réplica do Gustavo
+      // Andrade Milhomem (Sicredi, 03/10) o "Na sua rotina" estava a ~145 e a
+      // frase correta foi barrada. Escopo de frase não tem esse limite cego.
+      if (regra.id === 'REPERTORIO') {
+        const frase = fraseAoRedor(texto, m.index)
+        if (!SUJEITO_NOSSO.test(frase) && CONTEXTO_DO_LEAD.test(frase)) continue
+      }
+
       if (regra.id === 'AUTOMACAO') {
         const frase = fraseAoRedor(texto, m.index)
         if (!SUJEITO_NOSSO.test(frase) && CONTEXTO_DO_LEAD.test(frase)) continue

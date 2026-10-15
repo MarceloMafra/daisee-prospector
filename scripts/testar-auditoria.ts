@@ -159,4 +159,34 @@ for (const [texto, deveAcusar, rotulo] of INTENCAO) {
   console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
 }
 
+
+// REPERTORIO: a regra existe para barrar experiencia acumulada que a
+// MasterVendas nao tem ("o que costuma funcionar nesses casos"). Quando o
+// sujeito e a ROTINA DO LEAD, "costuma" e pergunta legitima, nao case inventado.
+// Caso real: Gustavo Andrade Milhomem (Sicredi) em 03/10 -- "a busca nas pastas
+// costuma resolver" foi barrado, e o guard TRAJETORIA_DO_LEAD existia mas so
+// enxergava 120 caracteres atras, e "Na sua rotina" estava a ~145.
+const REPERTORIO: [string, boolean, string][] = [
+  [
+    'Na sua rotina de controladoria e auditoria PJ, quando precisa cruzar evidências ou localizar uma cláusula específica num contrato, a busca nas pastas costuma resolver rápido ou ainda dá trabalho?',
+    false,
+    'CASO GUSTAVO: sujeito e a rotina do lead, a 145 caracteres',
+  ],
+  ['Na sua rotina, a busca nas pastas costuma resolver rápido?', false, 'mesma frase, sujeito perto'],
+  ['Você sabe se a busca atual costuma resolver esse tipo de consulta?', false, 'voce = sujeito do lead'],
+  ['Pelo que costuma funcionar nesses casos, o caminho é indexar primeiro.', true, 'repertorio nosso: deve continuar acusando'],
+  ['Na maioria das vezes o problema está na indexação.', true, 'na maioria das vezes'],
+  ['Vejo com frequência esse gargalo em cooperativas.', true, 'vejo com frequencia'],
+  ['O padrão que a gente observa é esse.', true, 'o padrao que a gente observa'],
+  ['A DAISEE costuma resolver esse tipo de busca.', true, 'sujeito NOSSO na frase: acusa'],
+  ['Nossa plataforma costuma dar certo nesse cenário.', true, 'nossa plataforma: acusa'],
+]
+
+for (const [texto, deveAcusar, rotulo] of REPERTORIO) {
+  const acusou = violacoesEmTexto(texto).some(x => x.regra === 'REPERTORIO')
+  const ok = acusou === deveAcusar
+  if (!ok) falhas++
+  console.log(`${ok ? '  ok  ' : ' FALHA'} | ${deveAcusar ? 'esperado ACUSAR' : 'esperado passar'} · ${rotulo}`)
+}
+
 console.log(falhas === 0 ? '\nTodos os casos passaram.' : `\n${falhas} falha(s).`)
