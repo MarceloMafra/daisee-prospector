@@ -68,10 +68,16 @@ async function main() {
   // Esta era a última consulta fora da rede de novas tentativas: foi ela que
   // derrubou a primeira tentativa de 01/10, e no preparo agendado das 19h a
   // falha significa fila vazia no disparo da manhã seguinte.
-  const leads = await comRetentativaDeBanco('bulk-prepare: base', () =>
-    prisma.lead.findMany({
-      include: { cadencia: { include: { touches: { select: { id: true } } } } },
-    })
+  // Atrasos longos (os mesmos do lote), e não os 2/5/10s padrão: esta consulta
+  // decide se o preparo acontece. Falhando ela, o agendamento das 19h não
+  // abastece nada e o disparo das 8h amanhece com a fila vazia.
+  const leads = await comRetentativaDeBanco(
+    'bulk-prepare: base',
+    () =>
+      prisma.lead.findMany({
+        include: { cadencia: { include: { touches: { select: { id: true } } } } },
+      }),
+    DB_RETRY_DELAYS_MS
   )
 
   const comCadencia = leads.filter((l) => l.cadencia && l.cadencia.touches.length > 0)
