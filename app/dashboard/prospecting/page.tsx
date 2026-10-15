@@ -170,6 +170,43 @@ function progressOf(touches: Touch[]) {
   return { sent, total: touches.length, pct: touches.length ? Math.round((sent / touches.length) * 100) : 0 }
 }
 
+function SituacaoLead({ lead }: { lead: Lead }) {
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {vezDe(lead) === 'VOCE' && (
+        <span
+          title="O lead escreveu e ainda não foi respondido"
+          className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 whitespace-nowrap"
+        >
+          <MessageSquare className="w-3 h-3" />
+          Sua vez
+        </span>
+      )}
+      {vezDe(lead) === 'LEAD' && (
+        <span
+          title="Você respondeu por último — a bola está com o lead"
+          className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
+        >
+          <Clock className="w-3 h-3" />
+          Aguardando lead
+        </span>
+      )}
+      {cadenciaPausada(lead) && (
+        <span
+          title="A cadência automática não avança mais neste lead"
+          className="inline-flex items-center gap-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
+        >
+          <PauseCircle className="w-3 h-3" />
+          Cadência pausada
+        </span>
+      )}
+      {!vezDe(lead) && !cadenciaPausada(lead) && (
+        <span className="text-[11px] text-gray-400 dark:text-gray-600">—</span>
+      )}
+    </div>
+  )
+}
+
 export default function ProspectingPage() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -457,7 +494,7 @@ export default function ProspectingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full">
                 <thead>
                   <tr className="border-b dark:border-gray-700">
@@ -520,38 +557,7 @@ export default function ProspectingPage() {
                           <p className="text-xs text-gray-500 mt-0.5">{lead.company}</p>
                         </td>
                         <td className="py-4 pr-4 align-middle">
-                          <div className="flex flex-col items-start gap-1">
-                            {vezDe(lead) === 'VOCE' && (
-                              <span
-                                title="O lead escreveu e ainda não foi respondido"
-                                className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 whitespace-nowrap"
-                              >
-                                <MessageSquare className="w-3 h-3" />
-                                Sua vez
-                              </span>
-                            )}
-                            {vezDe(lead) === 'LEAD' && (
-                              <span
-                                title="Você respondeu por último — a bola está com o lead"
-                                className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
-                              >
-                                <Clock className="w-3 h-3" />
-                                Aguardando lead
-                              </span>
-                            )}
-                            {cadenciaPausada(lead) && (
-                              <span
-                                title="A cadência automática não avança mais neste lead"
-                                className="inline-flex items-center gap-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap"
-                              >
-                                <PauseCircle className="w-3 h-3" />
-                                Cadência pausada
-                              </span>
-                            )}
-                            {!vezDe(lead) && !cadenciaPausada(lead) && (
-                              <span className="text-[11px] text-gray-400 dark:text-gray-600">—</span>
-                            )}
-                          </div>
+                          <SituacaoLead lead={lead} />
                         </td>
                         <td className="py-4 pr-4 hidden lg:table-cell">
                           <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -590,6 +596,89 @@ export default function ProspectingPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Celular: um cartão por lead no lugar da tabela */}
+            <ul className="md:hidden divide-y dark:divide-gray-700">
+              {modoT2 && (
+                <li className="pb-3">
+                  <label className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                    <input
+                      type="checkbox"
+                      checked={filaT2.length > 0 && selecionados.size === filaT2.length}
+                      disabled={Boolean(envio)}
+                      onChange={e => setSelecionados(e.target.checked ? new Set(filaT2.map(l => l.id)) : new Set())}
+                      className="h-5 w-5 cursor-pointer accent-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    />
+                    Selecionar todos
+                  </label>
+                </li>
+              )}
+              {filtered.map(lead => {
+                const touches = lead.cadencia?.touches || []
+                const { sent, total, pct } = progressOf(touches)
+                return (
+                  <li
+                    key={lead.id}
+                    className={`py-4 ${modoT2 && selecionados.has(lead.id) ? 'bg-amber-50/60 dark:bg-amber-900/10 -mx-2 px-2 rounded-lg' : ''}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {modoT2 && (
+                        <input
+                          type="checkbox"
+                          aria-label={`Selecionar ${lead.name}`}
+                          checked={selecionados.has(lead.id)}
+                          disabled={Boolean(envio)}
+                          onChange={() => alternarSelecao(lead.id)}
+                          className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div>
+                          <a
+                            href={`/dashboard/leads/${lead.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-gray-900 dark:text-white hover:underline text-sm"
+                          >
+                            {lead.name}
+                          </a>
+                          <p className="text-xs text-gray-500">{lead.company}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {lead.linkedinConnectedAt && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold px-2 py-0.5 whitespace-nowrap">
+                              <UserCheck className="w-3 h-3" />
+                              Conectado
+                            </span>
+                          )}
+                          <SituacaoLead lead={lead} />
+                          <span className={`text-xs font-bold ml-auto ${lead.daiseeScore >= 80 ? 'text-green-600' : lead.daiseeScore >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
+                            {lead.daiseeScore.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : pct > 0 ? 'bg-primary-500' : 'bg-gray-300'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500 whitespace-nowrap">{sent}/{total}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {touches.map(touch => (
+                            <TouchBadge key={touch.id} touch={touch} onStatusChange={handleStatusChange} />
+                          ))}
+                          {touches.length === 0 && (
+                            <span className="text-xs text-gray-400 italic">Sem touches</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
           </CardContent>
         </Card>
       )}
