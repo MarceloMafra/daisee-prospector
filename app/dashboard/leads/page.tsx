@@ -364,14 +364,14 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Base de Leads</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Base de Leads</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Gerencie e acompanhe seus leads de vendas
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           {someSelected && (
             <>
               <Button
@@ -510,7 +510,7 @@ export default function LeadsPage() {
             {buscaAplicada && ` encontrado${totalLeads !== 1 ? 's' : ''} para “${buscaAplicada}”`}
             {someSelected && ` · ${selected.size} selecionado(s)`}
           </CardDescription>
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-2">
             <label className="text-sm text-gray-600 dark:text-gray-400">Exibir:</label>
             <select
               value={pageSize}
@@ -522,7 +522,7 @@ export default function LeadsPage() {
               <option value={50}>50</option>
             </select>
             <span className="text-sm text-gray-500">por página</span>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="sm:ml-auto flex w-full sm:w-auto items-center justify-between sm:justify-start gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -531,7 +531,7 @@ export default function LeadsPage() {
               >
                 Anterior
               </Button>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                 Página {currentPage} de {Math.max(1, Math.ceil(totalLeads / pageSize))}
               </span>
               <Button
@@ -568,7 +568,8 @@ export default function LeadsPage() {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full">
                 <thead className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <tr>
@@ -591,7 +592,7 @@ export default function LeadsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {leads.map((lead) => (
-                    <tr key={lead.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selected.has(lead.id) ? 'bg-red-50 dark:bg-red-950/20' : ''}`}>
+                    <tr key={lead.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selected.has(lead.id) ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
@@ -657,6 +658,83 @@ export default function LeadsPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Celular: um cartão por lead no lugar da tabela */}
+            <ul className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+              {leads.map((lead) => (
+                <li
+                  key={lead.id}
+                  className={`py-4 ${selected.has(lead.id) ? 'bg-primary-50 dark:bg-primary-900/20 -mx-2 px-2 rounded-lg' : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      aria-label={`Selecionar ${lead.name}`}
+                      checked={selected.has(lead.id)}
+                      onChange={() => toggleSelect(lead.id)}
+                      className="mt-1 h-5 w-5 shrink-0 rounded border-gray-300 cursor-pointer"
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div>
+                        <a
+                          href={`/dashboard/leads/${lead.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-gray-900 dark:text-white hover:underline"
+                        >
+                          {lead.name}
+                        </a>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{lead.company}</p>
+                        {lead.email && (
+                          <p className="text-xs text-gray-500 truncate">{lead.email}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          lead.daiseeScore >= 80
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                            : lead.daiseeScore >= 50
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                        }`}>
+                          {lead.daiseeScore.toFixed(1)}
+                        </span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {statusLabels[lead.status] || lead.status}
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          lead.excludedFromAutomation
+                            ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                        }`}>
+                          Automação: {lead.excludedFromAutomation ? 'excluído' : 'ativo'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
+                        >
+                          Ver
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(lead.id, lead.name)}
+                          disabled={deletingId === lead.id}
+                          aria-label={`Excluir ${lead.name}`}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            </>
           )}
         </CardContent>
       </Card>
