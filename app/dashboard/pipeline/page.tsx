@@ -21,6 +21,9 @@ const COLUMNS = [
   { status: 'PERDIDO',      label: 'Perdido',      color: 'bg-gray-50 dark:bg-gray-900/40' },
 ]
 
+// Quantos cards cada fase mostra de início; "Mostrar mais" acrescenta outro bloco.
+const PASSO = 30
+
 const STATUS_OPTIONS = COLUMNS.map(c => ({ value: c.status, label: c.label }))
 
 // "cambio" tem de achar "OZ Câmbio": quem procura um lead raramente digita o
@@ -34,6 +37,9 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
+  // Celular: uma fase por vez. Em tela larga todas aparecem lado a lado.
+  const [limites, setLimites] = useState<Record<string, number>>({})
+  const [faseMobile, setFaseMobile] = useState<string>(COLUMNS[0].status)
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -122,12 +128,39 @@ export default function PipelinePage() {
           <p className="text-gray-500">Carregando pipeline...</p>
         </div>
       ) : (
+        <>
+        <div className="lg:hidden -mx-1 overflow-x-auto">
+          <div className="flex gap-2 px-1 pb-1 min-w-max">
+            {COLUMNS.map((column) => {
+              const ativo = column.status === faseMobile
+              const qtd = visiveis.filter((l) => l.status === column.status).length
+              return (
+                <button
+                  key={column.status}
+                  type="button"
+                  onClick={() => setFaseMobile(column.status)}
+                  aria-pressed={ativo}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
+                    ativo
+                      ? 'bg-primary-500 border-primary-500 text-white'
+                      : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {column.label}
+                  <span className={`font-mono text-xs ${ativo ? 'text-white/90' : 'text-gray-500'}`}>{qtd}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           {COLUMNS.map((column) => {
             const columnLeads = visiveis.filter(l => l.status === column.status)
             const totalDaEtapa = leads.filter(l => l.status === column.status).length
+            const limite = limites[column.status] ?? PASSO
+            const restam = columnLeads.length - limite
             return (
-              <div key={column.status} className="space-y-3">
+              <div key={column.status} className={`space-y-3 ${column.status === faseMobile ? 'block' : 'hidden'} lg:block`}>
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                     {column.label}
@@ -148,7 +181,7 @@ export default function PipelinePage() {
                       {termo && totalDaEtapa > 0 ? 'Nenhum nesta busca' : 'Sem leads'}
                     </p>
                   ) : (
-                    columnLeads.map((lead) => (
+                    columnLeads.slice(0, limite).map((lead) => (
                       <Card
                         key={lead.id}
                         className="p-3 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
@@ -160,7 +193,13 @@ export default function PipelinePage() {
                           {lead.company}
                         </p>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                            lead.daiseeScore >= 80
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                              : lead.daiseeScore >= 50
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                          }`}>
                             {lead.daiseeScore.toFixed(1)}
                           </span>
                         </div>
@@ -177,11 +216,23 @@ export default function PipelinePage() {
                       </Card>
                     ))
                   )}
+                  {restam > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLimites((atual) => ({ ...atual, [column.status]: limite + PASSO }))
+                      }
+                      className="w-full rounded-lg border border-dashed border-gray-300 dark:border-gray-600 py-2.5 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Mostrar mais {Math.min(PASSO, restam)} · restam {restam}
+                    </button>
+                  )}
                 </div>
               </div>
             )
           })}
         </div>
+        </>
       )}
     </div>
   )
