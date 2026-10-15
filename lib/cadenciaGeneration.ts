@@ -4,9 +4,70 @@
 import { prisma } from '@/lib/prisma'
 import { generateCadencia } from '@/lib/claude'
 import { lerIndicacao } from '@/lib/indicacao'
+import { violacoesEmTexto, textoDoTouch } from '@/lib/auditoriaClaims'
+import { corrigirComCritica } from '@/lib/refazerCopy'
 import type { Touch } from '@prisma/client'
 
 export type CadenciaTone = 'CONSULTIVO' | 'DIRETO' | 'CRIATIVO'
+
+interface TouchGerado {
+  sequence: number
+  type: string
+  channel: string
+  content: string
+  subject?: string
+}
+
+// Audita o que a IA acabou de escrever e, no que estiver sujo, devolve a crítica
+// para ela corrigir — UMA vez. Em lote não há ninguém na frente da tela para
+// apertar um botão, então o refazer é automático.
+//
+// Roda SEMPRE fora da transação do Prisma. O limite dela é 30s desde a0fbc3f, e
+// uma chamada à IA aqui dentro reproduz exatamente a falha que derrubou 8 de 15
+// gerações em 15 e 23/09: a cadência era escrita e a gravação estourava depois.
+//
+// O que continuar sujo é gravado assim mesmo e registrado no AuditLog: melhor um
+// touch AGENDADO que o auditar-claims pega do que um lead sem cadência nenhuma.
+async function auditarERefazer<T extends TouchGerado>(touches: T[], leadId: string): Promise<T[]> {
+  const saida: T[] = []
+
+  for (const t of touches) {
+    const violacoes = violacoesEmTexto(textoDoTouch(t))
+    if (!violacoes.length) {
+      saida.push(t)
+      continue
+    }
+
+    try {
+      const refeito = await corrigirComCritica(t.content, violacoes)
+      if (refeito.mudou) {
+        saida.push({ ...t, content: refeito.texto })
+        await prisma.auditLog.create({
+          data: {
+            leadId,
+            action: 'COPY_REFEITA',
+            details: `T${t.sequence} refeito na geração (${violacoes.map((v) => v.regra).join(', ')}). Restaram ${refeito.violacoesRestantes.length} violação(ões).`,
+          },
+        })
+        continue
+      }
+    } catch (e) {
+      // Falhar o refazer não pode derrubar a geração inteira.
+      console.error(`Refazer T${t.sequence} falhou:`, e instanceof Error ? e.message : e)
+    }
+
+    saida.push(t)
+    await prisma.auditLog.create({
+      data: {
+        leadId,
+        action: 'COPY_REPROVADA',
+        details: `T${t.sequence} gravado ainda com violação (${violacoes.map((v) => v.regra).join(', ')}) — rode auditar-claims.`,
+      },
+    })
+  }
+
+  return saida
+}
 
 export class CadenciaGenerationError extends Error {
   status: number
@@ -78,6 +139,9 @@ export async function generateTouchesForCadencia(
     }))
   )
 
+  // Auditoria e refazer ANTES de abrir a transação (ver auditarERefazer).
+  const touchesAuditados = await auditarERefazer(generatedTouches, cadencia.leadId)
+
   // Com um touch já enviado, o relógio da cadência começou no dia em que ele
   // saiu — reancorar em hoje atrasaria todo o resto. Sem nenhum envio, hoje é
   // a âncora, que é o comportamento da geração inicial.
@@ -97,7 +161,7 @@ export async function generateTouchesForCadencia(
     })
 
     return Promise.all(
-      generatedTouches
+      touchesAuditados
         .filter((touch) => !preservados.has(touch.sequence))
         .map((touch) => {
           const offsetDays = TOUCH_OFFSET_DAYS[touch.sequence] ?? 0
@@ -213,11 +277,15 @@ export async function regenerarTouchesPendentes(
     }))
   )
 
+  // Mesma auditoria da geração inicial: a regeneração escreve texto novo e
+  // precisa do mesmo crivo antes de sobrescrever o que está agendado.
+  const touchesAuditados = await auditarERefazer(generatedTouches, cadencia.leadId)
+
   const atualizados: Touch[] = []
   const semGerado: number[] = []
 
   for (const pendente of pendentes) {
-    const novo = generatedTouches.find((g) => g.sequence === pendente.sequence)
+    const novo = touchesAuditados.find((g) => g.sequence === pendente.sequence)
     if (!novo) {
       // Sem substituto para essa sequência, o texto antigo continuaria no ar —
       // melhor devolver o número e deixar o chamador decidir do que sobrescrever.

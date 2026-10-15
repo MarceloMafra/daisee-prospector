@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { IndicacaoPainel } from '@/components/interacoes/indicacao-painel'
 import { corDaTemperatura, parseSugestao, STATUS_LABELS } from '@/lib/interacao'
-import { Archive, CalendarCheck, CheckCircle2, Copy, Linkedin, RotateCcw, Send, User, UserPlus, X } from 'lucide-react'
+import { Archive, CalendarCheck, CheckCircle2, Copy, Linkedin, RotateCcw, Send, User, UserPlus, Wand2, X } from 'lucide-react'
 
 export interface InteracaoView {
   id: string
@@ -66,6 +66,10 @@ export function InteracaoItem({
   const [horarios, setHorarios] = useState<string[]>([])
   const [avisoAgenda, setAvisoAgenda] = useState('')
   const [conferidaEm, setConferidaEm] = useState('')
+  const [recemEnviada, setRecemEnviada] = useState(false)
+  const [movendoFase, setMovendoFase] = useState(false)
+  const [violacoes, setViolacoes] = useState<{ regra: string; rotulo: string }[]>([])
+  const [refazendo, setRefazendo] = useState(false)
 
   const { temperatura, leitura, replica } = parseSugestao(interacao.sugestao)
   const tratada = interacao.status !== 'NOVA'
@@ -117,6 +121,7 @@ export function InteracaoItem({
 
     setEnviando(true)
     setErroEnvio('')
+    setViolacoes([])
     try {
       const res = await fetch(`/api/interacoes/${interacao.id}/responder`, {
         method: 'POST',
@@ -129,14 +134,76 @@ export function InteracaoItem({
           ? ` ${data.violacoes.map((v: { rotulo: string }) => v.rotulo).join(', ')}.`
           : ''
         setErroEnvio((data.error || `Falha (HTTP ${res.status})`) + detalhe)
+        setViolacoes(data.violacoes ?? [])
         return
       }
+      // Sem onAtualizar aqui de propósito: a aba padrão da caixa é NOVA, e a
+      // interação acabou de virar RESPONDIDA. Recarregar agora tira o card da
+      // lista e leva junto a pergunta sobre a fase — que é justamente o momento
+      // em que se sabe se o lead avançou ou morreu. O card fica até você decidir.
       setRespondendo(false)
-      onAtualizar?.()
+      setRecemEnviada(true)
     } catch (e) {
       setErroEnvio(e instanceof Error ? e.message : 'Falha de rede.')
     } finally {
       setEnviando(false)
+    }
+  }
+
+  // Depois de enviar, mover a fase é um clique nos chips — não um modal. O
+  // envio já passa por um confirm(); um segundo diálogo em toda mensagem vira
+  // diálogo que se fecha no automático, e na maioria dos envios (pergunta de
+  // abertura, meio de conversa) a fase não muda mesmo.
+  const moverFase = async (valor: string) => {
+    if (!interacao.lead?.id) return
+    setMovendoFase(true)
+    try {
+      await fetch(`/api/leads/${interacao.lead.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: valor }),
+      })
+      setRecemEnviada(false)
+      onStatusChange(interacao.id, 'RESPONDIDA')
+    } finally {
+      setMovendoFase(false)
+    }
+  }
+
+  const concluirSemMover = () => {
+    setRecemEnviada(false)
+    onStatusChange(interacao.id, 'RESPONDIDA')
+  }
+
+  // Quem escreveu o texto reprovado foi a própria IA, que tem a regra no prompt
+  // e escorregou. Devolver a crítica para ela corrigir é mais honesto do que
+  // deixar a conta com o SDR. A correção é cirúrgica: muda o mínimo e preserva
+  // o que você já editou. Nunca envia sozinha — você revisa e clica em enviar.
+  const refazerComCritica = async () => {
+    setRefazendo(true)
+    setErroEnvio('')
+    try {
+      const res = await fetch(`/api/interacoes/${interacao.id}/refazer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setErroEnvio(data.error || `Não consegui refazer (HTTP ${res.status}).`)
+        return
+      }
+      setTexto(data.texto)
+      setViolacoes(data.violacoesRestantes ?? [])
+      setErroEnvio(
+        data.violacoesRestantes?.length
+          ? `Ainda reprova: ${data.violacoesRestantes.map((v: { rotulo: string }) => v.rotulo).join(', ')}.`
+          : ''
+      )
+    } catch (e) {
+      setErroEnvio(e instanceof Error ? e.message : 'Falha de rede.')
+    } finally {
+      setRefazendo(false)
     }
   }
 
@@ -261,12 +328,53 @@ export function InteracaoItem({
             <Button size="sm" variant="ghost" onClick={() => setRespondendo(false)} disabled={enviando}>
               Cancelar
             </Button>
-            <Button size="sm" onClick={enviarResposta} disabled={enviando || !texto.trim()}>
+            {violacoes.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={refazerComCritica}
+                disabled={refazendo || enviando || !texto.trim()}
+              >
+                <Wand2 className="w-3.5 h-3.5 mr-1.5" />
+                {refazendo ? 'Refazendo...' : 'Refazer com a crítica'}
+              </Button>
+            )}
+            <Button size="sm" onClick={enviarResposta} disabled={enviando || refazendo || !texto.trim()}>
               <Send className="w-3.5 h-3.5 mr-1.5" />
               {enviando ? 'Enviando...' : 'Enviar agora'}
             </Button>
           </div>
           {erroEnvio && <p className="text-xs text-red-600 dark:text-red-400">{erroEnvio}</p>}
+        </div>
+      )}
+
+      {/* Enviou: a fase vira um clique, sem bloquear quem não precisa mudar nada */}
+      {recemEnviada && (
+        <div className="rounded-md border border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3 space-y-2">
+          <p className="text-sm text-gray-800 dark:text-gray-200">
+            <CheckCircle2 className="w-4 h-4 inline-block mr-1.5 text-green-600 dark:text-green-400 align-text-bottom" />
+            Mensagem enviada. {interacao.lead?.name ?? 'O lead'} segue em{' '}
+            <strong>{FASES.find(f => f.valor === faseAtual)?.label ?? faseAtual}</strong>.
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-gray-600 dark:text-gray-400">Mover para:</span>
+            {FASES.filter(f => f.valor !== faseAtual).map(f => (
+              <button
+                key={f.valor}
+                type="button"
+                onClick={() => moverFase(f.valor)}
+                disabled={movendoFase}
+                title={f.dica}
+                className="rounded-full px-2 py-0.5 text-xs bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+              >
+                {f.label}
+              </button>
+            ))}
+            <div className="flex-1" />
+            <Button size="sm" variant="ghost" onClick={concluirSemMover} disabled={movendoFase}>
+              Manter fase
+            </Button>
+          </div>
         </div>
       )}
 
@@ -367,12 +475,13 @@ export function InteracaoItem({
           </Button>
         )}
 
-        {tratada ? (
+        {tratada && (
           <Button size="sm" variant="outline" onClick={() => onStatusChange(interacao.id, 'NOVA')}>
             <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
             Reabrir
           </Button>
-        ) : (
+        )}
+        {!tratada && (
           <>
             <Button size="sm" variant="outline" onClick={() => onStatusChange(interacao.id, 'RESPONDIDA')}>
               <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
@@ -384,11 +493,16 @@ export function InteracaoItem({
                 Indicou outra pessoa
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={abrirArquivamento}>
-              <Archive className="w-3.5 h-3.5 mr-1.5" />
-              Arquivar
-            </Button>
           </>
+        )}
+        {/* Arquivar vale também depois de responder: antes sumia junto com o
+            seletor de fase, e quem enviava a mensagem de encerramento ficava sem
+            como mover o lead sem voltar na ficha. */}
+        {!arquivando && (
+          <Button size="sm" variant="ghost" onClick={abrirArquivamento}>
+            <Archive className="w-3.5 h-3.5 mr-1.5" />
+            Arquivar
+          </Button>
         )}
       </div>
     </div>
