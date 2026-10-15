@@ -319,7 +319,7 @@ export default function ProspectingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Monitoramento de Prospecção</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Cadências</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           Acompanhe o progresso de cada cadência. Clique em um touch para atualizar o status.
         </p>

@@ -113,7 +113,7 @@ export default function InteracoesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Inbox className="w-6 h-6 text-green-600" />
-            Respostas dos leads
+            Respostas & DM
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Tudo o que os leads responderam, com a sugestão de réplica gerada pela IA. Nada é enviado automaticamente — e

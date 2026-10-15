@@ -1,29 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
-
-interface Relatorio {
-  geradoEm: string
-  funil: {
-    base: number; convites: number; aceites: number; taxaAceite: number
-    dms: number; emails: number; respostas: number; taxaResposta: number
-    qualificados: number; filaT1: number; semCadencia: number; falhas: number
-  }
-  ritmo: { dia: string; enviados: number; aceites: number }[]
-  quota: { enviadosHoje: number; limite: number; ultimoEnvio: string | null; diasSemEnvio: number | null }
-  aguardandoAceite: { total: number; faixas: Record<string, number> }
-  score: { base: number; aceitos: number; responderam: number }
-  pendencias: {
-    aguardandoResposta: { nome: string; empresa: string; score: number; horas: number; mensagem: string }[]
-    t2Prontos: { nome: string; empresa: string; score: number }[]
-    emConversaSemT2: number
-  }
-  conversas: { nome: string; empresa: string; score: number; diasUltimoContato: number | null; situacao: string }[]
-}
-
-const hora = (iso: string) =>
-  new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+import Link from 'next/link'
+import { ArrowRight, RefreshCw } from 'lucide-react'
+import { RitmoChart } from '@/components/relatorio/ritmo-chart'
+import { horaBR as hora, decimal, type Relatorio } from '@/components/relatorio/tipos'
 
 // Cor do indicador é semântica, não decorativa: vermelho só onde alguém espera.
 const CORES_SITUACAO: Record<string, string> = {
@@ -68,9 +49,7 @@ export default function RelatorioPage() {
   if (!dados) return null
 
   const { funil, quota, score, aguardandoAceite, pendencias, conversas, ritmo } = dados
-  const picoRitmo = Math.max(...ritmo.map(r => Math.max(r.enviados, r.aceites)), 1)
   const maiorFaixa = Math.max(...Object.values(aguardandoAceite.faixas), 1)
-  const hojeBR = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10)
 
   const metricas = [
     { rotulo: 'Base', valor: funil.base, pe: `${funil.semCadencia} sem cadência` },
@@ -178,30 +157,8 @@ export default function RelatorioPage() {
       {/* Ritmo */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ritmo diário</h2>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 overflow-x-auto">
-          <div className="flex gap-1.5 items-end min-w-[560px] h-32">
-            {ritmo.map(r => (
-              <div key={r.dia} className="flex-1 flex flex-col justify-end h-full">
-                <div className="flex gap-0.5 items-end h-full" title={`${r.dia}: ${r.enviados} convites, ${r.aceites} aceites`}>
-                  <div
-                    className={`flex-1 rounded-t-sm ${r.enviados ? 'bg-sky-600/80' : 'bg-gray-200 dark:bg-gray-700'}`}
-                    style={{ height: `${Math.max((r.enviados / picoRitmo) * 100, 2)}%` }}
-                  />
-                  <div
-                    className={`flex-1 rounded-t-sm ${r.aceites ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-700'}`}
-                    style={{ height: `${Math.max((r.aceites / picoRitmo) * 100, 2)}%` }}
-                  />
-                </div>
-                <span className={`text-[10px] font-mono text-center pt-1.5 border-t border-gray-100 dark:border-gray-700 ${r.dia === hojeBR ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500'}`}>
-                  {r.dia.slice(8)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-5 mt-3 text-xs text-gray-600 dark:text-gray-400">
-            <span className="inline-flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-sm bg-sky-600/80" /> convites</span>
-            <span className="inline-flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-sm bg-emerald-600" /> aceites</span>
-          </div>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+          <RitmoChart ritmo={ritmo} />
         </div>
       </section>
 
@@ -243,58 +200,47 @@ export default function RelatorioPage() {
               <div key={l.nome} className="flex items-baseline justify-between gap-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">{l.nome}</span>
                 <span className={`font-mono text-lg tabular-nums ${l.forte ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
-                  {l.v.toFixed(1).replace('.', ',')}
+                  {decimal(l.v)}
                 </span>
               </div>
             ))}
           </div>
           <p className="text-xs text-gray-500">
-            {(score.aceitos - score.base).toFixed(1).replace('.', ',')} pontos acima da base entre quem aceitou.
+            {decimal(score.aceitos - score.base)} pontos acima da base entre quem aceitou.
             Priorizar a fila por score tem efeito real.
           </p>
         </section>
       </div>
 
-      {/* Conversas */}
+      {/* Conversas: a lista completa fica em Cadências (Prospecções). Aqui só o resumo. */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Conversas abertas</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {conversas.length} leads responderam em algum touch. A cadência automática fica pausada em todos eles.
-        </p>
-        <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-          <table className="w-full text-sm min-w-[520px]">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50">
-                {['Lead', 'Score', 'Último contato', 'Situação'].map(h => (
-                  <th key={h} className="text-left text-[10px] font-mono uppercase tracking-wider text-gray-500 font-normal px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {conversas.map(c => (
-                <tr key={c.nome} className="border-b border-gray-100 dark:border-gray-700/50 last:border-0">
-                  <td className="px-4 py-2.5">
-                    <span className="text-gray-900 dark:text-white">{c.nome}</span>
-                    <span className="block text-xs text-gray-500">{c.empresa}</span>
-                  </td>
-                  <td className="px-4 py-2.5 font-mono tabular-nums text-gray-600 dark:text-gray-400">
-                    {c.score.toFixed(1).replace('.', ',')}
-                  </td>
-                  <td className="px-4 py-2.5 font-mono tabular-nums text-gray-600 dark:text-gray-400">
-                    {c.diasUltimoContato === null ? '—' : `${c.diasUltimoContato} d`}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className={`inline-block text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded ${CORES_SITUACAO[c.situacao] ?? CORES_SITUACAO['aguardando lead']}`}>
-                      {c.situacao}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div>
+            <span className="block text-[10px] font-mono uppercase tracking-wider text-gray-500">Responderam</span>
+            <span className="block text-3xl font-mono tabular-nums text-gray-900 dark:text-white">{conversas.length}</span>
+          </div>
+          {(['sua vez', 'em progresso', 'aguardando lead', 'perdido'] as const).map((sit) => (
+            <div key={sit}>
+              <span className={`inline-block text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded ${CORES_SITUACAO[sit]}`}>
+                {sit}
+              </span>
+              <span className="block text-xl font-mono tabular-nums mt-1 text-gray-900 dark:text-white">
+                {conversas.filter((c) => c.situacao === sit).length}
+              </span>
+            </div>
+          ))}
+          <Link
+            href="/dashboard/prospecting"
+            className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+          >
+            Ver a lista completa em Cadências
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
+        <p className="text-sm text-gray-500">
+          A cadência automática fica pausada em todos os leads que responderam.
+        </p>
       </section>
     </div>
   )

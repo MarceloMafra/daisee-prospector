@@ -82,7 +82,7 @@ export default function PipelinePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pipeline de Vendas</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Funil de Vendas</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Acompanhe seus leads pelo funil de vendas. Use o seletor em cada card para mover o lead de etapa.
         </p>

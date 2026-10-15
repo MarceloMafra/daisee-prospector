@@ -366,7 +366,7 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leads</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Base de Leads</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Gerencie e acompanhe seus leads de vendas
           </p>

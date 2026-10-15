@@ -2,17 +2,32 @@
 
 import { useTheme } from 'next-themes'
 import { useSession, signOut } from 'next-auth/react'
-import { Moon, Sun, User, LogOut } from 'lucide-react'
+import { Menu, Moon, Sun, User, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export function Header() {
+interface HeaderProps {
+  /** Abre a gaveta do menu (só aparece em tela estreita). */
+  onMenu?: () => void
+}
+
+export function Header({ onMenu }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { data: session } = useSession()
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-40">
       <div className="flex items-center justify-between h-16 px-6">
-        <div className="flex-1" />
+        <div className="flex-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="Abrir menu"
+            onClick={onMenu}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
 
         <div className="flex items-center gap-4">
           {/* Theme Toggle */}
