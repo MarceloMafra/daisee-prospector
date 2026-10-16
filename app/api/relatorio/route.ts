@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { ETAPAS, etapaDoLead } from '@/lib/etapaFunil'
 
 export const dynamic = 'force-dynamic'
 
@@ -125,6 +126,19 @@ export async function GET() {
         semCadencia: ativos.filter((l) => !l.cadencia).length,
         falhas: touches.filter((t) => t.status === 'FALHOU').length,
       },
+      etapas: ETAPAS.map(({ etapa, rotulo }) => ({
+        etapa,
+        rotulo,
+        total: leads.filter(
+          (l) =>
+            etapaDoLead({
+              status: l.status,
+              linkedinConnectedAt: l.linkedinConnectedAt,
+              interacoes: l.interacoes.length,
+              touches: l.cadencia?.touches ?? [],
+            }) === etapa
+        ).length,
+      })),
       ritmo: Array.from(porDia.values()),
       quota: {
         enviadosHoje,

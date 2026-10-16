@@ -15,6 +15,7 @@ export interface Relatorio {
     semCadencia: number
     falhas: number
   }
+  etapas: { etapa: string; rotulo: string; total: number }[]
   ritmo: { dia: string; enviados: number; aceites: number }[]
   quota: {
     enviadosHoje: number

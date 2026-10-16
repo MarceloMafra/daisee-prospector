@@ -11,20 +11,32 @@ interface Lead {
   email: string
   status: string
   daiseeScore: number
+  etapa: string
+  motivoEncerramento: string | null
 }
 
+// As quatro primeiras etapas se movem sozinhas (lib/etapaFunil.ts); Qualificado
+// e Encerrado são decisão do operador e ficam gravadas em `status`.
 const COLUMNS = [
-  { status: 'PROSPECTANDO', label: 'Prospectando', color: 'bg-yellow-50 dark:bg-yellow-950/20' },
-  { status: 'QUALIFICADO',  label: 'Qualificado',  color: 'bg-green-50 dark:bg-green-950/20' },
-  { status: 'EM_PROGRESSO', label: 'Em Progresso', color: 'bg-blue-50 dark:bg-blue-950/20' },
-  { status: 'DESCARTADO',   label: 'Descartado',   color: 'bg-red-50 dark:bg-red-950/20' },
-  { status: 'PERDIDO',      label: 'Perdido',      color: 'bg-gray-50 dark:bg-gray-900/40' },
+  { etapa: 'BASE',        label: 'Base',        auto: true,  dica: 'Triado, convite ainda não enviado', color: 'bg-gray-50 dark:bg-gray-900/40' },
+  { etapa: 'CONVIDADO',   label: 'Convidado',   auto: true,  dica: 'Convite enviado, sem aceite',       color: 'bg-blue-50 dark:bg-blue-950/20' },
+  { etapa: 'CONECTADO',   label: 'Conectado',   auto: true,  dica: 'Aceitou, ainda não respondeu',      color: 'bg-mint-50 dark:bg-mint-900/10' },
+  { etapa: 'EM_CONVERSA', label: 'Em conversa', auto: true,  dica: 'Respondeu — cadência pausada',      color: 'bg-primary-50 dark:bg-primary-900/10' },
+  { etapa: 'QUALIFICADO', label: 'Qualificado', auto: false, dica: 'Perfil certo e interesse real',     color: 'bg-green-50 dark:bg-green-950/20' },
+  { etapa: 'ENCERRADO',   label: 'Encerrado',   auto: false, dica: 'Saiu do funil, com motivo',         color: 'bg-red-50 dark:bg-red-950/20' },
+]
+
+// O que o operador decide à mão. "Automático" devolve o lead às etapas calculadas.
+const STATUS_OPTIONS = [
+  { value: 'PROSPECTANDO', label: 'Automático (prospecção)' },
+  { value: 'QUALIFICADO', label: 'Qualificado' },
+  { value: 'EM_PROGRESSO', label: 'Qualificado · em progresso' },
+  { value: 'DESCARTADO', label: 'Encerrado · sem fit' },
+  { value: 'PERDIDO', label: 'Encerrado · sem interesse' },
 ]
 
 // Quantos cards cada fase mostra de início; "Mostrar mais" acrescenta outro bloco.
 const PASSO = 30
-
-const STATUS_OPTIONS = COLUMNS.map(c => ({ value: c.status, label: c.label }))
 
 // "cambio" tem de achar "OZ Câmbio": quem procura um lead raramente digita o
 // acento. Aqui dá pra normalizar no navegador porque a página já carrega a base
@@ -39,23 +51,24 @@ export default function PipelinePage() {
   const [busca, setBusca] = useState('')
   // Celular: uma fase por vez. Em tela larga todas aparecem lado a lado.
   const [limites, setLimites] = useState<Record<string, number>>({})
-  const [faseMobile, setFaseMobile] = useState<string>(COLUMNS[0].status)
+  const [faseMobile, setFaseMobile] = useState<string>(COLUMNS[0].etapa)
+
+  const carregar = async () => {
+    try {
+      const response = await fetch('/api/leads?limit=1000&etapa=1')
+      if (response.ok) {
+        const data = await response.json()
+        setLeads(data.leads || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch pipeline:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const response = await fetch('/api/leads?limit=1000')
-        if (response.ok) {
-          const data = await response.json()
-          setLeads(data.leads || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch pipeline:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchLeads()
+    carregar()
   }, [])
 
   const termo = semAcento(busca.trim())
@@ -76,7 +89,14 @@ export default function PipelinePage() {
         body: JSON.stringify({ status: newStatus }),
       })
       if (response.ok) {
-        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l))
+        if (newStatus === 'PROSPECTANDO') {
+          // Voltou ao automático: a etapa depende dos eventos do lead, quem sabe é o servidor.
+          await carregar()
+        } else {
+          const etapa = newStatus === 'QUALIFICADO' || newStatus === 'EM_PROGRESSO' ? 'QUALIFICADO' : 'ENCERRADO'
+          const motivo = newStatus === 'DESCARTADO' ? 'Descartado (sem fit)' : newStatus === 'PERDIDO' ? 'Perdido (sem interesse)' : null
+          setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus, etapa, motivoEncerramento: motivo } : l))
+        }
       }
     } catch (error) {
       console.error('Failed to update status:', error)
@@ -90,7 +110,8 @@ export default function PipelinePage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Funil de Vendas</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Acompanhe seus leads pelo funil de vendas. Use o seletor em cada card para mover o lead de etapa.
+          Base, Convidado, Conectado e Em conversa se movem sozinhas, conforme o convite, o aceite e a resposta.
+          Você decide apenas quem é Qualificado e quem sai do funil (Encerrado).
         </p>
       </div>
 
@@ -129,16 +150,16 @@ export default function PipelinePage() {
         </div>
       ) : (
         <>
-        <div className="lg:hidden -mx-1 overflow-x-auto">
+        <div className="md:hidden -mx-1 overflow-x-auto">
           <div className="flex gap-2 px-1 pb-1 min-w-max">
             {COLUMNS.map((column) => {
-              const ativo = column.status === faseMobile
-              const qtd = visiveis.filter((l) => l.status === column.status).length
+              const ativo = column.etapa === faseMobile
+              const qtd = visiveis.filter((l) => l.etapa === column.etapa).length
               return (
                 <button
-                  key={column.status}
+                  key={column.etapa}
                   type="button"
-                  onClick={() => setFaseMobile(column.status)}
+                  onClick={() => setFaseMobile(column.etapa)}
                   aria-pressed={ativo}
                   className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
                     ativo
@@ -153,17 +174,26 @@ export default function PipelinePage() {
             })}
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
           {COLUMNS.map((column) => {
-            const columnLeads = visiveis.filter(l => l.status === column.status)
-            const totalDaEtapa = leads.filter(l => l.status === column.status).length
-            const limite = limites[column.status] ?? PASSO
+            const columnLeads = visiveis.filter(l => l.etapa === column.etapa)
+            const totalDaEtapa = leads.filter(l => l.etapa === column.etapa).length
+            const limite = limites[column.etapa] ?? PASSO
             const restam = columnLeads.length - limite
             return (
-              <div key={column.status} className={`space-y-3 ${column.status === faseMobile ? 'block' : 'hidden'} lg:block`}>
+              <div key={column.etapa} className={`space-y-3 ${column.etapa === faseMobile ? 'block' : 'hidden'} md:block`}>
+                <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-1.5">
                     {column.label}
+                    {column.auto && (
+                      <span
+                        title="Esta etapa se move sozinha, conforme os eventos do lead"
+                        className="text-[9px] font-mono uppercase tracking-wide text-gray-400 border border-gray-300 dark:border-gray-600 rounded px-1"
+                      >
+                        auto
+                      </span>
+                    )}
                   </h3>
                   <span
                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
@@ -173,6 +203,8 @@ export default function PipelinePage() {
                         que a etapa esvaziou. */}
                     {termo ? `${columnLeads.length}/${totalDaEtapa}` : columnLeads.length}
                   </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{column.dica}</p>
                 </div>
 
                 <div className={`space-y-2 p-3 rounded-lg min-h-96 ${column.color}`}>
@@ -192,6 +224,11 @@ export default function PipelinePage() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {lead.company}
                         </p>
+                        {(lead.motivoEncerramento || lead.status === 'EM_PROGRESSO') && (
+                          <p className="mt-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">
+                            {lead.motivoEncerramento ?? 'Em progresso'}
+                          </p>
+                        )}
                         <div className="flex items-center justify-between mt-2">
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
                             lead.daiseeScore >= 80
@@ -220,7 +257,7 @@ export default function PipelinePage() {
                     <button
                       type="button"
                       onClick={() =>
-                        setLimites((atual) => ({ ...atual, [column.status]: limite + PASSO }))
+                        setLimites((atual) => ({ ...atual, [column.etapa]: limite + PASSO }))
                       }
                       className="w-full rounded-lg border border-dashed border-gray-300 dark:border-gray-600 py-2.5 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"
                     >

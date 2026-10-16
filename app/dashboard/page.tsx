@@ -19,19 +19,18 @@ import { decimal, horaBR, type Relatorio } from '@/components/relatorio/tipos'
 import { cn } from '@/lib/utils'
 
 interface Fases {
-  totalLeads: number
   hotProspects: number
   averageScore: number
-  statusBreakdown: Record<string, number>
 }
 
-const FASES: { chave: string; rotulo: string; cor: string }[] = [
-  { chave: 'PROSPECTANDO', rotulo: 'Prospectando', cor: 'bg-brand-400' },
-  { chave: 'QUALIFICADO', rotulo: 'Qualificado', cor: 'bg-mint-500' },
-  { chave: 'EM_PROGRESSO', rotulo: 'Em progresso', cor: 'bg-primary-500' },
-  { chave: 'DESCARTADO', rotulo: 'Descartado', cor: 'bg-gray-400' },
-  { chave: 'PERDIDO', rotulo: 'Perdido', cor: 'bg-red-400' },
-]
+const COR_ETAPA: Record<string, string> = {
+  BASE: 'bg-gray-400',
+  CONVIDADO: 'bg-blue-500',
+  CONECTADO: 'bg-mint-500',
+  EM_CONVERSA: 'bg-primary-500',
+  QUALIFICADO: 'bg-brand-500',
+  ENCERRADO: 'bg-red-400',
+}
 
 const pct = (parte: number, todo: number) => (todo ? Math.round((parte / todo) * 100) : 0)
 
@@ -154,7 +153,6 @@ export default function DashboardPage() {
   const t2Prontos = pendencias.t2Prontos.length
   const quotaPct = Math.min(100, pct(quota.enviadosHoje, quota.limite))
   const maiorFaixa = Math.max(...Object.values(aguardandoAceite.faixas), 1)
-  const totalFases = fases ? Object.values(fases.statusBreakdown).reduce((a, b) => a + b, 0) : 0
 
   const acoes = [
     {
@@ -317,33 +315,26 @@ export default function DashboardPage() {
       {/* Distribuições */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Cartao titulo="Leads por fase" acao={{ href: '/dashboard/pipeline', texto: 'Funil de Vendas' }}>
-          {fases ? (
-            <>
-              <div className="space-y-2.5">
-                {FASES.map((f) => {
-                  const qtd = fases.statusBreakdown[f.chave] ?? 0
-                  return (
-                    <div key={f.chave} className="grid grid-cols-[110px_1fr_44px] items-center gap-3 text-sm">
-                      <span className="text-gray-700 dark:text-gray-300">{f.rotulo}</span>
-                      <span className="h-2 bg-gray-100 dark:bg-gray-900/60 rounded-full overflow-hidden">
-                        <span
-                          className={cn('block h-full rounded-full', f.cor)}
-                          style={{ width: `${pct(qtd, totalFases)}%` }}
-                        />
-                      </span>
-                      <span className="font-mono tabular-nums text-right text-gray-600 dark:text-gray-400">
-                        {qtd}
-                      </span>
-                    </div>
-                  )
-                })}
+          <div className="space-y-2.5">
+            {dados.etapas.map((e) => (
+              <div key={e.etapa} className="grid grid-cols-[110px_1fr_44px] items-center gap-3 text-sm">
+                <span className="text-gray-700 dark:text-gray-300">{e.rotulo}</span>
+                <span className="h-2 bg-gray-100 dark:bg-gray-900/60 rounded-full overflow-hidden">
+                  <span
+                    className={cn('block h-full rounded-full', COR_ETAPA[e.etapa] ?? 'bg-gray-400')}
+                    style={{ width: `${pct(e.total, funil.base)}%` }}
+                  />
+                </span>
+                <span className="font-mono tabular-nums text-right text-gray-600 dark:text-gray-400">
+                  {e.total}
+                </span>
               </div>
-              <p className="text-xs text-gray-500 mt-4">
-                {fases.hotProspects} leads com prioridade alta · score médio {decimal(fases.averageScore)}.
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">Distribuição indisponível agora. Atualize para tentar de novo.</p>
+            ))}
+          </div>
+          {fases && (
+            <p className="text-xs text-gray-500 mt-4">
+              {fases.hotProspects} leads com prioridade alta · score médio {decimal(fases.averageScore)}.
+            </p>
           )}
         </Cartao>
 

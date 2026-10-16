@@ -14,6 +14,10 @@ Levantado em 15/10/2026, sobre `main` em `d8cd198`.
 
 ## 1. Navegação atual
 
+> Desde a fase 2 do redesenho os rótulos mudaram (rotas iguais): Leads → Base de
+> Leads, Pipeline → Funil de Vendas, Respostas → Respostas & DM, Prospecções →
+> Cadências, Compliance → Compliance de Copy. A tabela abaixo usa os nomes antigos.
+
 A barra lateral (`components/layout/sidebar.tsx`) tem oito entradas:
 
 | Rótulo | Rota | O que a tela faz |
@@ -81,9 +85,16 @@ Pelo componente `indicacao-painel.tsx`:
 - `GET|POST /api/interacoes/{id}/indicacao` — ⚠️ busca no LinkedIn
 - `POST /api/interacoes/{id}/indicacao/cadencia` — ⚠️ IA
 
-### `/dashboard/pipeline` — quadro por fase
-- `GET /api/leads?limit=1000`
-- `PUT /api/leads/{id}` (mudança de fase ao arrastar)
+### `/dashboard/pipeline` — Funil de Vendas (antes "Pipeline")
+- `GET /api/leads?limit=1000&etapa=1` — `etapa=1` faz a rota devolver `etapa` e
+  `motivoEncerramento` calculados por `lib/etapaFunil.ts`
+- `PUT /api/leads/{id}` com `status` (só Qualificado, Em progresso, Descartado,
+  Perdido ou Prospectando = voltar ao automático)
+
+> Seis etapas: Base, Convidado, Conectado, Em conversa (calculadas dos eventos),
+> Qualificado e Encerrado (decisão do operador, gravada em `status`). A regra tem
+> teste: `npx tsx scripts/testar-etapa-funil.ts`. O Dashboard e `/api/relatorio`
+> (campo `etapas`) usam a mesma função.
 
 ### `/dashboard/prospecting` — monitoramento
 - `GET /api/prospecting`

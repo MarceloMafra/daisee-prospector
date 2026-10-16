@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { etapaDoLead, motivoEncerramento } from '@/lib/etapaFunil'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status')
     const priority = searchParams.get('priority')
+    // Opt-in: o Funil de Vendas pede a etapa calculada; as outras telas não pagam o custo.
+    const comEtapa = searchParams.get('etapa') === '1'
     const minScore = parseFloat(searchParams.get('minScore') || '0')
     const maxScore = parseFloat(searchParams.get('maxScore') || '100')
 
@@ -76,17 +79,37 @@ export async function GET(request: NextRequest) {
         excludedFromAutomation: true,
         createdAt: true,
         updatedAt: true,
+        ...(comEtapa && {
+          linkedinConnectedAt: true,
+          _count: { select: { interacoes: true } },
+          cadencia: {
+            select: { touches: { select: { type: true, status: true, sentAt: true } } },
+          },
+        }),
       },
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
     })
 
+    const leadsSaida = comEtapa
+      ? (leads as any[]).map(({ cadencia, _count, linkedinConnectedAt, ...l }) => ({
+          ...l,
+          etapa: etapaDoLead({
+            status: l.status,
+            linkedinConnectedAt,
+            interacoes: _count?.interacoes ?? 0,
+            touches: cadencia?.touches ?? [],
+          }),
+          motivoEncerramento: motivoEncerramento(l.status),
+        }))
+      : leads
+
     const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json(
       {
-        leads,
+        leads: leadsSaida,
         pagination: {
           page,
           limit,
