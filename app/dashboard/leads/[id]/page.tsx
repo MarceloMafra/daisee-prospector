@@ -594,11 +594,11 @@ export default function LeadDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/leads')}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
         </Button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {editingName ? (
             <div className="flex flex-col gap-2">
               <input
@@ -621,7 +621,7 @@ export default function LeadDetailPage() {
           ) : (
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{lead.name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white break-words">{lead.name}</h1>
                 <button
                   onClick={() => { setEditingName(true); setNameInput(lead.name) }}
                   className="text-xs text-gray-400 hover:text-gray-600"
@@ -629,15 +629,15 @@ export default function LeadDetailPage() {
                   Editar
                 </button>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">{lead.seniority} · {lead.company}</p>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 break-words">{lead.seniority} · {lead.company}</p>
             </div>
           )}
         </div>
-        <div className="ml-auto">
+        <div className="sm:ml-auto flex items-center gap-3 sm:block">
           <span className={`text-2xl font-bold px-4 py-2 rounded-lg ${scoreColor}`}>
             {lead.daiseeScore.toFixed(1)}
           </span>
-          <p className="text-xs text-center text-gray-500 mt-1">DAISEE Score</p>
+          <p className="text-xs sm:text-center text-gray-500 sm:mt-1">DAISEE Score</p>
         </div>
       </div>
 
@@ -1207,8 +1207,8 @@ export default function LeadDetailPage() {
                         onClick={() => setSelectedTone(tone)}
                         className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
                           selectedTone === tone
-                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-red-300'
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
                         }`}
                       >
                         {toneLabels[tone]}
@@ -1230,9 +1230,9 @@ export default function LeadDetailPage() {
           ) : (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
+                    <MessageSquare className="w-4 h-4 shrink-0" />
                     Cadência Gerada — Tom {toneLabels[lead.cadencia.tone]}
                   </CardTitle>
                   <div className="flex items-center gap-2">
@@ -1260,7 +1260,9 @@ export default function LeadDetailPage() {
                 {/* Copy quality info */}
                 <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400">
                   <Shield className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                  Clique em <strong className="text-gray-700 dark:text-gray-300">Qualidade</strong> em cada touch para analisar spam, tom, personalização, CTA e tamanho.
+                  <span>
+                    Clique em <strong className="text-gray-700 dark:text-gray-300">Qualidade</strong> em cada touch para analisar spam, tom, personalização, CTA e tamanho.
+                  </span>
                 </div>
 
                 {(lead.cadencia?.touches ?? []).some((t) => t.status === 'RESPONDIDO') && (
@@ -1280,8 +1282,8 @@ export default function LeadDetailPage() {
                   const cadenciaPausada = (lead.cadencia?.touches ?? []).some((t) => t.status === 'RESPONDIDO')
                   return (
                     <div key={touch.id} className="border dark:border-gray-700 rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-semibold text-gray-500 uppercase">
                             Touch {touch.sequence} — {touchTypeLabels[touch.type] || touch.type}
                           </span>
@@ -1312,7 +1314,7 @@ export default function LeadDetailPage() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
                             {touch.channel}
                           </span>
