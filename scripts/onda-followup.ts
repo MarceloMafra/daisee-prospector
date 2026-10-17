@@ -31,7 +31,7 @@ const FLAGS_COM_VALOR = new Set(['--canal', '--amostra', '--limite', '--pular'])
 const FLAGS_SOLTAS = new Set(['--dry-run', '--apply'])
 const args = process.argv.slice(2)
 
-const desconhecidas = args.filter((a, i) => {
+const desconhecidas = args.filter((a) => {
   if (!a.startsWith('-')) return false
   return !FLAGS_COM_VALOR.has(a) && !FLAGS_SOLTAS.has(a)
 })
