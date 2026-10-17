@@ -72,6 +72,8 @@ const touchTypeLabels: Record<string, string> = {
   EMAIL_T3: 'E-mail T3',
   EMAIL_T4: 'E-mail T4',
   EMAIL_T5: 'E-mail T5',
+  LINKEDIN_FOLLOWUP: 'Follow-up por DM',
+  EMAIL_FOLLOWUP: 'Follow-up por e-mail',
 }
 
 const escapeHtml = (value: string | number | null | undefined) =>

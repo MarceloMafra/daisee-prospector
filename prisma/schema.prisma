@@ -214,6 +214,8 @@ enum TouchType {
   EMAIL_T3      // T3: Email
   EMAIL_T4      // T4: Email
   EMAIL_T5      // T5: Email
+  LINKEDIN_FOLLOWUP // Onda de follow-up (17/10/2026): DM para quem aceitou e não respondeu
+  EMAIL_FOLLOWUP    // Onda de follow-up: e-mail 3 dias depois da DM
 }
 
 enum TouchStatus {
