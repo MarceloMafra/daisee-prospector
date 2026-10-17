@@ -19,6 +19,18 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get('priority')
     // Opt-in: o Funil de Vendas pede a etapa calculada; as outras telas não pagam o custo.
     const comEtapa = searchParams.get('etapa') === '1'
+
+    // Ordenação pedida pela tela (lista branca: nunca repassar texto livre ao Prisma).
+    const dir: 'asc' | 'desc' = searchParams.get('dir') === 'asc' ? 'asc' : 'desc'
+    const sort = searchParams.get('sort') || 'createdAt'
+    const orderBy: any[] =
+      sort === 'email'
+        // com e-mail primeiro (asc) ou sem e-mail primeiro (desc)
+        ? [{ email: { sort: dir, nulls: dir === 'asc' ? 'last' : 'first' } }, { createdAt: 'desc' }]
+        : ['name', 'company', 'daiseeScore', 'status', 'createdAt'].includes(sort)
+          ? [{ [sort]: dir }, { id: 'asc' }]
+          : [{ createdAt: 'desc' }]
+    const filtroEmail = searchParams.get('email') // 'com' | 'sem'
     const minScore = parseFloat(searchParams.get('minScore') || '0')
     const maxScore = parseFloat(searchParams.get('maxScore') || '100')
 
@@ -57,6 +69,9 @@ export async function GET(request: NextRequest) {
       where.status = status
     }
 
+    if (filtroEmail === 'com') where.email = { not: null }
+    if (filtroEmail === 'sem') where.email = null
+
     if (priority) {
       where.priority = priority
     }
@@ -87,7 +102,7 @@ export async function GET(request: NextRequest) {
           },
         }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip,
       take: limit,
     })

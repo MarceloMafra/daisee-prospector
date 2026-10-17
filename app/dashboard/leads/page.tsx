@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles, Rocket, X, UserPlus } from 'lucide-react'
+import { Plus, FileText, Search, Trash2, RefreshCw, Sparkles, Rocket, X, UserPlus, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { NovoLeadDialog } from '@/components/leads/novo-lead-dialog'
 import { useRouter } from 'next/navigation'
 
@@ -52,6 +52,50 @@ export default function LeadsPage() {
   // O que já foi consultado no servidor. Difere de searchQuery enquanto o
   // usuário ainda está digitando.
   const [buscaAplicada, setBuscaAplicada] = useState('')
+  // Ordenação e filtro de e-mail rodam no servidor: a lista é paginada, então
+  // ordenar só a página carregada esconderia o resto da base.
+  const [sortKey, setSortKey] = useState('createdAt')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [filtroEmail, setFiltroEmail] = useState<'todos' | 'com' | 'sem'>('todos')
+
+  const ordenarPor = (chave: string, dirInicial: 'asc' | 'desc' = 'asc') => {
+    if (sortKey === chave) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortKey(chave)
+      setSortDir(dirInicial)
+    }
+    setCurrentPage(1)
+  }
+
+  const CabecalhoOrdenavel = ({
+    chave,
+    rotulo,
+    dirInicial = 'asc',
+    dicaAsc,
+    dicaDesc,
+  }: {
+    chave: string
+    rotulo: string
+    dirInicial?: 'asc' | 'desc'
+    dicaAsc: string
+    dicaDesc: string
+  }) => {
+    const ativo = sortKey === chave
+    const Icone = !ativo ? ChevronsUpDown : sortDir === 'asc' ? ChevronUp : ChevronDown
+    return (
+      <th className="text-left px-4 py-3 font-semibold text-sm" aria-sort={ativo ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+        <button
+          type="button"
+          onClick={() => ordenarPor(chave, dirInicial)}
+          title={ativo && sortDir === 'asc' ? dicaDesc : dicaAsc}
+          className="inline-flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400"
+        >
+          {rotulo}
+          <Icone className={`w-3.5 h-3.5 ${ativo ? 'text-primary-500' : 'text-gray-400'}`} />
+        </button>
+      </th>
+    )
+  }
 
   // A busca precisa varrer a base inteira, não a página carregada: com 25 por
   // página, procurar um lead da página 6 não devolvia nada. A rota já aceitava
@@ -60,9 +104,12 @@ export default function LeadsPage() {
     (pagina = currentPage) => {
       const params = new URLSearchParams({ limit: String(pageSize), page: String(pagina) })
       if (buscaAplicada) params.set('search', buscaAplicada)
+      params.set('sort', sortKey)
+      params.set('dir', sortDir)
+      if (filtroEmail !== 'todos') params.set('email', filtroEmail)
       return `/api/leads?${params}`
     },
-    [pageSize, currentPage, buscaAplicada]
+    [pageSize, currentPage, buscaAplicada, sortKey, sortDir, filtroEmail]
   )
 
   // Uma consulta por pausa na digitação, não uma por tecla.
@@ -522,6 +569,21 @@ export default function LeadsPage() {
               <option value={50}>50</option>
             </select>
             <span className="text-sm text-gray-500">por página</span>
+            <div className="inline-flex rounded-full border border-gray-300 dark:border-gray-600 p-0.5 text-xs font-semibold" role="group" aria-label="Filtrar por e-mail">
+              {([['todos', 'Todos'], ['com', 'Com e-mail'], ['sem', 'Sem e-mail']] as const).map(([v, r]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => { setFiltroEmail(v); setCurrentPage(1) }}
+                  aria-pressed={filtroEmail === v}
+                  className={`px-3 py-1 rounded-full transition-colors ${
+                    filtroEmail === v ? 'bg-primary-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-primary-600'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
             <div className="sm:ml-auto flex w-full sm:w-auto items-center justify-between sm:justify-start gap-2">
               <Button
                 variant="outline"
@@ -581,11 +643,11 @@ export default function LeadsPage() {
                         className="rounded border-gray-300 cursor-pointer"
                       />
                     </th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">Nome</th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">E-mail</th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">Empresa</th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">Score</th>
-                    <th className="text-left px-4 py-3 font-semibold text-sm">Status</th>
+                    {CabecalhoOrdenavel({ chave: 'name', rotulo: 'Nome', dicaAsc: 'Ordenar de A a Z', dicaDesc: 'Ordenar de Z a A' })}
+                    {CabecalhoOrdenavel({ chave: 'email', rotulo: 'E-mail', dicaAsc: 'Mostrar primeiro quem tem e-mail', dicaDesc: 'Mostrar primeiro quem NÃO tem e-mail' })}
+                    {CabecalhoOrdenavel({ chave: 'company', rotulo: 'Empresa', dicaAsc: 'Ordenar de A a Z', dicaDesc: 'Ordenar de Z a A' })}
+                    {CabecalhoOrdenavel({ chave: 'daiseeScore', rotulo: 'Score', dirInicial: 'desc', dicaAsc: 'Maior score primeiro', dicaDesc: 'Menor score primeiro' })}
+                    {CabecalhoOrdenavel({ chave: 'status', rotulo: 'Status', dicaAsc: 'Ordenar por status', dicaDesc: 'Ordenar por status (inverso)' })}
                     <th className="text-left px-4 py-3 font-semibold text-sm">Automação</th>
                     <th className="text-left px-4 py-3 font-semibold text-sm">Ações</th>
                   </tr>
