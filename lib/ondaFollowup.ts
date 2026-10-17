@@ -108,7 +108,9 @@ const REGRAS = `REGRAS DE HONESTIDADE (inegociáveis — mensagem que violar qua
 - NUNCA descreva a DAISEE como automação. Ela é IA privada de gestão documental: o valor está em RECUPERAR (achar a norma, o parecer, o contrato), não em armazenar.
 - A MasterVendas NÃO desenvolveu a DAISEE: somos PARCEIROS. Nunca "desenvolvemos", "criamos" ou "nossa IA".
 - NUNCA declare a intenção para negá-la: nada de "sem compromisso", "não quero te vender nada", "sem segunda intenção".
-- Ancore só em fato que está nas mensagens anteriores ou no perfil. Não invente nada sobre o lead nem sobre a empresa dele.`
+- Ancore só em fato que está nas mensagens anteriores ou no perfil. Não invente nada sobre o lead nem sobre a empresa dele.
+- NUNCA prometa nem afirme encaixe: nada de "é exatamente o cenário onde a DAISEE entrega mais valor", "é o perfil ideal", "vai resolver". Fale em PERGUNTA ou hipótese ("faz sentido avaliarmos juntos se...", "talvez valha uma conversa para ver se...").
+- Cite no máximo UM detalhe do perfil, o mais ligado ao tema da abordagem inicial. Empilhar vários dados do perfil soa como leitura de currículo.`
 
 export interface TextoGerado {
   conteudo: string
@@ -133,7 +135,11 @@ ASSUNTO: <assunto de até 60 caracteres, natural, sem "Re:" nem promessa>
 
   return `Você escreve pelo Marcelo Mafra, fundador da MasterVendas, na prospecção B2B de compliance. Quem fala é o Marcelo (masculino): "avaliarmos juntos", nunca "juntas". Português brasileiro impecável, com todos os acentos.
 
-SITUAÇÃO: ${l.name} aceitou o convite de conexão no LinkedIn e recebeu as mensagens abaixo, mas NÃO respondeu. Esta é uma ÚLTIMA tentativa de retomar o diálogo.
+SITUAÇÃO: ${l.name} aceitou o convite de conexão no LinkedIn e recebeu as mensagens abaixo, mas NÃO respondeu. ${
+    canal === 'LINKEDIN'
+      ? 'Esta é uma nova tentativa de retomar o diálogo, por DM. Ainda haverá um e-mail depois, então NUNCA escreva "última vez", "última tentativa" nem "por fim": use "mais uma vez" ou "uma vez mais".'
+      : 'Esta é a ÚLTIMA mensagem da sequência: já houve uma DM no LinkedIn três dias antes. Pode dizer que é a última tentativa e citar a DM de passagem, sem repeti-la.'
+  }
 
 DADOS: ${l.name}, ${l.seniority}, ${l.company}.${l.profileText ? `\nPERFIL (resumo): ${l.profileText.substring(0, 1500)}` : ''}
 
@@ -143,7 +149,7 @@ ${enviados || '(nenhuma registrada)'}
 ESTRUTURA (siga a ideia, com palavras suas, sem soar como modelo):
 1. Abra reconhecendo, com leveza e sem culpar, que ele pode não ter conseguido ler as mensagens anteriores (rotina corrida, agenda cheia — escolha um motivo plausível e variado, nunca o mesmo para todos).
 2. Reconheça que ele é um profissional qualificado e experiente NO TEMA que abriu a abordagem inicial (extraia o tema das mensagens já enviadas, em uma frase específica; não escreva "o tema" de forma genérica).
-3. Diga que decidiu insistir uma vez mais, de forma educada.
+3. Diga que decidiu insistir uma vez mais, de forma educada e curta.
 4. Feche com UM convite simples para retomar o diálogo (uma pergunta curta ou uma sugestão de conversa breve). A pergunta é calibrada pela senioridade: com diretor, head, superintendente ou C-level não peça que ele "mate a sua curiosidade".
 
 ${REGRAS}
