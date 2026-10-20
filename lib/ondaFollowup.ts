@@ -119,6 +119,21 @@ export interface TextoGerado {
   corrigido: boolean
 }
 
+// Fechos alternados por lead (hash do id): 40 mensagens com o mesmo fecho parecem
+// modelo, e quem recebe percebe. Cada um é um convite curto, em tom diferente.
+const FECHOS = [
+  'uma pergunta curta e direta: se vale uma conversa rápida (cerca de 15 minutos) para ver se faz sentido.',
+  'uma sugestão concreta de agenda: "esta semana ou na próxima" para uma conversa breve, deixando a escolha do horário com ele.',
+  'uma pergunta aberta sobre como ele hoje resolve a recuperação de documentos e normas, convidando-o a contar em poucas linhas, sem pedir reunião.',
+  'a oferta de continuar por mensagem mesmo: ele pode responder só "sim" ou "agora não", e você respeita qualquer das duas.',
+  'um convite para trocar ideias, deixando claro que ele decide o formato: uma ligação rápida, uma mensagem ou um café virtual.',
+]
+function fechoDe(id: string) {
+  let h = 0
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return FECHOS[h % FECHOS.length]
+}
+
 function montarPrompt(l: LeadParaOnda, canal: 'LINKEDIN' | 'EMAIL') {
   const enviados = l.touches
     .filter((t) => JA_SAIU.includes(t.status) && t.content)
@@ -150,7 +165,7 @@ ESTRUTURA (siga a ideia, com palavras suas, sem soar como modelo):
 1. Abra reconhecendo, com leveza e sem culpar, que ele pode não ter conseguido ler as mensagens anteriores (rotina corrida, agenda cheia — escolha um motivo plausível e variado, nunca o mesmo para todos).
 2. Reconheça que ele é um profissional qualificado e experiente NO TEMA que abriu a abordagem inicial (extraia o tema das mensagens já enviadas, em uma frase específica; não escreva "o tema" de forma genérica).
 3. Diga que decidiu insistir uma vez mais, de forma educada e curta.
-4. Feche com UM convite simples para retomar o diálogo (uma pergunta curta ou uma sugestão de conversa breve). A pergunta é calibrada pela senioridade: com diretor, head, superintendente ou C-level não peça que ele "mate a sua curiosidade".
+4. Feche com UM convite simples para retomar o diálogo. NESTA mensagem o fecho deve ser: ${fechoDe(l.id)} Não use a fórmula "faz sentido trocarmos 15 minutos para avaliarmos juntos". A pergunta é calibrada pela senioridade: com diretor, head, superintendente ou C-level não peça que ele "mate a sua curiosidade".
 
 ${REGRAS}
 
